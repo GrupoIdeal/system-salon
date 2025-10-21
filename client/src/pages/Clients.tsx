@@ -30,11 +30,11 @@ import { Plus, Trash2, Edit2, Loader2 } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 
 export default function Clients() {
-  const [search, setSearch] = useState("");
-  const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [search, setSearch] = useState<string>("");
+  const [isDialogOpen, setIsDialogOpen] = useState<boolean>(false);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [deleteId, setDeleteId] = useState<string | null>(null);
-  const [formData, setFormData] = useState({
+  const [formData, setFormData] = useState<{ name: string; email: string; phone: string; birthDate: string; notes: string; }>({
     name: "",
     email: "",
     phone: "",
@@ -84,7 +84,7 @@ export default function Clients() {
     }
   };
 
-  const handleEdit = (client: any) => {
+  const handleEdit = (client: { id: string; name: string; email?: string; phone?: string; birthDate?: string; notes?: string; }) => {
     setFormData({
       name: client.name,
       email: client.email || "",
@@ -234,7 +234,7 @@ export default function Clients() {
               </div>
             ) : clientsQuery.data && clientsQuery.data.length > 0 ? (
               <div className="space-y-2">
-                {clientsQuery.data.map((client) => (
+                {clientsQuery.data.map((client: { id: string; name: string; email?: string; phone?: string; birthDate?: string; notes?: string; }) => (
                   <div
                     key={client.id}
                     className="flex items-center justify-between p-3 border rounded-lg hover:bg-slate-50"

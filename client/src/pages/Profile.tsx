@@ -28,9 +28,9 @@ import { Plus, Edit2, Trash2, Loader2 } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 
 export default function Profile() {
-  const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [isDialogOpen, setIsDialogOpen] = useState<boolean>(false);
   const [editingSpecialistId, setEditingSpecialistId] = useState<string | null>(null);
-  const [specialistForm, setSpecialistForm] = useState({
+  const [specialistForm, setSpecialistForm] = useState<{ name: string; specialty: string; email: string; phone: string; }>({
     name: "",
     specialty: "",
     email: "",
@@ -83,7 +83,7 @@ export default function Profile() {
     }
   };
 
-  const handleEditSpecialist = (specialist: any) => {
+  const handleEditSpecialist = (specialist: { id: string; name: string; specialty?: string; email?: string; phone?: string; }) => {
     setSpecialistForm({
       name: specialist.name,
       specialty: specialist.specialty || "",
@@ -123,43 +123,48 @@ export default function Profile() {
                 {salonQuery.isLoading ? (
                   <div className="space-y-4">
                     {[...Array(4)].map((_, i) => (
-                      <Skeleton key={i} className="h-10 w-full" />
+                      <Skeleton key={"skeleton-" + i} className="h-10 w-full" />
                     ))}
                   </div>
                 ) : salonQuery.data ? (
                   <form className="space-y-4">
                     <div>
-                      <label className="text-sm font-medium">Nome do Salão</label>
+                      <label htmlFor="salon-name" className="text-sm font-medium">Nome do Salão</label>
                       <Input
+                        id="salon-name"
                         defaultValue={salonQuery.data.name}
                         placeholder="Nome do salão"
                       />
                     </div>
                     <div>
-                      <label className="text-sm font-medium">CNPJ</label>
+                      <label htmlFor="salon-cnpj" className="text-sm font-medium">CNPJ</label>
                       <Input
+                        id="salon-cnpj"
                         defaultValue={salonQuery.data.cnpj || ""}
                         placeholder="00.000.000/0000-00"
                       />
                     </div>
                     <div>
-                      <label className="text-sm font-medium">Endereço</label>
+                      <label htmlFor="salon-address" className="text-sm font-medium">Endereço</label>
                       <Input
+                        id="salon-address"
                         defaultValue={salonQuery.data.address || ""}
                         placeholder="Rua, número, complemento"
                       />
                     </div>
                     <div className="grid grid-cols-2 gap-4">
                       <div>
-                        <label className="text-sm font-medium">Telefone</label>
+                        <label htmlFor="salon-phone" className="text-sm font-medium">Telefone</label>
                         <Input
+                          id="salon-phone"
                           defaultValue={salonQuery.data.phone || ""}
                           placeholder="(11) 99999-9999"
                         />
                       </div>
                       <div>
-                        <label className="text-sm font-medium">Email</label>
+                        <label htmlFor="salon-email" className="text-sm font-medium">Email</label>
                         <Input
+                          id="salon-email"
                           type="email"
                           defaultValue={salonQuery.data.email || ""}
                           placeholder="email@salao.com"
@@ -218,8 +223,9 @@ export default function Profile() {
                   </DialogHeader>
                   <form onSubmit={handleSpecialistSubmit} className="space-y-4">
                     <div>
-                      <label className="text-sm font-medium">Nome</label>
+                      <label htmlFor="specialist-name" className="text-sm font-medium">Nome</label>
                       <Input
+                        id="specialist-name"
                         value={specialistForm.name}
                         onChange={(e) =>
                           setSpecialistForm({
@@ -232,8 +238,9 @@ export default function Profile() {
                       />
                     </div>
                     <div>
-                      <label className="text-sm font-medium">Especialidade</label>
+                      <label htmlFor="specialist-specialty" className="text-sm font-medium">Especialidade</label>
                       <Input
+                        id="specialist-specialty"
                         value={specialistForm.specialty}
                         onChange={(e) =>
                           setSpecialistForm({
@@ -245,8 +252,9 @@ export default function Profile() {
                       />
                     </div>
                     <div>
-                      <label className="text-sm font-medium">Email</label>
+                      <label htmlFor="specialist-email" className="text-sm font-medium">Email</label>
                       <Input
+                        id="specialist-email"
                         type="email"
                         value={specialistForm.email}
                         onChange={(e) =>
@@ -259,8 +267,9 @@ export default function Profile() {
                       />
                     </div>
                     <div>
-                      <label className="text-sm font-medium">Telefone</label>
+                      <label htmlFor="specialist-phone" className="text-sm font-medium">Telefone</label>
                       <Input
+                        id="specialist-phone"
                         value={specialistForm.phone}
                         onChange={(e) =>
                           setSpecialistForm({
@@ -281,8 +290,8 @@ export default function Profile() {
                     >
                       {(createSpecialistMutation.isPending ||
                         updateSpecialistMutation.isPending) && (
-                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                      )}
+                          <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                        )}
                       {editingSpecialistId ? "Atualizar" : "Criar"}
                     </Button>
                   </form>
@@ -301,12 +310,12 @@ export default function Profile() {
                 {specialistsQuery.isLoading ? (
                   <div className="space-y-2">
                     {[...Array(3)].map((_, i) => (
-                      <Skeleton key={i} className="h-16 w-full" />
+                      <Skeleton key={"skeleton-" + i} className="h-16 w-full" />
                     ))}
                   </div>
                 ) : specialistsQuery.data && specialistsQuery.data.length > 0 ? (
                   <div className="space-y-2">
-                    {specialistsQuery.data.map((specialist) => (
+                    {specialistsQuery.data.map((specialist: { id: string; name: string; specialty?: string; email?: string; phone?: string; }) => (
                       <div
                         key={specialist.id}
                         className="flex items-center justify-between p-3 border rounded-lg hover:bg-slate-50"

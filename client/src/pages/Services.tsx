@@ -36,16 +36,33 @@ import { trpc } from "@/lib/trpc";
 import { Plus, Trash2, Edit2, Loader2 } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 
+interface Service {
+  id: string;
+  name: string;
+  description: string | null;
+  duration: number;
+  price: string;
+  status: "active" | "inactive" | null;
+  specialistId: string | null;
+}
+
 export default function Services() {
-  const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [isDialogOpen, setIsDialogOpen] = useState<boolean>(false);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [deleteId, setDeleteId] = useState<string | null>(null);
-  const [formData, setFormData] = useState({
+  const [formData, setFormData] = useState<{
+    name: string;
+    description: string;
+    duration: string;
+    price: string;
+    status: "active" | "inactive";
+    specialistId: string;
+  }>({
     name: "",
     description: "",
     duration: "60",
     price: "",
-    status: "active" as "active" | "inactive",
+    status: "active",
     specialistId: "",
   });
 
@@ -112,14 +129,14 @@ export default function Services() {
     }
   };
 
-  const handleEdit = (service: any) => {
+  const handleEdit = (service: Service) => {
     setFormData({
       name: service.name,
-      description: service.description || "",
+      description: service.description ?? "",
       duration: service.duration.toString(),
       price: service.price,
-      status: service.status,
-      specialistId: service.specialistId || "",
+      status: service.status ?? "active",
+      specialistId: service.specialistId ?? "",
     });
     setEditingId(service.id);
     setIsDialogOpen(true);
@@ -222,10 +239,9 @@ export default function Services() {
                     />
                   </div>
                 </div>
-                <div>
-                  <label htmlFor="status-select" className="text-sm font-medium">Status</label>
+                <fieldset className="mb-4">
+                  <legend className="text-sm font-medium mb-1">Status</legend>
                   <Select
-                    id="status-select"
                     value={formData.status}
                     onValueChange={(value) =>
                       setFormData({
@@ -242,12 +258,11 @@ export default function Services() {
                       <SelectItem value="inactive">Inativo</SelectItem>
                     </SelectContent>
                   </Select>
-                </div>
+                </fieldset>
 
-                <div>
-                  <label htmlFor="specialist-select" className="text-sm font-medium">Especialista Responsável (opcional)</label>
+                <fieldset className="mb-4">
+                  <legend className="text-sm font-medium mb-1">Especialista Responsável (opcional)</legend>
                   <Select
-                    id="specialist-select"
                     value={formData.specialistId}
                     onValueChange={(value) =>
                       setFormData({
@@ -268,7 +283,7 @@ export default function Services() {
                       ))}
                     </SelectContent>
                   </Select>
-                </div>
+                </fieldset>
                 <Button
                   type="submit"
                   className="w-full"
@@ -303,8 +318,8 @@ export default function Services() {
                     </div>
                     <span
                       className={`text-xs font-semibold px-2 py-1 rounded ${service.status === "active"
-                          ? "bg-green-100 text-green-800"
-                          : "bg-gray-100 text-gray-800"
+                        ? "bg-green-100 text-green-800"
+                        : "bg-gray-100 text-gray-800"
                         }`}
                     >
                       {service.status === "active" ? "Ativo" : "Inativo"}
@@ -325,10 +340,12 @@ export default function Services() {
                     </div>
                   </div>
 
-                  {service.specialist && (
+                  {service.specialistId && (
                     <div className="text-sm border-t pt-2 mt-2">
                       <p className="text-muted-foreground">Especialista</p>
-                      <p className="font-semibold">{service.specialist.name}</p>
+                      <p className="font-semibold">
+                        {specialistsQuery.data?.find(s => s.id === service.specialistId)?.name || service.specialistId}
+                      </p>
                     </div>
                   )}
                   <div className="flex gap-2 pt-2">
@@ -347,6 +364,7 @@ export default function Services() {
                       onClick={() => setDeleteId(service.id)}
                     >
                       <Trash2 className="h-4 w-4" />
+                      Deletar
                     </Button>
                   </div>
                 </CardContent>

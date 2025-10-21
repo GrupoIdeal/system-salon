@@ -10,10 +10,9 @@ import {
   XAxis,
   YAxis,
   CartesianGrid,
-  Tooltip,
-  Legend
+  Tooltip
 } from "recharts";
-import { format, parseISO, subDays } from "date-fns";
+import { format, subDays } from "date-fns";
 import { ptBR } from "date-fns/locale";
 
 export default function Dashboard() {
@@ -196,7 +195,7 @@ export default function Dashboard() {
                   />
                   <YAxis allowDecimals={false} />
                   <Tooltip
-                    formatter={(value, name) => [value, 'Agendamentos']}
+                    formatter={(value: number) => [value, 'Agendamentos']}
                     labelFormatter={(label, payload) => {
                       if (payload && payload.length > 0) {
                         return `${payload[0].payload.dia}`;

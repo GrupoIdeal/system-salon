@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Link, useLocation } from "wouter";
+import { useLocation } from "wouter";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
@@ -9,9 +9,9 @@ import { APP_LOGO, APP_TITLE } from "@/const";
 import { AlertCircle, ArrowLeft, CheckCircle, Loader2 } from "lucide-react";
 
 export default function RecuperarSenha() {
-    const [email, setEmail] = useState("");
-    const [error, setError] = useState("");
-    const [success, setSuccess] = useState(false);
+    const [email, setEmail] = useState<string>("");
+    const [error, setError] = useState<string>("");
+    const [success, setSuccess] = useState<boolean>(false);
     const [, setLocation] = useLocation();
 
     const passwordResetMutation = trpc.auth.requestPasswordReset.useMutation({
@@ -19,12 +19,12 @@ export default function RecuperarSenha() {
             setSuccess(true);
             setError("");
         },
-        onError: (err) => {
+        onError: (err: { message?: string }) => {
             setError(err.message || "Erro ao solicitar recuperação de senha");
         },
     });
 
-    const handleSubmit = async (e: React.FormEvent) => {
+    const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
         e.preventDefault();
         setError("");
 

@@ -1,9 +1,7 @@
 import { useLocation } from "wouter";
-import { useState } from "react";
 import { Button } from "@/components/ui/button";
 
 export default function Home() {
-  const [error, setError] = useState("");
   const [, setLocation] = useLocation();
 
   const handleAccess = () => {
@@ -19,8 +17,9 @@ export default function Home() {
         <Button variant="default" size="lg" className="w-full text-lg py-3 bg-pink-500 hover:bg-pink-600 text-white font-semibold transition" onClick={handleAccess}>
           Acessar o Sistema
         </Button>
-        {error && (<div className="mt-6 text-red-500 text-center">{error}</div>)}
-        <div className="mt-8 text-xs text-gray-400 text-center">© {new Date().getFullYear()} Salão de Beleza Tal. Todos os direitos reservados.</div>
+        <div className="mt-8 text-xs text-gray-400 text-center">
+          © {new Date().getFullYear()} Salão de Beleza Tal. Todos os direitos reservados.
+        </div>
       </div>
     </div>
   );
