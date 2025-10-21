@@ -5,31 +5,66 @@ import { Route, Switch } from "wouter";
 import ErrorBoundary from "./components/ErrorBoundary";
 import { ThemeProvider } from "./contexts/ThemeContext";
 import Home from "./pages/Home";
+import Login from "./pages/Login";
+import Dashboard from "./pages/Dashboard";
+import Clients from "./pages/Clients";
+import Services from "./pages/Services";
+import Appointments from "./pages/Appointments";
+import Profile from "./pages/Profile";
+import { useAuth } from "@/_core/hooks/useAuth";
+
+function ProtectedRoute({ component: Component }: { component: React.ComponentType }) {
+  const { user, loading } = useAuth();
+
+  if (loading) {
+    return <div className="flex items-center justify-center min-h-screen">Carregando...</div>;
+  }
+
+  if (!user) {
+    return <Login />;
+  }
+
+  return <Component />;
+}
 
 function Router() {
-  // make sure to consider if you need authentication for certain routes
+  const { user } = useAuth();
+
   return (
     <Switch>
-      <Route path={"/"} component={Home} />
-      <Route path={"/404"} component={NotFound} />
+      <Route path="/" component={Home} />
+      <Route path="/login" component={Login} />
+      <Route
+        path="/dashboard"
+        component={() => <ProtectedRoute component={Dashboard} />}
+      />
+      <Route
+        path="/clientes"
+        component={() => <ProtectedRoute component={Clients} />}
+      />
+      <Route
+        path="/servicos"
+        component={() => <ProtectedRoute component={Services} />}
+      />
+      <Route
+        path="/agendamentos"
+        component={() => <ProtectedRoute component={Appointments} />}
+      />
+      <Route
+        path="/perfil"
+        component={() => <ProtectedRoute component={Profile} />}
+      />
+      <Route path="/404" component={NotFound} />
       {/* Final fallback route */}
       <Route component={NotFound} />
     </Switch>
   );
 }
 
-// NOTE: About Theme
-// - First choose a default theme according to your design style (dark or light bg), than change color palette in index.css
-//   to keep consistent foreground/background color across components
-// - If you want to make theme switchable, pass `switchable` ThemeProvider and use `useTheme` hook
-
 function App() {
   return (
     <ErrorBoundary>
-      <ThemeProvider
-        defaultTheme="light"
-        // switchable
-      >
+      <ThemeProvider defaultTheme="light">
         <TooltipProvider>
           <Toaster />
           <Router />
@@ -40,3 +75,4 @@ function App() {
 }
 
 export default App;
+
