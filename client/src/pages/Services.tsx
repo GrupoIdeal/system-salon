@@ -46,9 +46,11 @@ export default function Services() {
     duration: "60",
     price: "",
     status: "active" as "active" | "inactive",
+    specialistId: "",
   });
 
   const servicesQuery = trpc.services.list.useQuery();
+  const specialistsQuery = trpc.specialists.list.useQuery();
 
   const createMutation = trpc.services.create.useMutation({
     onSuccess: () => {
@@ -59,6 +61,7 @@ export default function Services() {
         duration: "60",
         price: "",
         status: "active",
+        specialistId: "",
       });
       setIsDialogOpen(false);
     },
@@ -73,6 +76,7 @@ export default function Services() {
         duration: "60",
         price: "",
         status: "active",
+        specialistId: "",
       });
       setEditingId(null);
       setIsDialogOpen(false);
@@ -115,6 +119,7 @@ export default function Services() {
       duration: service.duration.toString(),
       price: service.price,
       status: service.status,
+      specialistId: service.specialistId || "",
     });
     setEditingId(service.id);
     setIsDialogOpen(true);
@@ -145,6 +150,7 @@ export default function Services() {
                     duration: "60",
                     price: "",
                     status: "active",
+                    specialistId: "",
                   });
                 }}
               >
@@ -165,8 +171,9 @@ export default function Services() {
               </DialogHeader>
               <form onSubmit={handleSubmit} className="space-y-4">
                 <div>
-                  <label className="text-sm font-medium">Nome</label>
+                  <label htmlFor="name" className="text-sm font-medium">Nome</label>
                   <Input
+                    id="name"
                     value={formData.name}
                     onChange={(e) =>
                       setFormData({ ...formData, name: e.target.value })
@@ -176,8 +183,9 @@ export default function Services() {
                   />
                 </div>
                 <div>
-                  <label className="text-sm font-medium">Descrição</label>
+                  <label htmlFor="description" className="text-sm font-medium">Descrição</label>
                   <Input
+                    id="description"
                     value={formData.description}
                     onChange={(e) =>
                       setFormData({ ...formData, description: e.target.value })
@@ -187,8 +195,9 @@ export default function Services() {
                 </div>
                 <div className="grid grid-cols-2 gap-4">
                   <div>
-                    <label className="text-sm font-medium">Duração (min)</label>
+                    <label htmlFor="duration" className="text-sm font-medium">Duração (min)</label>
                     <Input
+                      id="duration"
                       type="number"
                       value={formData.duration}
                       onChange={(e) =>
@@ -199,8 +208,9 @@ export default function Services() {
                     />
                   </div>
                   <div>
-                    <label className="text-sm font-medium">Preço (R$)</label>
+                    <label htmlFor="price" className="text-sm font-medium">Preço (R$)</label>
                     <Input
+                      id="price"
                       type="number"
                       step="0.01"
                       value={formData.price}
@@ -213,8 +223,9 @@ export default function Services() {
                   </div>
                 </div>
                 <div>
-                  <label className="text-sm font-medium">Status</label>
+                  <label htmlFor="status-select" className="text-sm font-medium">Status</label>
                   <Select
+                    id="status-select"
                     value={formData.status}
                     onValueChange={(value) =>
                       setFormData({
@@ -229,6 +240,32 @@ export default function Services() {
                     <SelectContent>
                       <SelectItem value="active">Ativo</SelectItem>
                       <SelectItem value="inactive">Inativo</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                <div>
+                  <label htmlFor="specialist-select" className="text-sm font-medium">Especialista Responsável (opcional)</label>
+                  <Select
+                    id="specialist-select"
+                    value={formData.specialistId}
+                    onValueChange={(value) =>
+                      setFormData({
+                        ...formData,
+                        specialistId: value,
+                      })
+                    }
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Selecione um especialista (opcional)" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="">Nenhum especialista</SelectItem>
+                      {specialistsQuery.data?.map((specialist) => (
+                        <SelectItem key={specialist.id} value={specialist.id}>
+                          {specialist.name}
+                        </SelectItem>
+                      ))}
                     </SelectContent>
                   </Select>
                 </div>
@@ -250,8 +287,8 @@ export default function Services() {
         {/* Services Grid */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
           {servicesQuery.isLoading ? (
-            [...Array(3)].map((_, i) => (
-              <Skeleton key={i} className="h-48 w-full" />
+            [1, 2, 3].map((item) => (
+              <Skeleton key={`skeleton-service-${item}`} className="h-48 w-full" />
             ))
           ) : servicesQuery.data && servicesQuery.data.length > 0 ? (
             servicesQuery.data.map((service) => (
@@ -265,11 +302,10 @@ export default function Services() {
                       </CardDescription>
                     </div>
                     <span
-                      className={`text-xs font-semibold px-2 py-1 rounded ${
-                        service.status === "active"
+                      className={`text-xs font-semibold px-2 py-1 rounded ${service.status === "active"
                           ? "bg-green-100 text-green-800"
                           : "bg-gray-100 text-gray-800"
-                      }`}
+                        }`}
                     >
                       {service.status === "active" ? "Ativo" : "Inativo"}
                     </span>
@@ -283,9 +319,18 @@ export default function Services() {
                     </div>
                     <div>
                       <p className="text-muted-foreground">Preço</p>
-                      <p className="font-semibold">R$ {service.price}</p>
+                      <p className="font-semibold">
+                        {new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(parseFloat(service.price))}
+                      </p>
                     </div>
                   </div>
+
+                  {service.specialist && (
+                    <div className="text-sm border-t pt-2 mt-2">
+                      <p className="text-muted-foreground">Especialista</p>
+                      <p className="font-semibold">{service.specialist.name}</p>
+                    </div>
+                  )}
                   <div className="flex gap-2 pt-2">
                     <Button
                       variant="outline"

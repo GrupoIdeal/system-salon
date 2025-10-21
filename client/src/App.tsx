@@ -1,7 +1,7 @@
 import { Toaster } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import NotFound from "@/pages/NotFound";
-import { Route, Switch } from "wouter";
+import { Route, Switch, useLocation } from "wouter";
 import ErrorBoundary from "./components/ErrorBoundary";
 import { ThemeProvider } from "./contexts/ThemeContext";
 import Home from "./pages/Home";
@@ -11,29 +11,42 @@ import Clients from "./pages/Clients";
 import Services from "./pages/Services";
 import Appointments from "./pages/Appointments";
 import Profile from "./pages/Profile";
+import RecuperarSenha from "./pages/RecuperarSenha";
+import RedefinirSenha from "./pages/RedefinirSenha";
 import { useAuth } from "@/_core/hooks/useAuth";
+import { useEffect } from "react";
 
 function ProtectedRoute({ component: Component }: { component: React.ComponentType }) {
-  const { user, loading } = useAuth();
+  const { user, loading, isAuthenticated } = useAuth();
+  const [, navigate] = useLocation();
+
+  useEffect(() => {
+    // Se não estiver autenticado e não estiver carregando, redirecione para login
+    if (!isAuthenticated && !loading) {
+      navigate("/login");
+    }
+  }, [isAuthenticated, loading, navigate]);
 
   if (loading) {
     return <div className="flex items-center justify-center min-h-screen">Carregando...</div>;
   }
 
   if (!user) {
-    return <Login />;
+    // Em vez de renderizar o Login diretamente, redirecionamos
+    // Isso evita ciclos de autenticação automática
+    return <div className="flex items-center justify-center min-h-screen">Redirecionando...</div>;
   }
 
   return <Component />;
 }
 
 function Router() {
-  const { user } = useAuth();
-
   return (
     <Switch>
       <Route path="/" component={Home} />
       <Route path="/login" component={Login} />
+      <Route path="/recuperar-senha" component={RecuperarSenha} />
+      <Route path="/redefinir-senha" component={RedefinirSenha} />
       <Route
         path="/dashboard"
         component={() => <ProtectedRoute component={Dashboard} />}

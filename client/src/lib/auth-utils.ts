@@ -1,0 +1,16 @@
+// Utilitários de autenticação para armazenar e recuperar token de sessão
+export const AUTH_TOKEN_KEY = "auth_session_token";
+
+export function storeAuthToken(token: string): void {
+  localStorage.setItem(AUTH_TOKEN_KEY, token);
+  console.log("Token de autenticação armazenado no localStorage");
+}
+
+export function getAuthToken(): string | null {
+  return localStorage.getItem(AUTH_TOKEN_KEY);
+}
+
+export function clearAuthToken(): void {
+  localStorage.removeItem(AUTH_TOKEN_KEY);
+  console.log("Token de autenticação removido do localStorage");
+}

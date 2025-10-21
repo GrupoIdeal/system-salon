@@ -1,27 +1,27 @@
-import { useAuth } from "@/_core/hooks/useAuth";
+import { useLocation } from "wouter";
+import { useState } from "react";
 import { Button } from "@/components/ui/button";
-import { APP_LOGO, APP_TITLE, getLoginUrl } from "@/const";
 
-/**
- * All content in this page are only for example, delete if unneeded
- * When building pages, remember your instructions in Frontend Workflow, Frontend Best Practices, Design Guide and Common Pitfalls
- */
 export default function Home() {
-  // The userAuth hooks provides authentication state
-  // To implement login/logout functionality, simply call logout() or redirect to getLoginUrl()
-  let { user, loading, error, isAuthenticated, logout } = useAuth();
+  const [error, setError] = useState("");
+  const [, setLocation] = useLocation();
 
-  // If theme is switchable in App.tsx, we can implement theme toggling like this:
-  // const { theme, toggleTheme } = useTheme();
-
-  // Use APP_LOGO (as image src) and APP_TITLE if needed
+  const handleAccess = () => {
+    setLocation("/login");
+  };
 
   return (
-    <div className="min-h-screen flex flex-col">
-      <main>
-        Example Page
-        <Button variant="default">Example Button</Button>
-      </main>
+    <div className="min-h-screen flex flex-col items-center justify-center bg-gradient-to-br from-pink-100 via-blue-50 to-blue-200">
+      <div className="bg-white rounded-2xl shadow-2xl p-10 flex flex-col items-center max-w-md w-full">
+        <img src="https://placehold.co/120x120/3b82f6/ffffff?text=SB" alt="Logo Salão de Beleza Tal" className="mb-6 rounded-full shadow-lg" />
+        <h1 className="text-4xl font-extrabold mb-3 text-pink-600 text-center">Sistema do Salão de Beleza Tal</h1>
+        <p className="mb-8 text-gray-700 text-center text-lg">Bem-vindo ao sistema exclusivo para gestão do Salão de Beleza Tal.<br />Acesse para continuar.</p>
+        <Button variant="default" size="lg" className="w-full text-lg py-3 bg-pink-500 hover:bg-pink-600 text-white font-semibold transition" onClick={handleAccess}>
+          Acessar o Sistema
+        </Button>
+        {error && (<div className="mt-6 text-red-500 text-center">{error}</div>)}
+        <div className="mt-8 text-xs text-gray-400 text-center">© {new Date().getFullYear()} Salão de Beleza Tal. Todos os direitos reservados.</div>
+      </div>
     </div>
   );
 }

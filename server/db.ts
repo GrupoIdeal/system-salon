@@ -1,5 +1,6 @@
 import { eq, and, gte, lte, like, desc, asc } from "drizzle-orm";
-import { drizzle } from "drizzle-orm/mysql2";
+import { drizzle } from "drizzle-orm/postgres-js";
+import postgres from "postgres";
 import {
   users,
   salons,
@@ -24,7 +25,8 @@ let _db: ReturnType<typeof drizzle> | null = null;
 export async function getDb() {
   if (!_db && process.env.DATABASE_URL) {
     try {
-      _db = drizzle(process.env.DATABASE_URL);
+      const client = postgres(process.env.DATABASE_URL);
+      _db = drizzle(client);
     } catch (error) {
       console.warn("[Database] Failed to connect:", error);
       _db = null;
@@ -37,7 +39,9 @@ export async function getDb() {
 // USER QUERIES
 // ============================================================================
 
-export async function upsertUser(user: Partial<InsertUser> & { id: string }): Promise<void> {
+export async function upsertUser(
+  user: Partial<InsertUser> & { id: string }
+): Promise<void> {
   if (!user.id) {
     throw new Error("User ID is required for upsert");
   }
@@ -91,9 +95,25 @@ export async function upsertUser(user: Partial<InsertUser> & { id: string }): Pr
       updateSet.lastSignedIn = new Date();
     }
 
-    await db.insert(users).values(values).onDuplicateKeyUpdate({
-      set: updateSet,
-    });
+    try {
+      // Primeiro tenta atualizar - se o usuário já existir
+      const result = await db
+        .update(users)
+        .set(updateSet)
+        .where(eq(users.id, user.id))
+        .returning();
+
+      // Se não atualizou nenhuma linha, então o usuário não existe, então inserimos
+      if (result.length === 0) {
+        await db.insert(users).values(values);
+      }
+    } catch (error) {
+      console.error(
+        "[Database] Failed to upsert user with PostgreSQL approach:",
+        error
+      );
+      throw error;
+    }
   } catch (error) {
     console.error("[Database] Failed to upsert user:", error);
     throw error;
@@ -107,11 +127,7 @@ export async function getUser(id: string): Promise<User | undefined> {
     return undefined;
   }
 
-  const result = await db
-    .select()
-    .from(users)
-    .where(eq(users.id, id))
-    .limit(1);
+  const result = await db.select().from(users).where(eq(users.id, id)).limit(1);
 
   return result.length > 0 ? result[0] : undefined;
 }
@@ -133,7 +149,9 @@ export async function getUserByEmail(email: string): Promise<User | undefined> {
 // SALON QUERIES
 // ============================================================================
 
-export async function getSalonByUserId(userId: string): Promise<Salon | undefined> {
+export async function getSalonByUserId(
+  userId: string
+): Promise<Salon | undefined> {
   const db = await getDb();
   if (!db) return undefined;
 
@@ -146,7 +164,9 @@ export async function getSalonByUserId(userId: string): Promise<Salon | undefine
   return result.length > 0 ? result[0] : undefined;
 }
 
-export async function getSalonById(salonId: string): Promise<Salon | undefined> {
+export async function getSalonById(
+  salonId: string
+): Promise<Salon | undefined> {
   const db = await getDb();
   if (!db) return undefined;
 
@@ -173,7 +193,9 @@ export async function updateSalon(
 // SPECIALIST QUERIES
 // ============================================================================
 
-export async function getSpecialistsBySalonId(salonId: string): Promise<Specialist[]> {
+export async function getSpecialistsBySalonId(
+  salonId: string
+): Promise<Specialist[]> {
   const db = await getDb();
   if (!db) return [];
 
@@ -183,7 +205,9 @@ export async function getSpecialistsBySalonId(salonId: string): Promise<Speciali
     .where(eq(specialists.salonId, salonId));
 }
 
-export async function getSpecialistById(specialistId: string): Promise<Specialist | undefined> {
+export async function getSpecialistById(
+  specialistId: string
+): Promise<Specialist | undefined> {
   const db = await getDb();
   if (!db) return undefined;
 
@@ -221,9 +245,7 @@ export async function deleteSpecialist(specialistId: string): Promise<void> {
   const db = await getDb();
   if (!db) return;
 
-  await db
-    .delete(specialists)
-    .where(eq(specialists.id, specialistId));
+  await db.delete(specialists).where(eq(specialists.id, specialistId));
 }
 
 // ============================================================================
@@ -240,10 +262,7 @@ export async function getClientsBySalonId(
   if (!db) return [];
 
   const whereConditions = search
-    ? and(
-        eq(clients.salonId, salonId),
-        like(clients.name, `%${search}%`)
-      )
+    ? and(eq(clients.salonId, salonId), like(clients.name, `%${search}%`))
     : eq(clients.salonId, salonId);
 
   return await db
@@ -254,7 +273,9 @@ export async function getClientsBySalonId(
     .offset(offset);
 }
 
-export async function getClientById(clientId: string): Promise<Client | undefined> {
+export async function getClientById(
+  clientId: string
+): Promise<Client | undefined> {
   const db = await getDb();
   if (!db) return undefined;
 
@@ -296,17 +317,18 @@ export async function deleteClient(clientId: string): Promise<void> {
 // SERVICE QUERIES
 // ============================================================================
 
-export async function getServicesBySalonId(salonId: string): Promise<Service[]> {
+export async function getServicesBySalonId(
+  salonId: string
+): Promise<Service[]> {
   const db = await getDb();
   if (!db) return [];
 
-  return await db
-    .select()
-    .from(services)
-    .where(eq(services.salonId, salonId));
+  return await db.select().from(services).where(eq(services.salonId, salonId));
 }
 
-export async function getServiceById(serviceId: string): Promise<Service | undefined> {
+export async function getServiceById(
+  serviceId: string
+): Promise<Service | undefined> {
   const db = await getDb();
   if (!db) return undefined;
 
@@ -356,13 +378,14 @@ export async function getAppointmentsBySalonId(
   const db = await getDb();
   if (!db) return [];
 
-  const whereConditions = startDate && endDate
-    ? and(
-        eq(appointments.salonId, salonId),
-        gte(appointments.appointmentDate, startDate),
-        lte(appointments.appointmentDate, endDate)
-      )
-    : eq(appointments.salonId, salonId);
+  const whereConditions =
+    startDate && endDate
+      ? and(
+          eq(appointments.salonId, salonId),
+          gte(appointments.appointmentDate, startDate),
+          lte(appointments.appointmentDate, endDate)
+        )
+      : eq(appointments.salonId, salonId);
 
   return await db
     .select()
@@ -371,7 +394,9 @@ export async function getAppointmentsBySalonId(
     .orderBy(asc(appointments.appointmentDate));
 }
 
-export async function getAppointmentById(appointmentId: string): Promise<Appointment | undefined> {
+export async function getAppointmentById(
+  appointmentId: string
+): Promise<Appointment | undefined> {
   const db = await getDb();
   if (!db) return undefined;
 
@@ -397,7 +422,7 @@ export async function getAppointmentsBySpecialistAndDate(
   const endOfDay = new Date(date);
   endOfDay.setHours(23, 59, 59, 999);
 
-  return await db
+  return (await db
     .select()
     .from(appointments)
     .where(
@@ -406,7 +431,7 @@ export async function getAppointmentsBySpecialistAndDate(
         gte(appointments.appointmentDate, startOfDay),
         lte(appointments.appointmentDate, endOfDay)
       )
-    ) as any;
+    )) as any;
 }
 
 export async function createAppointment(data: any): Promise<Appointment> {
@@ -434,9 +459,7 @@ export async function deleteAppointment(appointmentId: string): Promise<void> {
   const db = await getDb();
   if (!db) return;
 
-  await db
-    .delete(appointments)
-    .where(eq(appointments.id, appointmentId));
+  await db.delete(appointments).where(eq(appointments.id, appointmentId));
 }
 
 // ============================================================================
@@ -475,4 +498,3 @@ export async function markPasswordResetAsUsed(resetId: string): Promise<void> {
     .set({ used: true })
     .where(eq(passwordResets.id, resetId));
 }
-

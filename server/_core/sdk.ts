@@ -150,7 +150,13 @@ class SDKServer {
       return new Map<string, string>();
     }
 
+    console.log("[Auth] Raw cookie header:", cookieHeader);
     const parsed = parseCookieHeader(cookieHeader);
+    console.log("[Auth] Parsed cookies:", parsed);
+
+    // Procurar especificamente pelo cookie de sessão
+    console.log("[Auth] Procurando cookie:", COOKIE_NAME);
+
     return new Map(Object.entries(parsed));
   }
 
@@ -168,14 +174,17 @@ class SDKServer {
     userId: string,
     options: { expiresInMs?: number; name?: string } = {}
   ): Promise<string> {
-    return this.signSession(
+    console.log("[Auth] Criando token de sessão para usuário:", userId);
+    const token = await this.signSession(
       {
         openId: userId,
-        appId: ENV.appId,
+        appId: ENV.appId || "system-salon",
         name: options.name || "",
       },
       options
     );
+    console.log("[Auth] Token criado:", token.substring(0, 20) + "...");
+    return token;
   }
 
   async signSession(
@@ -206,10 +215,16 @@ class SDKServer {
     }
 
     try {
+      console.log(
+        "[Auth] Verificando sessão com token:",
+        cookieValue.substring(0, 20) + "..."
+      );
       const secretKey = this.getSessionSecret();
+      console.log("[Auth] Usando chave secreta:", typeof secretKey);
       const { payload } = await jwtVerify(cookieValue, secretKey, {
         algorithms: ["HS256"],
       });
+      console.log("[Auth] JWT verificado com sucesso, payload:", payload);
       const { openId, appId, name } = payload as Record<string, unknown>;
 
       if (
@@ -258,9 +273,44 @@ class SDKServer {
 
   async authenticateRequest(req: Request): Promise<User> {
     // Regular authentication flow
+    console.log("[Auth] Autenticando requisição...");
+    console.log("[Auth] URL da requisição:", req.url);
+    console.log("[Auth] Método HTTP:", req.method);
+
+    // Tentar autenticar por cookie
     const cookies = this.parseCookies(req.headers.cookie);
+    console.log("[Auth] Cookies recebidos:", Array.from(cookies.entries()));
     const sessionCookie = cookies.get(COOKIE_NAME);
-    const session = await this.verifySession(sessionCookie);
+    console.log(
+      "[Auth] Cookie de sessão:",
+      sessionCookie ? sessionCookie.substring(0, 20) + "..." : "Ausente"
+    );
+
+    // Tentar autenticar por token Bearer no cabeçalho Authorization
+    let bearerToken = null;
+    const authHeader = req.headers.authorization;
+    console.log(
+      "[Auth] Authorization header:",
+      authHeader ? "Presente" : "Ausente"
+    );
+    if (authHeader && authHeader.startsWith("Bearer ")) {
+      bearerToken = authHeader.substring(7);
+      console.log(
+        "[Auth] Token Bearer encontrado:",
+        bearerToken.substring(0, 20) + "..."
+      );
+    }
+
+    // Se não houver token, nem em cookie nem em bearer, falhe imediatamente
+    const token = sessionCookie || bearerToken;
+    if (!token) {
+      console.log("[Auth] Nenhum token encontrado, rejeitando autenticação");
+      throw ForbiddenError("No authentication token provided");
+    }
+
+    // Verificar token (de cookie ou bearer)
+    const session = await this.verifySession(token);
+    console.log("[Auth] Sessão verificada:", session);
 
     if (!session) {
       throw ForbiddenError("Invalid session cookie");

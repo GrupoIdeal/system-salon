@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { useLocation } from "wouter";
+import { useLocation, Link } from "wouter";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -7,6 +7,7 @@ import { Alert, AlertDescription } from "@/components/ui/alert";
 import { trpc } from "@/lib/trpc";
 import { APP_LOGO, APP_TITLE } from "@/const";
 import { AlertCircle, Loader2 } from "lucide-react";
+import { storeAuthToken } from "@/lib/auth-utils";
 
 export default function Login() {
   const [email, setEmail] = useState("");
@@ -14,11 +15,39 @@ export default function Login() {
   const [error, setError] = useState("");
   const [, setLocation] = useLocation();
 
-  const loginMutation = trpc.auth.login.useMutation({
-    onSuccess: () => {
-      setLocation("/dashboard");
+  const utils = trpc.useUtils();
+
+  // Função para verificar cookies
+  const checkCookies = () => {
+    console.log("Verificando cookies no cliente:", document.cookie);
+  }; const loginMutation = trpc.auth.login.useMutation({
+    onSuccess: async (data) => {
+      console.log("Login bem-sucedido", data);
+
+      // Verificar cookies após login
+      checkCookies();
+
+      // Armazenar o token de sessão manualmente
+      if (data.sessionToken) {
+        console.log("Armazenando token de sessão:", data.sessionToken.substring(0, 10) + "...");
+        storeAuthToken(data.sessionToken);
+
+        // Invalidar a consulta auth.me para recarregar os dados do usuário
+        await utils.auth.me.invalidate();
+
+        // Aguardar um momento para que a consulta seja recarregada
+        setTimeout(() => {
+          checkCookies(); // Verificar cookies novamente antes do redirecionamento
+          console.log("Redirecionando para o dashboard após login bem-sucedido");
+          setLocation("/dashboard");
+        }, 1000);
+      } else {
+        console.error("ERRO: Login bem-sucedido, mas não recebeu token de sessão");
+        setError("Erro de autenticação. Tente novamente.");
+      }
     },
     onError: (err) => {
+      console.error("Erro de login:", err);
       setError(err.message || "Erro ao fazer login");
     },
   });
@@ -87,6 +116,14 @@ export default function Login() {
               />
             </div>
 
+            <div className="flex justify-end">
+              <Link href="/recuperar-senha">
+                <Button variant="link" size="sm" className="p-0" type="button">
+                  Esqueceu sua senha?
+                </Button>
+              </Link>
+            </div>
+
             <Button
               type="submit"
               className="w-full"
@@ -97,27 +134,6 @@ export default function Login() {
               )}
               {loginMutation.isPending ? "Entrando..." : "Entrar"}
             </Button>
-
-            <div className="text-center text-sm text-muted-foreground">
-              Não tem uma conta?{" "}
-              <button
-                type="button"
-                onClick={() => setLocation("/registrar")}
-                className="text-primary hover:underline font-medium"
-              >
-                Registre-se
-              </button>
-            </div>
-
-            <div className="text-center text-sm">
-              <button
-                type="button"
-                onClick={() => setLocation("/recuperar-senha")}
-                className="text-primary hover:underline"
-              >
-                Esqueceu a senha?
-              </button>
-            </div>
           </form>
         </CardContent>
       </Card>

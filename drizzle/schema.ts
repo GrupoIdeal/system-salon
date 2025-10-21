@@ -1,27 +1,29 @@
 import {
-  mysqlEnum,
-  mysqlTable,
+  pgEnum,
+  pgTable,
   text,
   timestamp,
   varchar,
-  int,
+  integer,
   decimal,
   boolean,
-  json,
+  jsonb,
   index,
-} from "drizzle-orm/mysql-core";
+} from "drizzle-orm/pg-core";
+
+export const roleEnum = pgEnum("role", ["user", "admin"]);
 
 /**
  * Core user table for admin authentication
  */
-export const users = mysqlTable("users", {
+export const users = pgTable("users", {
   id: varchar("id", { length: 64 }).primaryKey(),
   email: varchar("email", { length: 320 }).notNull().unique(),
   password: text("password").notNull(),
   name: text("name").notNull(),
-  role: mysqlEnum("role", ["user", "admin"]).default("user").notNull(),
+  role: roleEnum("role").default("user").notNull(),
   createdAt: timestamp("createdAt").defaultNow(),
-  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow(),
+  updatedAt: timestamp("updatedAt").defaultNow(),
   lastSignedIn: timestamp("lastSignedIn"),
 });
 
@@ -31,7 +33,7 @@ export type InsertUser = typeof users.$inferInsert;
 /**
  * Salon data table
  */
-export const salons = mysqlTable(
+export const salons = pgTable(
   "salons",
   {
     id: varchar("id", { length: 64 }).primaryKey(),
@@ -44,22 +46,34 @@ export const salons = mysqlTable(
     phone: varchar("phone", { length: 20 }),
     email: varchar("email", { length: 320 }),
     logo: text("logo"),
-    workingHours: json("workingHours").$type<Record<string, { start: string; end: string }>>(),
+    workingHours:
+      jsonb("workingHours").$type<
+        Record<string, { start: string; end: string }>
+      >(),
     createdAt: timestamp("createdAt").defaultNow(),
-    updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow(),
+    updatedAt: timestamp("updatedAt").defaultNow(),
   },
-  (table) => ({
-    userIdIdx: index("userIdIdx").on(table.userId),
+  table => ({
+    userIdIdx: index("salons_userId_idx").on(table.userId),
   })
 );
 
 export type Salon = typeof salons.$inferSelect;
 export type InsertSalon = typeof salons.$inferInsert;
 
+export const specialistStatusEnum = pgEnum("specialist_status", [
+  "active",
+  "inactive",
+]);
+export const serviceStatusEnum = pgEnum("service_status", [
+  "active",
+  "inactive",
+]);
+
 /**
  * Specialist/Collaborator table
  */
-export const specialists = mysqlTable(
+export const specialists = pgTable(
   "specialists",
   {
     id: varchar("id", { length: 64 }).primaryKey(),
@@ -71,13 +85,16 @@ export const specialists = mysqlTable(
     photo: text("photo"),
     email: varchar("email", { length: 320 }),
     phone: varchar("phone", { length: 20 }),
-    workingDays: json("workingDays").$type<Record<string, { start: string; end: string }>>(),
-    status: mysqlEnum("status", ["active", "inactive"]).default("active"),
+    workingDays:
+      jsonb("workingDays").$type<
+        Record<string, { start: string; end: string }>
+      >(),
+    status: specialistStatusEnum("status").default("active"),
     createdAt: timestamp("createdAt").defaultNow(),
-    updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow(),
+    updatedAt: timestamp("updatedAt").defaultNow(),
   },
-  (table) => ({
-    salonIdIdx: index("salonIdIdx").on(table.salonId),
+  table => ({
+    salonIdIdx: index("specialists_salonId_idx").on(table.salonId),
   })
 );
 
@@ -87,7 +104,7 @@ export type InsertSpecialist = typeof specialists.$inferInsert;
 /**
  * Client table
  */
-export const clients = mysqlTable(
+export const clients = pgTable(
   "clients",
   {
     id: varchar("id", { length: 64 }).primaryKey(),
@@ -100,11 +117,11 @@ export const clients = mysqlTable(
     birthDate: timestamp("birthDate"),
     notes: text("notes"),
     createdAt: timestamp("createdAt").defaultNow(),
-    updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow(),
+    updatedAt: timestamp("updatedAt").defaultNow(),
   },
-  (table) => ({
-    salonIdIdx: index("salonIdIdx").on(table.salonId),
-    emailIdx: index("emailIdx").on(table.email),
+  table => ({
+    salonIdIdx: index("clients_salonId_idx").on(table.salonId),
+    emailIdx: index("clients_email_idx").on(table.email),
   })
 );
 
@@ -114,7 +131,7 @@ export type InsertClient = typeof clients.$inferInsert;
 /**
  * Service table
  */
-export const services = mysqlTable(
+export const services = pgTable(
   "services",
   {
     id: varchar("id", { length: 64 }).primaryKey(),
@@ -127,15 +144,15 @@ export const services = mysqlTable(
     ),
     name: text("name").notNull(),
     description: text("description"),
-    duration: int("duration").notNull(), // in minutes
+    duration: integer("duration").notNull(), // in minutes
     price: decimal("price", { precision: 10, scale: 2 }).notNull(),
-    status: mysqlEnum("status", ["active", "inactive"]).default("active"),
+    status: serviceStatusEnum("status").default("active"),
     createdAt: timestamp("createdAt").defaultNow(),
-    updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow(),
+    updatedAt: timestamp("updatedAt").defaultNow(),
   },
-  (table) => ({
-    salonIdIdx: index("salonIdIdx").on(table.salonId),
-    specialistIdIdx: index("specialistIdIdx").on(table.specialistId),
+  table => ({
+    salonIdIdx: index("services_salonId_idx").on(table.salonId),
+    specialistIdIdx: index("services_specialistId_idx").on(table.specialistId),
   })
 );
 
@@ -145,7 +162,14 @@ export type InsertService = typeof services.$inferInsert;
 /**
  * Appointment table
  */
-export const appointments = mysqlTable(
+export const appointmentStatusEnum = pgEnum("appointment_status", [
+  "pending",
+  "confirmed",
+  "completed",
+  "cancelled",
+]);
+
+export const appointments = pgTable(
   "appointments",
   {
     id: varchar("id", { length: 64 }).primaryKey(),
@@ -163,23 +187,22 @@ export const appointments = mysqlTable(
       .references(() => specialists.id, { onDelete: "cascade" }),
     appointmentDate: timestamp("appointmentDate").notNull(),
     appointmentTime: varchar("appointmentTime", { length: 10 }).notNull(), // HH:MM format
-    status: mysqlEnum("status", [
-      "pending",
-      "confirmed",
-      "completed",
-      "cancelled",
-    ]).default("pending"),
+    status: appointmentStatusEnum("appointment_status").default("pending"),
     notes: text("notes"),
     isPublic: boolean("isPublic").default(false),
     createdAt: timestamp("createdAt").defaultNow(),
-    updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow(),
+    updatedAt: timestamp("updatedAt").defaultNow(),
   },
-  (table) => ({
-    salonIdIdx: index("salonIdIdx").on(table.salonId),
-    clientIdIdx: index("clientIdIdx").on(table.clientId),
-    serviceIdIdx: index("serviceIdIdx").on(table.serviceId),
-    specialistIdIdx: index("specialistIdIdx").on(table.specialistId),
-    appointmentDateIdx: index("appointmentDateIdx").on(table.appointmentDate),
+  table => ({
+    salonIdIdx: index("appointments_salonId_idx").on(table.salonId),
+    clientIdIdx: index("appointments_clientId_idx").on(table.clientId),
+    serviceIdIdx: index("appointments_serviceId_idx").on(table.serviceId),
+    specialistIdIdx: index("appointments_specialistId_idx").on(
+      table.specialistId
+    ),
+    appointmentDateIdx: index("appointments_appointmentDate_idx").on(
+      table.appointmentDate
+    ),
   })
 );
 
@@ -189,7 +212,7 @@ export type InsertAppointment = typeof appointments.$inferInsert;
 /**
  * Password reset token table
  */
-export const passwordResets = mysqlTable(
+export const passwordResets = pgTable(
   "passwordResets",
   {
     id: varchar("id", { length: 64 }).primaryKey(),
@@ -201,12 +224,11 @@ export const passwordResets = mysqlTable(
     used: boolean("used").default(false),
     createdAt: timestamp("createdAt").defaultNow(),
   },
-  (table) => ({
-    userIdIdx: index("userIdIdx").on(table.userId),
-    tokenIdx: index("tokenIdx").on(table.token),
+  table => ({
+    userIdIdx: index("passwordResets_userId_idx").on(table.userId),
+    tokenIdx: index("passwordResets_token_idx").on(table.token),
   })
 );
 
 export type PasswordReset = typeof passwordResets.$inferSelect;
 export type InsertPasswordReset = typeof passwordResets.$inferInsert;
-

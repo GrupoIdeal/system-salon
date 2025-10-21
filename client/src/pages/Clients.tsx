@@ -38,6 +38,8 @@ export default function Clients() {
     name: "",
     email: "",
     phone: "",
+    birthDate: "",
+    notes: "",
   });
 
   const clientsQuery = trpc.clients.list.useQuery({
@@ -87,6 +89,8 @@ export default function Clients() {
       name: client.name,
       email: client.email || "",
       phone: client.phone || "",
+      birthDate: client.birthDate ? new Date(client.birthDate).toISOString().split('T')[0] : "",
+      notes: client.notes || "",
     });
     setEditingId(client.id);
     setIsDialogOpen(true);
@@ -131,8 +135,9 @@ export default function Clients() {
               </DialogHeader>
               <form onSubmit={handleSubmit} className="space-y-4">
                 <div>
-                  <label className="text-sm font-medium">Nome</label>
+                  <label htmlFor="name" className="text-sm font-medium">Nome</label>
                   <Input
+                    id="name"
                     value={formData.name}
                     onChange={(e) =>
                       setFormData({ ...formData, name: e.target.value })
@@ -142,8 +147,9 @@ export default function Clients() {
                   />
                 </div>
                 <div>
-                  <label className="text-sm font-medium">Email</label>
+                  <label htmlFor="email" className="text-sm font-medium">Email</label>
                   <Input
+                    id="email"
                     type="email"
                     value={formData.email}
                     onChange={(e) =>
@@ -153,13 +159,37 @@ export default function Clients() {
                   />
                 </div>
                 <div>
-                  <label className="text-sm font-medium">Telefone</label>
+                  <label htmlFor="phone" className="text-sm font-medium">Telefone</label>
                   <Input
+                    id="phone"
                     value={formData.phone}
                     onChange={(e) =>
                       setFormData({ ...formData, phone: e.target.value })
                     }
                     placeholder="(11) 99999-9999"
+                  />
+                </div>
+                <div>
+                  <label htmlFor="birthDate" className="text-sm font-medium">Data de Nascimento</label>
+                  <Input
+                    id="birthDate"
+                    type="date"
+                    value={formData.birthDate}
+                    onChange={(e) =>
+                      setFormData({ ...formData, birthDate: e.target.value })
+                    }
+                  />
+                </div>
+                <div>
+                  <label htmlFor="notes" className="text-sm font-medium">Observações</label>
+                  <textarea
+                    id="notes"
+                    value={formData.notes}
+                    onChange={(e) =>
+                      setFormData({ ...formData, notes: e.target.value })
+                    }
+                    placeholder="Informações adicionais sobre o cliente"
+                    className="w-full min-h-[80px] px-3 py-2 border rounded-md border-input bg-background"
                   />
                 </div>
                 <Button
@@ -198,8 +228,8 @@ export default function Clients() {
           <CardContent>
             {clientsQuery.isLoading ? (
               <div className="space-y-2">
-                {[...Array(3)].map((_, i) => (
-                  <Skeleton key={i} className="h-12 w-full" />
+                {[1, 2, 3].map((item) => (
+                  <Skeleton key={`skeleton-client-${item}`} className="h-12 w-full" />
                 ))}
               </div>
             ) : clientsQuery.data && clientsQuery.data.length > 0 ? (
@@ -214,6 +244,20 @@ export default function Clients() {
                       <p className="text-sm text-muted-foreground">
                         {client.email || "Sem email"} • {client.phone || "Sem telefone"}
                       </p>
+                      {(client.birthDate || client.notes) && (
+                        <div className="mt-1 flex flex-wrap gap-2 text-xs text-muted-foreground">
+                          {client.birthDate && (
+                            <span className="bg-muted px-2 py-0.5 rounded-md">
+                              Nasc: {new Date(client.birthDate).toLocaleDateString("pt-BR")}
+                            </span>
+                          )}
+                          {client.notes && (
+                            <span className="bg-muted px-2 py-0.5 rounded-md truncate max-w-[200px]">
+                              {client.notes}
+                            </span>
+                          )}
+                        </div>
+                      )}
                     </div>
                     <div className="flex gap-2">
                       <Button

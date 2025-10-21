@@ -39,10 +39,11 @@ export function getSessionCookieOptions(
   //       ? hostname
   //       : undefined;
 
+  // Em desenvolvimento, usamos configurações menos restritivas para facilitar o debug
   return {
-    httpOnly: true,
+    httpOnly: false, // Permitir acesso via JavaScript em desenvolvimento
     path: "/",
-    sameSite: "none",
-    secure: isSecureRequest(req),
+    sameSite: "lax",
+    secure: false, // Definido como false para desenvolvimento em localhost
   };
 }

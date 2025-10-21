@@ -1,11 +1,12 @@
 import { TRPCError } from "@trpc/server";
 import { publicProcedure, router, protectedProcedure } from "./_core/trpc";
 import { systemRouter } from "./_core/systemRouter";
-import { COOKIE_NAME } from "@shared/const";
+import { COOKIE_NAME, ONE_YEAR_MS } from "@shared/const";
 import { getSessionCookieOptions } from "./_core/cookies";
 import { z } from "zod";
 import bcrypt from "bcrypt";
 import crypto from "crypto";
+import { sdk } from "./_core/sdk";
 import {
   getUser,
   getUserByEmail,
@@ -60,7 +61,11 @@ export const appRouter = router({
   // ============================================================================
 
   auth: router({
-    me: publicProcedure.query(({ ctx }) => ctx.user),
+    me: publicProcedure.query(({ ctx }) => {
+      console.log("[Auth] me endpoint chamado");
+      console.log("[Auth] ctx.user:", ctx.user);
+      return ctx.user;
+    }),
 
     logout: publicProcedure.mutation(({ ctx }) => {
       const cookieOptions = getSessionCookieOptions(ctx.req);
@@ -97,28 +102,63 @@ export const appRouter = router({
     login: publicProcedure
       .input(loginSchema)
       .mutation(async ({ input, ctx }) => {
+        console.log("Tentativa de login:", input);
         const user = await getUserByEmail(input.email);
+        console.log("Usuário encontrado:", user);
         if (!user) {
+          console.log("Login falhou: usuário não encontrado");
           throw new TRPCError({
             code: "UNAUTHORIZED",
             message: "Email ou senha inválidos",
           });
         }
 
-        const passwordMatch = await bcrypt.compare(input.password, user.password);
+        const passwordMatch = await bcrypt.compare(
+          input.password,
+          user.password
+        );
+        console.log("Senha confere:", passwordMatch);
         if (!passwordMatch) {
+          console.log("Login falhou: senha incorreta");
           throw new TRPCError({
             code: "UNAUTHORIZED",
             message: "Email ou senha inválidos",
           });
         }
+
+        console.log("Login bem-sucedido:", user.email);
+
+        // Configurar cookie de sessão com JWT
+        const sessionToken = await sdk.createSessionToken(user.id, {
+          name: user.name,
+        });
+
+        const cookieOptions = {
+          ...getSessionCookieOptions(ctx.req),
+          maxAge: ONE_YEAR_MS,
+        };
+
+        console.log(
+          `Configurando cookie de sessão:
+        - Nome: ${COOKIE_NAME}
+        - Token: ${sessionToken.substring(0, 20)}...
+        - Opções:`,
+          cookieOptions
+        );
+
+        ctx.res?.cookie(COOKIE_NAME, sessionToken, cookieOptions);
+
+        console.log("Cookie de sessão JWT configurado");
 
         return {
           success: true,
+          // Também retornamos o token para que o cliente possa armazená-lo
+          sessionToken,
           user: {
             id: user.id,
             email: user.email,
             name: user.name,
+            role: user.role,
           },
         };
       }),
@@ -495,7 +535,10 @@ export const appRouter = router({
           });
         }
 
-        const price = typeof input.price === "string" ? input.price : input.price.toString();
+        const price =
+          typeof input.price === "string"
+            ? input.price
+            : input.price.toString();
         const service = await createService({
           id: generateId(),
           salonId: salon.id,
@@ -527,7 +570,10 @@ export const appRouter = router({
 
         const updateData = {
           ...input.data,
-          price: typeof input.data.price === "string" ? input.data.price : input.data.price.toString(),
+          price:
+            typeof input.data.price === "string"
+              ? input.data.price
+              : input.data.price.toString(),
         };
         await updateService(input.id, updateData as any);
         return { success: true };
@@ -650,7 +696,7 @@ export const appRouter = router({
         );
 
         const hasConflict = existingAppointments.some(
-          (apt) =>
+          apt =>
             apt.appointmentTime === input.appointmentTime &&
             apt.status !== "cancelled"
         );
@@ -775,4 +821,3 @@ export const appRouter = router({
 });
 
 export type AppRouter = typeof appRouter;
-

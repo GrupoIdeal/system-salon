@@ -2,6 +2,7 @@ import { getLoginUrl } from "@/const";
 import { trpc } from "@/lib/trpc";
 import { TRPCClientError } from "@trpc/client";
 import { useCallback, useEffect, useMemo } from "react";
+import { clearAuthToken, getAuthToken } from "@/lib/auth-utils";
 
 type UseAuthOptions = {
   redirectOnUnauthenticated?: boolean;
@@ -13,13 +14,19 @@ export function useAuth(options?: UseAuthOptions) {
     options ?? {};
   const utils = trpc.useUtils();
 
+  // Verifica se há um token armazenado antes de fazer a consulta
+  const hasToken = Boolean(getAuthToken());
+
   const meQuery = trpc.auth.me.useQuery(undefined, {
     retry: false,
     refetchOnWindowFocus: false,
+    // Não fazer a consulta se não houver token
+    enabled: hasToken,
   });
 
   const logoutMutation = trpc.auth.logout.useMutation({
     onSuccess: () => {
+      clearAuthToken();
       utils.auth.me.setData(undefined, null);
     },
   });
@@ -32,27 +39,38 @@ export function useAuth(options?: UseAuthOptions) {
         error instanceof TRPCClientError &&
         error.data?.code === "UNAUTHORIZED"
       ) {
+        // Mesmo se a API falhar, ainda assim limpe os tokens locais
+        clearAuthToken();
         return;
       }
       throw error;
     } finally {
+      // Garante que o token seja removido do localStorage
+      clearAuthToken();
       utils.auth.me.setData(undefined, null);
       await utils.auth.me.invalidate();
     }
   }, [logoutMutation, utils]);
 
   const state = useMemo(() => {
-    localStorage.setItem(
-      "manus-runtime-user-info",
-      JSON.stringify(meQuery.data)
-    );
+    // Só armazena os dados do usuário se tivermos um token e dados válidos
+    if (hasToken && meQuery.data) {
+      localStorage.setItem(
+        "manus-runtime-user-info",
+        JSON.stringify(meQuery.data)
+      );
+    }
+
     return {
       user: meQuery.data ?? null,
-      loading: meQuery.isLoading || logoutMutation.isPending,
+      // Só considera como carregando se tivermos um token e a consulta estiver em andamento
+      loading: hasToken && (meQuery.isLoading || logoutMutation.isPending),
       error: meQuery.error ?? logoutMutation.error ?? null,
-      isAuthenticated: Boolean(meQuery.data),
+      // Só considera como autenticado se tivermos um token e dados de usuário
+      isAuthenticated: hasToken && Boolean(meQuery.data),
     };
   }, [
+    hasToken,
     meQuery.data,
     meQuery.error,
     meQuery.isLoading,
@@ -67,7 +85,7 @@ export function useAuth(options?: UseAuthOptions) {
     if (typeof window === "undefined") return;
     if (window.location.pathname === redirectPath) return;
 
-    window.location.href = redirectPath
+    window.location.href = redirectPath;
   }, [
     redirectOnUnauthenticated,
     redirectPath,
