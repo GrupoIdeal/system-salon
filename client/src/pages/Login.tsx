@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { useLocation, Link } from "wouter";
+import { useLocation } from "wouter";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -70,11 +70,11 @@ export default function Login() {
         <CardHeader className="space-y-4">
           <div className="flex justify-center">
             {APP_LOGO && (
-              <img src={APP_LOGO} alt="Logo" className="w-16 h-16 rounded-lg" />
+              <img src={APP_LOGO} alt="Logo" className="w-94 h-24 rounded-lg" />
             )}
           </div>
           <div className="text-center space-y-2">
-            <CardTitle className="text-2xl">{APP_TITLE}</CardTitle>
+            {/* <CardTitle className="text-2xl">{APP_TITLE}</CardTitle> */}
             <CardDescription>Faça login para acessar o sistema</CardDescription>
           </div>
         </CardHeader>

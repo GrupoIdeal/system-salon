@@ -178,27 +178,24 @@ function DashboardLayoutContent({
             <div className="flex items-center gap-3 pl-2 group-data-[collapsible=icon]:px-0 transition-all w-full">
               {isCollapsed ? (
                 <div className="relative h-8 w-8 shrink-0 group">
-                  <img
-                    src={APP_LOGO}
-                    className="h-8 w-8 rounded-md object-cover ring-1 ring-border"
-                    alt="Logo"
-                  />
+                  {/* Removido a logo quando colapsado */}
                   <button
                     onClick={toggleSidebar}
                     type="button"
-                    className="absolute inset-0 flex items-center justify-center bg-accent rounded-md ring-1 ring-border opacity-0 group-hover:opacity-100 transition-opacity focus:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                    className="absolute inset-0 flex items-center justify-center bg-accent rounded-md ring-1 ring-border transition-opacity focus:outline-none focus-visible:ring-2 focus-visible:ring-ring h-8 w-8"
                   >
                     <PanelLeft className="h-4 w-4 text-foreground" />
                   </button>
                 </div>
               ) : (
                 <>
+                  {/* Logo e título */}
                   <div className="flex items-center gap-3 min-w-0">
-                    <img
+                    {/*  <img
                       src={APP_LOGO}
                       className="h-8 w-8 rounded-md object-cover ring-1 ring-border shrink-0"
                       alt="Logo"
-                    />
+                    /> */}
                     <span className="font-semibold tracking-tight truncate">
                       {APP_TITLE}
                     </span>
@@ -225,10 +222,10 @@ function DashboardLayoutContent({
                       isActive={isActive}
                       onClick={() => setLocation(item.path)}
                       tooltip={item.label}
-                      className={`h-10 transition-all font-normal`}
+                      className={`h-12 transition-all font-normal`}
                     >
                       <item.icon
-                        className={`h-4 w-4 ${isActive ? "text-primary" : ""}`}
+                        className={`h-6 w-6 ${isActive ? "text-primary" : ""}`}
                       />
                       <span>{item.label}</span>
                     </SidebarMenuButton>
@@ -243,9 +240,9 @@ function DashboardLayoutContent({
                       isActive={location === "/empresa"}
                       onClick={() => setLocation("/empresa")}
                       tooltip="Empresa"
-                      className="h-10 transition-all font-normal text-blue-600"
+                      className="h-12 transition-all font-normal"
                     >
-                      <User className="h-4 w-4" />
+                      <User className="h-6 w-6" />
                       <span>Empresa</span>
                     </SidebarMenuButton>
                   </SidebarMenuItem>
@@ -254,9 +251,9 @@ function DashboardLayoutContent({
                       isActive={location === "/admin"}
                       onClick={() => setLocation("/admin")}
                       tooltip="Administração"
-                      className="h-10 transition-all font-normal text-red-600"
+                      className="h-12 transition-all font-normal"
                     >
-                      <Users className="h-4 w-4" />
+                      <Users className="h-6 w-6" />
                       <span>Administração</span>
                     </SidebarMenuButton>
                   </SidebarMenuItem>
@@ -265,39 +262,15 @@ function DashboardLayoutContent({
             </SidebarMenu>
           </SidebarContent>
 
-          <SidebarFooter className="flex items-center gap-3 p-4 border-t">
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <button className="flex items-center gap-3 w-full group bg-transparent">
-                  <Avatar className="w-10 h-10">
-                    {meQuery.data?.photoUrl ? (
-                      <img src={meQuery.data.photoUrl} alt="Avatar" className="w-full h-full object-cover rounded-full" />
-                    ) : (
-                      <AvatarFallback>
-                        {user?.name ? user.name.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2) : "?"}
-                      </AvatarFallback>
-                    )}
-                  </Avatar>
-                  <div className="flex-1 min-w-0 group-data-[collapsible=icon]:hidden">
-                    <p className="text-sm font-medium truncate leading-none">
-                      {user?.name || "-"}
-                    </p>
-                    <p className="text-xs text-muted-foreground truncate mt-1.5">
-                      {user?.email || "-"}
-                    </p>
-                  </div>
-                </button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="end" className="w-48">
-                <DropdownMenuItem
-                  onClick={logout}
-                  className="cursor-pointer text-destructive focus:text-destructive"
-                >
-                  <LogOut className="mr-2 h-4 w-4" />
-                  <span>Sair</span>
-                </DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
+          <SidebarFooter className="flex items-center p-4 border-t">
+            <Button
+              onClick={logout}
+              className="w-full flex items-center justify-center gap-2 text-destructive font-semibold"
+              variant="outline"
+            >
+              <LogOut className="h-5 w-5" />
+              Sair
+            </Button>
           </SidebarFooter>
         </Sidebar>
         <button
