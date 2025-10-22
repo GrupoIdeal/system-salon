@@ -1,4 +1,4 @@
-FROM node:20-alpine as builder
+FROM node:20-alpine AS builder
 
 # Definindo diretório de trabalho
 WORKDIR /app
@@ -6,8 +6,9 @@ WORKDIR /app
 # Instalando o pnpm
 RUN corepack enable && corepack prepare pnpm@latest --activate
 
-# Copiando os arquivos de configuração de dependências
+# Copiando os arquivos de configuração de dependências e patches
 COPY package.json pnpm-lock.yaml ./
+COPY patches/ ./patches/
 
 # Instalando as dependências
 RUN pnpm install --frozen-lockfile
@@ -19,7 +20,7 @@ COPY . .
 RUN pnpm build
 
 # Criando a imagem final de produção
-FROM node:20-alpine as runner
+FROM node:20-alpine AS runner
 
 # Definindo diretório de trabalho
 WORKDIR /app
@@ -29,6 +30,7 @@ RUN corepack enable && corepack prepare pnpm@latest --activate
 
 # Copiando os arquivos necessários para a produção
 COPY --from=builder /app/package.json /app/pnpm-lock.yaml ./
+COPY --from=builder /app/patches ./patches
 COPY --from=builder /app/dist ./dist
 COPY --from=builder /app/drizzle ./drizzle
 
