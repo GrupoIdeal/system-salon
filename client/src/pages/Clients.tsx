@@ -224,7 +224,7 @@ export default function Clients() {
                 ))}
               </div>
             ) : clientsQuery.data && clientsQuery.data.length > 0 ? (
-              <div className="space-y-2">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 {clientsQuery.data.map((client: { id: string; name: string; email?: string; phone?: string; notes?: string; }) => (
                   <div
                     key={client.id}

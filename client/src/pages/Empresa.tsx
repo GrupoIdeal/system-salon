@@ -106,7 +106,13 @@ export default function Empresa() {
 
     return (
         <DashboardLayout>
-            <div className="max-w-4xl mx-auto mt-8">
+            <div className="flex items-center justify-between mb-8">
+                <div>
+                    <h1 className="text-3xl font-bold tracking-tight">Empresa</h1>
+                    <p className="text-muted-foreground">Gerencie os dados e horários do salão</p>
+                </div>
+            </div>
+            <div className="w-full mx-auto mt-8">
                 <div className="flex justify-end mb-4">
                     {editMode ? (
                         <Button type="button" className="px-6" onClick={handleSubmit}>
@@ -118,7 +124,7 @@ export default function Empresa() {
                         </Button>
                     )}
                 </div>
-                <Card className="mb-8">
+                <Card className="w-full mb-8">
                     <CardHeader>
                         <CardTitle>Dados da Empresa</CardTitle>
                     </CardHeader>
@@ -146,18 +152,68 @@ export default function Empresa() {
                                 <Input value={form.email} onChange={e => setForm(f => ({ ...f, email: e.target.value }))} disabled={!editMode} />
                             </div>
                         </div>
-                        <div className="flex flex-col gap-6 mt-8">
-                            <h3 className="font-semibold text-lg mb-2">Horários de Funcionamento</h3>
-                            {diasSemana.map(({ key, label }) => (
-                                <Card key={key} className="mb-2">
+                        <div className="mt-8">
+                            <h3 className="font-semibold text-lg mb-4">Horários de Funcionamento</h3>
+                            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                                {diasSemana.slice(0, 6).map(({ key, label }) => (
+                                    <Card key={key}>
+                                        <CardHeader className="flex flex-row items-center gap-2 py-2">
+                                            <Clock className="h-5 w-5 text-muted-foreground" />
+                                            <span className="font-semibold text-base">{label}</span>
+                                        </CardHeader>
+                                        <CardContent className="space-y-2">
+                                            {(form.workingHours[key] && form.workingHours[key].length > 0) ? (
+                                                form.workingHours[key].map((wh, whIdx) => (
+                                                    <div key={whIdx} className="flex flex-wrap items-center gap-4 mb-2">
+                                                        <div className="flex gap-2 items-center">
+                                                            <span className="text-sm">Início:</span>
+                                                            <Input type="time" value={wh.start} disabled className="w-24" />
+                                                            <span className="text-sm">Fim:</span>
+                                                            <Input type="time" value={wh.end} disabled className="w-24" />
+                                                        </div>
+                                                        {wh.lunch && (
+                                                            <div className="flex gap-2 items-center">
+                                                                <span className="text-sm text-muted-foreground">Almoço:</span>
+                                                                <Input type="time" value={wh.lunch.start} disabled className="w-20" />
+                                                                <span className="text-sm">-</span>
+                                                                <Input type="time" value={wh.lunch.end} disabled className="w-20" />
+                                                            </div>
+                                                        )}
+                                                        {editMode && (
+                                                            <Button type="button" size="icon" variant="ghost" onClick={() => handleRemoveHour(key, whIdx)}>
+                                                                <Trash2 className="h-4 w-4 text-red-500" />
+                                                            </Button>
+                                                        )}
+                                                    </div>
+                                                ))
+                                            ) : (
+                                                <span className="text-muted-foreground text-xs">Nenhum horário cadastrado</span>
+                                            )}
+                                            {editMode && (
+                                                <div className="flex flex-wrap gap-2 mt-2">
+                                                    <Input type="time" value={selectedDay === key ? newHour.start : ""} onChange={e => { setSelectedDay(key); setNewHour(n => ({ ...n, start: e.target.value })); }} placeholder="Início" className="w-24" />
+                                                    <Input type="time" value={selectedDay === key ? newHour.end : ""} onChange={e => { setSelectedDay(key); setNewHour(n => ({ ...n, end: e.target.value })); }} placeholder="Fim" className="w-24" />
+                                                    <Input type="time" value={selectedDay === key ? newHour.lunchStart : ""} onChange={e => { setSelectedDay(key); setNewHour(n => ({ ...n, lunchStart: e.target.value })); }} placeholder="Almoço início" className="w-20" />
+                                                    <Input type="time" value={selectedDay === key ? newHour.lunchEnd : ""} onChange={e => { setSelectedDay(key); setNewHour(n => ({ ...n, lunchEnd: e.target.value })); }} placeholder="Almoço fim" className="w-20" />
+                                                    <Button type="button" size="sm" onClick={() => { setSelectedDay(key); handleAddHour(key); }}>
+                                                        + Adicionar Horário
+                                                    </Button>
+                                                </div>
+                                            )}
+                                        </CardContent>
+                                    </Card>
+                                ))}
+                            </div>
+                            <div className="mt-4">
+                                <Card key={diasSemana[6].key} className="w-full">
                                     <CardHeader className="flex flex-row items-center gap-2 py-2">
                                         <Clock className="h-5 w-5 text-muted-foreground" />
-                                        <span className="font-semibold text-base">{label}</span>
+                                        <span className="font-semibold text-base">{diasSemana[6].label}</span>
                                     </CardHeader>
-                                    <CardContent>
-                                        {(form.workingHours[key] && form.workingHours[key].length > 0) ? (
-                                            form.workingHours[key].map((wh, idx) => (
-                                                <div key={idx} className="flex items-center gap-4 mb-2">
+                                    <CardContent className="space-y-2">
+                                        {(form.workingHours[diasSemana[6].key] && form.workingHours[diasSemana[6].key].length > 0) ? (
+                                            form.workingHours[diasSemana[6].key].map((wh, whIdx) => (
+                                                <div key={whIdx} className="flex flex-wrap items-center gap-4 mb-2">
                                                     <div className="flex gap-2 items-center">
                                                         <span className="text-sm">Início:</span>
                                                         <Input type="time" value={wh.start} disabled className="w-24" />
@@ -173,7 +229,7 @@ export default function Empresa() {
                                                         </div>
                                                     )}
                                                     {editMode && (
-                                                        <Button type="button" size="icon" variant="ghost" onClick={() => handleRemoveHour(key, idx)}>
+                                                        <Button type="button" size="icon" variant="ghost" onClick={() => handleRemoveHour(diasSemana[6].key, whIdx)}>
                                                             <Trash2 className="h-4 w-4 text-red-500" />
                                                         </Button>
                                                     )}
@@ -183,19 +239,19 @@ export default function Empresa() {
                                             <span className="text-muted-foreground text-xs">Nenhum horário cadastrado</span>
                                         )}
                                         {editMode && (
-                                            <div className="flex gap-2 mt-2">
-                                                <Input type="time" value={selectedDay === key ? newHour.start : ""} onChange={e => { setSelectedDay(key); setNewHour(n => ({ ...n, start: e.target.value })); }} placeholder="Início" className="w-24" />
-                                                <Input type="time" value={selectedDay === key ? newHour.end : ""} onChange={e => { setSelectedDay(key); setNewHour(n => ({ ...n, end: e.target.value })); }} placeholder="Fim" className="w-24" />
-                                                <Input type="time" value={selectedDay === key ? newHour.lunchStart : ""} onChange={e => { setSelectedDay(key); setNewHour(n => ({ ...n, lunchStart: e.target.value })); }} placeholder="Almoço início" className="w-20" />
-                                                <Input type="time" value={selectedDay === key ? newHour.lunchEnd : ""} onChange={e => { setSelectedDay(key); setNewHour(n => ({ ...n, lunchEnd: e.target.value })); }} placeholder="Almoço fim" className="w-20" />
-                                                <Button type="button" size="sm" onClick={() => { setSelectedDay(key); handleAddHour(key); }}>
+                                            <div className="flex flex-wrap gap-2 mt-2">
+                                                <Input type="time" value={selectedDay === diasSemana[6].key ? newHour.start : ""} onChange={e => { setSelectedDay(diasSemana[6].key); setNewHour(n => ({ ...n, start: e.target.value })); }} placeholder="Início" className="w-24" />
+                                                <Input type="time" value={selectedDay === diasSemana[6].key ? newHour.end : ""} onChange={e => { setSelectedDay(diasSemana[6].key); setNewHour(n => ({ ...n, end: e.target.value })); }} placeholder="Fim" className="w-24" />
+                                                <Input type="time" value={selectedDay === diasSemana[6].key ? newHour.lunchStart : ""} onChange={e => { setSelectedDay(diasSemana[6].key); setNewHour(n => ({ ...n, lunchStart: e.target.value })); }} placeholder="Almoço início" className="w-20" />
+                                                <Input type="time" value={selectedDay === diasSemana[6].key ? newHour.lunchEnd : ""} onChange={e => { setSelectedDay(diasSemana[6].key); setNewHour(n => ({ ...n, lunchEnd: e.target.value })); }} placeholder="Almoço fim" className="w-20" />
+                                                <Button type="button" size="sm" onClick={() => { setSelectedDay(diasSemana[6].key); handleAddHour(diasSemana[6].key); }}>
                                                     + Adicionar Horário
                                                 </Button>
                                             </div>
                                         )}
                                     </CardContent>
                                 </Card>
-                            ))}
+                            </div>
                         </div>
                     </CardContent>
                 </Card>

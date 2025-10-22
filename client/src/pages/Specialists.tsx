@@ -150,108 +150,124 @@ export default function Specialists() {
 
     return (
         <DashboardLayout>
-            <div className="flex flex-col md:flex-row gap-8 max-w-6xl mx-auto py-10">
-                {/* Formulário de cadastro */}
-                <Card className="flex-1 max-w-lg shadow-xl border-none rounded-2xl bg-white/90 backdrop-blur-lg">
-                    <CardHeader className="flex flex-col items-center gap-2 pb-0">
-                        <div className="flex flex-col items-center gap-2">
-                            <div className="relative group cursor-pointer">
-                                <label className="block">
-                                    <input type="file" accept="image/*" onChange={handlePhotoChange} className="hidden" />
-                                    <div className="w-36 h-36 rounded-full bg-gradient-to-tr from-blue-100 to-slate-100 flex items-center justify-center border-4 border-white shadow-lg overflow-hidden">
-                                        {formData.photo ? (
-                                            <img src={formData.photo} alt="Foto do especialista" className="w-full h-full object-cover" />
-                                        ) : (
-                                            <User2 className="h-16 w-16 text-slate-400" />
-                                        )}
-                                        <span className="absolute bottom-2 right-2 bg-blue-500 text-white text-xs px-2 py-1 rounded shadow opacity-0 group-hover:opacity-100 transition">Alterar foto</span>
+            <div className="flex items-center justify-between mb-8">
+                <div>
+                    <h1 className="text-3xl font-bold tracking-tight">Especialistas</h1>
+                    <p className="text-muted-foreground">Gerencie os profissionais do salão</p>
+                </div>
+            </div>
+            <div className="w-full">
+                <div className="flex flex-col md:flex-row gap-8 max-w-6xl mx-auto py-10">
+                    {/* Formulário de cadastro */}
+                    <Card className="flex-1 shadow-xl border-none rounded-2xl bg-white/90 backdrop-blur-lg">
+                        <CardHeader className="flex flex-col items-center gap-2 pb-0">
+                            <div className="flex flex-col items-center gap-2">
+                                <div className="relative group cursor-pointer">
+                                    <label className="block">
+                                        <input type="file" accept="image/*" onChange={handlePhotoChange} className="hidden" />
+                                        <div className="w-36 h-36 rounded-full bg-gradient-to-tr from-blue-100 to-slate-100 flex items-center justify-center border-4 border-white shadow-lg overflow-hidden">
+                                            {formData.photo ? (
+                                                <img src={formData.photo} alt="Foto do especialista" className="w-full h-full object-cover" />
+                                            ) : (
+                                                <User2 className="h-16 w-16 text-slate-400" />
+                                            )}
+                                            <span className="absolute bottom-2 right-2 bg-blue-500 text-white text-xs px-2 py-1 rounded shadow opacity-0 group-hover:opacity-100 transition">Alterar foto</span>
+                                        </div>
+                                    </label>
+                                </div>
+                            </div>
+                            <CardTitle className="text-2xl font-bold mt-2">
+                                {isEditing ? "Editar Especialista" : "Novo Especialista"}
+                            </CardTitle>
+                        </CardHeader>
+                        <CardContent className="pt-0">
+                            <form onSubmit={handleSubmit} className="space-y-4 mb-8">
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                    <div>
+                                        <label htmlFor={nameId} className="text-sm font-medium text-slate-700">Nome</label>
+                                        <Input id={nameId} value={formData.name} onChange={e => setFormData({ ...formData, name: e.target.value })} className="mt-1" required autoFocus />
                                     </div>
-                                </label>
-                            </div>
-                        </div>
-                        <CardTitle className="text-2xl font-bold mt-2">
-                            {isEditing ? "Editar Especialista" : "Novo Especialista"}
-                        </CardTitle>
-                    </CardHeader>
-                    <CardContent className="pt-0">
-                        <form onSubmit={handleSubmit} className="space-y-4 mb-8">
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                <div>
-                                    <label htmlFor={nameId} className="text-sm font-medium text-slate-700">Nome</label>
-                                    <Input id={nameId} value={formData.name} onChange={e => setFormData({ ...formData, name: e.target.value })} className="mt-1" required autoFocus />
+                                    <div>
+                                        <label htmlFor={specialtyId} className="text-sm font-medium text-slate-700">Especialidade</label>
+                                        <Input id={specialtyId} value={formData.specialty} onChange={e => setFormData({ ...formData, specialty: e.target.value })} placeholder="Ex: Cabeleireira, Manicure..." className="mt-1" required />
+                                    </div>
+                                    <div>
+                                        <label htmlFor={phoneId} className="text-sm font-medium text-slate-700">Telefone</label>
+                                        <Input id={phoneId} value={formData.phone} onChange={e => setFormData({ ...formData, phone: e.target.value })} className="mt-1" required />
+                                    </div>
+                                    <div>
+                                        <label htmlFor={emailId} className="text-sm font-medium text-slate-700">Email</label>
+                                        <Input id={emailId} type="email" value={formData.email} onChange={e => setFormData({ ...formData, email: e.target.value })} className="mt-1" required />
+                                    </div>
                                 </div>
                                 <div>
-                                    <label htmlFor={specialtyId} className="text-sm font-medium text-slate-700">Especialidade</label>
-                                    <Input id={specialtyId} value={formData.specialty} onChange={e => setFormData({ ...formData, specialty: e.target.value })} placeholder="Ex: Cabeleireira, Manicure..." className="mt-1" required />
+                                    <label htmlFor={bioId} className="text-sm font-medium text-slate-700">Bio</label>
+                                    <textarea id={bioId} className="w-full min-h-[60px] rounded-md border px-3 py-2 text-sm resize-none focus:outline-none focus:ring-2 focus:ring-primary/40 mt-1" value={formData.bio} onChange={e => setFormData({ ...formData, bio: e.target.value })} placeholder="Breve descrição do profissional" />
                                 </div>
-                                <div>
-                                    <label htmlFor={phoneId} className="text-sm font-medium text-slate-700">Telefone</label>
-                                    <Input id={phoneId} value={formData.phone} onChange={e => setFormData({ ...formData, phone: e.target.value })} className="mt-1" required />
-                                </div>
-                                <div>
-                                    <label htmlFor={emailId} className="text-sm font-medium text-slate-700">Email</label>
-                                    <Input id={emailId} type="email" value={formData.email} onChange={e => setFormData({ ...formData, email: e.target.value })} className="mt-1" required />
-                                </div>
-                            </div>
-                            <div>
-                                <label htmlFor={bioId} className="text-sm font-medium text-slate-700">Bio</label>
-                                <textarea id={bioId} className="w-full min-h-[60px] rounded-md border px-3 py-2 text-sm resize-none focus:outline-none focus:ring-2 focus:ring-primary/40 mt-1" value={formData.bio} onChange={e => setFormData({ ...formData, bio: e.target.value })} placeholder="Breve descrição do profissional" />
-                            </div>
-                            <div className="flex gap-2">
-                                <Button type="submit" className="flex-1 bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2 rounded-xl transition" disabled={createMutation.isPending || updateMutation.isPending}>
-                                    {isEditing ? "Atualizar" : "Salvar"}
-                                </Button>
-                                {isEditing && (
-                                    <Button type="button" onClick={handleCancelEdit} className="bg-gray-300 hover:bg-gray-400 text-gray-800 font-semibold py-2 px-4 rounded-xl transition">
-                                        Cancelar
+                                <div className="flex gap-2">
+                                    <Button type="submit" className="flex-1 bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2 rounded-xl transition" disabled={createMutation.isPending || updateMutation.isPending}>
+                                        {isEditing ? "Atualizar" : "Salvar"}
                                     </Button>
-                                )}
-                            </div>
-                        </form>
-                    </CardContent>
-                </Card>
-                {/* Listagem dos especialistas */}
-                <div className="flex-1">
-                    <h2 className="text-xl font-bold mb-6 text-primary">Especialistas cadastrados</h2>
-                    <div className="grid gap-6">
-                        {specialistsQuery.isLoading && <div>Carregando...</div>}
-                        {specialistsQuery.data?.length === 0 && <div className="col-span-full text-center text-muted-foreground">Nenhum especialista cadastrado.</div>}
-                        {specialistsQuery.data?.map((spec) => (
-                            <Card key={spec.id} className="flex items-center gap-6 p-6 shadow rounded-xl border border-muted bg-white">
-                                <Avatar className="h-24 w-24 border-2 border-primary shadow-md">
-                                    {spec.photo ? (
-                                        <AvatarImage src={spec.photo} alt={spec.name} className="object-cover" />
-                                    ) : (
-                                        <AvatarFallback><User2 className="h-12 w-12 text-muted-foreground" /></AvatarFallback>
+                                    {isEditing && (
+                                        <Button type="button" onClick={handleCancelEdit} className="bg-gray-300 hover:bg-gray-400 text-gray-800 font-semibold py-2 px-4 rounded-xl transition">
+                                            Cancelar
+                                        </Button>
                                     )}
-                                </Avatar>
-                                <div className="flex-1">
-                                    <div className="font-bold text-lg text-primary mb-1">{spec.name}</div>
-                                    <div className="text-muted-foreground text-sm mb-1">{spec.specialty}</div>
-                                    <div className="text-muted-foreground text-sm">{spec.email}</div>
-                                    <div className="text-muted-foreground text-sm mb-2">{spec.phone}</div>
-                                    {spec.bio && <div className="text-xs text-muted-foreground italic mt-2">{spec.bio}</div>}
                                 </div>
-                                <div className="flex flex-row gap-2">
-                                    <Button
-                                        variant="ghost"
-                                        size="icon"
-                                        className="h-8 w-8 text-blue-600 hover:text-blue-800 hover:bg-blue-100"
-                                        onClick={() => handleEditSpecialist(spec)}
-                                    >
-                                        <Edit size={18} />
-                                    </Button>
-                                    <Button
-                                        variant="ghost"
-                                        size="icon"
-                                        className="h-8 w-8 text-red-600 hover:text-red-800 hover:bg-red-100"
-                                        onClick={() => confirmDelete(spec.id)}
-                                    >
-                                        <Trash2 size={18} />
-                                    </Button>
-                                </div>
-                            </Card>
-                        ))}
+                            </form>
+                        </CardContent>
+                    </Card>
+                    {/* Listagem dos especialistas */}
+                    <div className="flex-1">
+                        <h2 className="text-xl font-bold mb-6 text-primary">Especialistas cadastrados</h2>
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                            {specialistsQuery.isLoading && <div>Carregando...</div>}
+                            {specialistsQuery.data?.length === 0 && <div className="col-span-full text-center text-muted-foreground">Nenhum especialista cadastrado.</div>}
+                            {specialistsQuery.data?.map((spec) => (
+                                <Card key={spec.id} className="flex items-center gap-6 p-6 shadow rounded-xl border border-muted bg-white">
+                                    <Avatar className="h-24 w-24 border-2 border-primary shadow-md">
+                                        {spec.photo ? (
+                                            <AvatarImage src={spec.photo} alt={spec.name} className="object-cover" />
+                                        ) : (
+                                            <AvatarFallback><User2 className="h-12 w-12 text-muted-foreground" /></AvatarFallback>
+                                        )}
+                                    </Avatar>
+                                    <div className="flex-1">
+                                        <div className="font-bold text-lg text-primary mb-1">{spec.name}</div>
+                                        <div className="text-muted-foreground text-sm mb-1">{spec.specialty}</div>
+                                        <div className="text-muted-foreground text-sm">{spec.email}</div>
+                                        <div className="text-muted-foreground text-sm mb-2">{spec.phone}</div>
+                                        {spec.bio && <div className="text-xs text-muted-foreground italic mt-2">{spec.bio}</div>}
+                                    </div>
+                                    <div className="flex flex-row gap-2">
+                                        <Button
+                                            variant="ghost"
+                                            size="icon"
+                                            className="h-8 w-8 text-blue-600 hover:text-blue-800 hover:bg-blue-100"
+                                            onClick={() => handleEditSpecialist({
+                                                id: spec.id,
+                                                name: spec.name,
+                                                email: spec.email ?? undefined,
+                                                phone: spec.phone ?? undefined,
+                                                photo: spec.photo ?? undefined,
+                                                specialty: spec.specialty ?? undefined,
+                                                bio: spec.bio ?? undefined,
+                                            })}
+                                        >
+                                            <Edit size={18} />
+                                        </Button>
+                                        <Button
+                                            variant="ghost"
+                                            size="icon"
+                                            className="h-8 w-8 text-red-600 hover:text-red-800 hover:bg-red-100"
+                                            onClick={() => confirmDelete(spec.id)}
+                                        >
+                                            <Trash2 size={18} />
+                                        </Button>
+                                    </div>
+                                </Card>
+                            ))}
+                        </div>
                     </div>
                 </div>
             </div>
