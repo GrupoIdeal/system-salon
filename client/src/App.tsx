@@ -1,10 +1,10 @@
+// biome-ignore assist/source/organizeImports: false positive
 import { Toaster } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import NotFound from "@/pages/NotFound";
 import { Route, Switch, useLocation } from "wouter";
 import ErrorBoundary from "./components/ErrorBoundary";
 import { ThemeProvider } from "./contexts/ThemeContext";
-import Home from "./pages/Home";
 import Login from "./pages/Login";
 import Dashboard from "./pages/Dashboard";
 import Clients from "./pages/Clients";
@@ -13,6 +13,7 @@ import Appointments from "./pages/Appointments";
 import Profile from "./pages/Profile";
 import RecuperarSenha from "./pages/RecuperarSenha";
 import RedefinirSenha from "./pages/RedefinirSenha";
+import Admin from "./pages/Admin";
 import { useAuth } from "@/_core/hooks/useAuth";
 import { useEffect } from "react";
 
@@ -43,30 +44,19 @@ function ProtectedRoute({ component: Component }: { component: React.ComponentTy
 function Router() {
   return (
     <Switch>
-      <Route path="/" component={Home} />
+      <Route path="/" component={() => {
+        window.location.replace("/login");
+        return <div />;
+      }} />
       <Route path="/login" component={Login} />
+      <Route path="/admin" component={Admin} />
       <Route path="/recuperar-senha" component={RecuperarSenha} />
       <Route path="/redefinir-senha" component={RedefinirSenha} />
-      <Route
-        path="/dashboard"
-        component={() => <ProtectedRoute component={Dashboard} />}
-      />
-      <Route
-        path="/clientes"
-        component={() => <ProtectedRoute component={Clients} />}
-      />
-      <Route
-        path="/servicos"
-        component={() => <ProtectedRoute component={Services} />}
-      />
-      <Route
-        path="/agendamentos"
-        component={() => <ProtectedRoute component={Appointments} />}
-      />
-      <Route
-        path="/perfil"
-        component={() => <ProtectedRoute component={Profile} />}
-      />
+      <Route path="/dashboard" component={() => <ProtectedRoute component={Dashboard} />} />
+      <Route path="/clientes" component={() => <ProtectedRoute component={Clients} />} />
+      <Route path="/servicos" component={() => <ProtectedRoute component={Services} />} />
+      <Route path="/agendamentos" component={() => <ProtectedRoute component={Appointments} />} />
+      <Route path="/perfil" component={() => <ProtectedRoute component={Profile} />} />
       <Route path="/404" component={NotFound} />
       {/* Final fallback route */}
       <Route component={NotFound} />

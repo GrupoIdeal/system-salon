@@ -26,6 +26,7 @@ import { CSSProperties, useEffect, useRef, useState } from "react";
 import { useLocation } from "wouter";
 import { DashboardLayoutSkeleton } from './DashboardLayoutSkeleton';
 import { Button } from "./ui/button";
+import { trpc } from "@/lib/trpc";
 
 const menuItems = [
   { icon: LayoutDashboard, label: "Dashboard", path: "/dashboard" },
@@ -33,6 +34,7 @@ const menuItems = [
   { icon: Scissors, label: "Serviços", path: "/servicos" },
   { icon: Calendar, label: "Agendamentos", path: "/agendamentos" },
   { icon: User, label: "Perfil", path: "/perfil" },
+  // Adiciona menu de administração apenas para admin
 ];
 
 const SIDEBAR_WIDTH_KEY = "sidebar-width";
@@ -126,6 +128,7 @@ function DashboardLayoutContent({
   const sidebarRef = useRef<HTMLDivElement>(null);
   const activeMenuItem = menuItems.find(item => item.path === location);
   const isMobile = useIsMobile();
+  const meQuery = trpc.auth.me.useQuery();
 
   useEffect(() => {
     if (isCollapsed) {
@@ -232,17 +235,35 @@ function DashboardLayoutContent({
                   </SidebarMenuItem>
                 );
               })}
+              {/* Menu de administração só para admin */}
+              {user?.role === "admin" && (
+                <SidebarMenuItem>
+                  <SidebarMenuButton
+                    isActive={location === "/admin"}
+                    onClick={() => setLocation("/admin")}
+                    tooltip="Administração"
+                    className="h-10 transition-all font-normal text-red-600"
+                  >
+                    <Users className="h-4 w-4" />
+                    <span>Administração</span>
+                  </SidebarMenuButton>
+                </SidebarMenuItem>
+              )}
             </SidebarMenu>
           </SidebarContent>
 
-          <SidebarFooter className="p-3">
+          <SidebarFooter className="flex items-center gap-3 p-4 border-t">
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <button type="button" className="flex items-center gap-3 rounded-lg px-1 py-1 hover:bg-accent/50 transition-colors w-full text-left group-data-[collapsible=icon]:justify-center focus:outline-none focus-visible:ring-2 focus-visible:ring-ring">
-                  <Avatar className="h-9 w-9 border shrink-0">
-                    <AvatarFallback className="text-xs font-medium">
-                      {user?.name?.charAt(0).toUpperCase()}
-                    </AvatarFallback>
+                <button className="flex items-center gap-3 w-full group bg-transparent">
+                  <Avatar className="w-10 h-10">
+                    {meQuery.data?.photoUrl ? (
+                      <img src={meQuery.data.photoUrl} alt="Avatar" className="w-full h-full object-cover rounded-full" />
+                    ) : (
+                      <AvatarFallback>
+                        {user?.name ? user.name.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2) : "?"}
+                      </AvatarFallback>
+                    )}
                   </Avatar>
                   <div className="flex-1 min-w-0 group-data-[collapsible=icon]:hidden">
                     <p className="text-sm font-medium truncate leading-none">

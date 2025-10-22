@@ -25,6 +25,8 @@ export const users = pgTable("users", {
   createdAt: timestamp("createdAt").defaultNow(),
   updatedAt: timestamp("updatedAt").defaultNow(),
   lastSignedIn: timestamp("lastSignedIn"),
+  photoUrl: text("photoUrl"),
+  phone: varchar("phone", { length: 20 }),
 });
 
 export type User = typeof users.$inferSelect;

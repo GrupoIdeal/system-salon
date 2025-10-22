@@ -1,362 +1,181 @@
-import { useState } from "react";
+import { useCallback, useState, useEffect } from "react";
+import { useDropzone } from "react-dropzone";
 import DashboardLayout from "@/components/DashboardLayout";
 import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from "@/components/ui/dialog";
-import {
-  Tabs,
-  TabsContent,
-  TabsList,
-  TabsTrigger,
-} from "@/components/ui/tabs";
+import { Loader2 } from "lucide-react";
 import { trpc } from "@/lib/trpc";
-import { Plus, Edit2, Trash2, Loader2 } from "lucide-react";
-import { Skeleton } from "@/components/ui/skeleton";
 
 export default function Profile() {
-  const [isDialogOpen, setIsDialogOpen] = useState<boolean>(false);
-  const [editingSpecialistId, setEditingSpecialistId] = useState<string | null>(null);
-  const [specialistForm, setSpecialistForm] = useState<{ name: string; specialty: string; email: string; phone: string; }>({
-    name: "",
-    specialty: "",
-    email: "",
-    phone: "",
-  });
+  const [profileImage, setProfileImage] = useState<string>("");
+  const [uploading, setUploading] = useState(false);
+  const [success, setSuccess] = useState("");
+  const [error, setError] = useState("");
+  const [newPassword, setNewPassword] = useState("");
 
-  const salonQuery = trpc.salon.get.useQuery();
-  const specialistsQuery = trpc.specialists.list.useQuery();
+  const meQuery = trpc.auth.me.useQuery();
+  const editMutation = trpc.users.edit.useMutation();
 
-  const updateSalonMutation = trpc.salon.update.useMutation({
-    onSuccess: () => {
-      salonQuery.refetch();
-    },
-  });
+  // Formulário de dados do usuário
+  const [name, setName] = useState("");
+  const [email, setEmail] = useState("");
+  const [phone, setPhone] = useState("");
 
-  const createSpecialistMutation = trpc.specialists.create.useMutation({
-    onSuccess: () => {
-      specialistsQuery.refetch();
-      setSpecialistForm({ name: "", specialty: "", email: "", phone: "" });
-      setIsDialogOpen(false);
-    },
-  });
+  // Exibir foto do banco ao carregar perfil
+  useEffect(() => {
+    if (meQuery.data) {
+      setName(meQuery.data.name || "");
+      setEmail(meQuery.data.email || "");
+      setPhone(meQuery.data.phone || "");
+      setProfileImage(meQuery.data.photoUrl || "");
+    }
+  }, [meQuery.data]);
 
-  const updateSpecialistMutation = trpc.specialists.update.useMutation({
-    onSuccess: () => {
-      specialistsQuery.refetch();
-      setSpecialistForm({ name: "", specialty: "", email: "", phone: "" });
-      setEditingSpecialistId(null);
-      setIsDialogOpen(false);
-    },
-  });
-
-  const deleteSpecialistMutation = trpc.specialists.delete.useMutation({
-    onSuccess: () => {
-      specialistsQuery.refetch();
-    },
-  });
-
-  const handleSpecialistSubmit = (e: React.FormEvent) => {
+  const handleSaveProfile = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!specialistForm.name) return;
-
-    if (editingSpecialistId) {
-      updateSpecialistMutation.mutate({
-        id: editingSpecialistId,
-        data: specialistForm,
-      });
-    } else {
-      createSpecialistMutation.mutate(specialistForm);
+    setSuccess("");
+    setError("");
+    try {
+      await editMutation.mutateAsync({ id: meQuery.data.id, data: { name, email, phone, photoUrl: profileImage } });
+      setSuccess("Dados atualizados com sucesso!");
+      meQuery.refetch();
+    } catch {
+      setError("Erro ao atualizar dados");
     }
   };
 
-  const handleEditSpecialist = (specialist: { id: string; name: string; specialty?: string; email?: string; phone?: string; }) => {
-    setSpecialistForm({
-      name: specialist.name,
-      specialty: specialist.specialty || "",
-      email: specialist.email || "",
-      phone: specialist.phone || "",
-    });
-    setEditingSpecialistId(specialist.id);
-    setIsDialogOpen(true);
+  // Salvar foto no banco ao fazer upload
+  const handleImageSave = async (url: string) => {
+    if (!meQuery.data?.id) return;
+    try {
+      await editMutation.mutateAsync({ id: meQuery.data.id, data: { photoUrl: url } });
+      setSuccess("Foto atualizada!");
+      meQuery.refetch();
+    } catch {
+      setError("Erro ao salvar foto");
+    }
+  };
+
+  // Upload para Cloudinary
+  const onDrop = useCallback(async (acceptedFiles: File[]) => {
+    if (!acceptedFiles[0]) return;
+    setUploading(true);
+    setSuccess("");
+    setError("");
+    const formData = new FormData();
+    formData.append("file", acceptedFiles[0]);
+    formData.append("upload_preset", "default"); // configure um preset no painel Cloudinary
+    try {
+      const res = await fetch("https://api.cloudinary.com/v1_1/dvq5a1chd/image/upload", {
+        method: "POST",
+        body: formData,
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        setError(`Erro Cloudinary: ${data.error?.message || 'Falha no upload'}`);
+        return;
+      }
+      if (!data.secure_url) {
+        setError("Cloudinary não retornou URL da imagem");
+        return;
+      }
+      setProfileImage(data.secure_url);
+      handleImageSave(data.secure_url);
+    } catch (err) {
+      setError("Erro ao enviar imagem");
+    } finally {
+      setUploading(false);
+    }
+  }, [meQuery.data]);
+
+  const { getRootProps, getInputProps, isDragActive } = useDropzone({ onDrop, accept: { 'image/*': [] } });
+
+  // Troca de senha
+  const changePasswordMutation = trpc.users.resetPassword.useMutation();
+  const handleChangePassword = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setSuccess("");
+    setError("");
+    if (!newPassword) {
+      setError("Preencha a nova senha!");
+      return;
+    }
+    try {
+      await changePasswordMutation.mutateAsync({ id: meQuery.data.id, password: newPassword });
+      setSuccess("Senha alterada com sucesso!");
+      setNewPassword("");
+    } catch {
+      setError("Erro ao alterar senha");
+    }
   };
 
   return (
     <DashboardLayout>
-      <div className="space-y-6">
-        <div>
-          <h1 className="text-3xl font-bold tracking-tight">Perfil</h1>
-          <p className="text-muted-foreground mt-2">
-            Gerencie os dados do seu salão e especialistas
-          </p>
-        </div>
-
-        <Tabs defaultValue="salon" className="w-full">
-          <TabsList>
-            <TabsTrigger value="salon">Dados do Salão</TabsTrigger>
-            <TabsTrigger value="specialists">Especialistas</TabsTrigger>
-          </TabsList>
-
-          {/* Salon Data Tab */}
-          <TabsContent value="salon" className="space-y-4">
-            <Card>
-              <CardHeader>
-                <CardTitle>Informações do Salão</CardTitle>
-                <CardDescription>
-                  Atualize os dados do seu salão
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                {salonQuery.isLoading ? (
-                  <div className="space-y-4">
-                    {[...Array(4)].map((_, i) => (
-                      <Skeleton key={"skeleton-" + i} className="h-10 w-full" />
-                    ))}
-                  </div>
-                ) : salonQuery.data ? (
-                  <form className="space-y-4">
-                    <div>
-                      <label htmlFor="salon-name" className="text-sm font-medium">Nome do Salão</label>
-                      <Input
-                        id="salon-name"
-                        defaultValue={salonQuery.data.name}
-                        placeholder="Nome do salão"
-                      />
-                    </div>
-                    <div>
-                      <label htmlFor="salon-cnpj" className="text-sm font-medium">CNPJ</label>
-                      <Input
-                        id="salon-cnpj"
-                        defaultValue={salonQuery.data.cnpj || ""}
-                        placeholder="00.000.000/0000-00"
-                      />
-                    </div>
-                    <div>
-                      <label htmlFor="salon-address" className="text-sm font-medium">Endereço</label>
-                      <Input
-                        id="salon-address"
-                        defaultValue={salonQuery.data.address || ""}
-                        placeholder="Rua, número, complemento"
-                      />
-                    </div>
-                    <div className="grid grid-cols-2 gap-4">
-                      <div>
-                        <label htmlFor="salon-phone" className="text-sm font-medium">Telefone</label>
-                        <Input
-                          id="salon-phone"
-                          defaultValue={salonQuery.data.phone || ""}
-                          placeholder="(11) 99999-9999"
-                        />
-                      </div>
-                      <div>
-                        <label htmlFor="salon-email" className="text-sm font-medium">Email</label>
-                        <Input
-                          id="salon-email"
-                          type="email"
-                          defaultValue={salonQuery.data.email || ""}
-                          placeholder="email@salao.com"
-                        />
-                      </div>
-                    </div>
-                    <Button
-                      disabled={updateSalonMutation.isPending}
-                      className="w-full"
-                    >
-                      {updateSalonMutation.isPending && (
-                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                      )}
-                      Salvar Alterações
-                    </Button>
-                  </form>
-                ) : (
-                  <p className="text-muted-foreground">Salão não encontrado</p>
-                )}
-              </CardContent>
-            </Card>
-          </TabsContent>
-
-          {/* Specialists Tab */}
-          <TabsContent value="specialists" className="space-y-4">
-            <div className="flex justify-end">
-              <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-                <DialogTrigger asChild>
-                  <Button
-                    onClick={() => {
-                      setEditingSpecialistId(null);
-                      setSpecialistForm({
-                        name: "",
-                        specialty: "",
-                        email: "",
-                        phone: "",
-                      });
-                    }}
-                  >
-                    <Plus className="mr-2 h-4 w-4" />
-                    Novo Especialista
-                  </Button>
-                </DialogTrigger>
-                <DialogContent>
-                  <DialogHeader>
-                    <DialogTitle>
-                      {editingSpecialistId
-                        ? "Editar Especialista"
-                        : "Novo Especialista"}
-                    </DialogTitle>
-                    <DialogDescription>
-                      {editingSpecialistId
-                        ? "Atualize os dados do especialista"
-                        : "Adicione um novo especialista ao seu salão"}
-                    </DialogDescription>
-                  </DialogHeader>
-                  <form onSubmit={handleSpecialistSubmit} className="space-y-4">
-                    <div>
-                      <label htmlFor="specialist-name" className="text-sm font-medium">Nome</label>
-                      <Input
-                        id="specialist-name"
-                        value={specialistForm.name}
-                        onChange={(e) =>
-                          setSpecialistForm({
-                            ...specialistForm,
-                            name: e.target.value,
-                          })
-                        }
-                        placeholder="Nome do especialista"
-                        required
-                      />
-                    </div>
-                    <div>
-                      <label htmlFor="specialist-specialty" className="text-sm font-medium">Especialidade</label>
-                      <Input
-                        id="specialist-specialty"
-                        value={specialistForm.specialty}
-                        onChange={(e) =>
-                          setSpecialistForm({
-                            ...specialistForm,
-                            specialty: e.target.value,
-                          })
-                        }
-                        placeholder="Ex: Cabeleireiro"
-                      />
-                    </div>
-                    <div>
-                      <label htmlFor="specialist-email" className="text-sm font-medium">Email</label>
-                      <Input
-                        id="specialist-email"
-                        type="email"
-                        value={specialistForm.email}
-                        onChange={(e) =>
-                          setSpecialistForm({
-                            ...specialistForm,
-                            email: e.target.value,
-                          })
-                        }
-                        placeholder="email@example.com"
-                      />
-                    </div>
-                    <div>
-                      <label htmlFor="specialist-phone" className="text-sm font-medium">Telefone</label>
-                      <Input
-                        id="specialist-phone"
-                        value={specialistForm.phone}
-                        onChange={(e) =>
-                          setSpecialistForm({
-                            ...specialistForm,
-                            phone: e.target.value,
-                          })
-                        }
-                        placeholder="(11) 99999-9999"
-                      />
-                    </div>
-                    <Button
-                      type="submit"
-                      className="w-full"
-                      disabled={
-                        createSpecialistMutation.isPending ||
-                        updateSpecialistMutation.isPending
-                      }
-                    >
-                      {(createSpecialistMutation.isPending ||
-                        updateSpecialistMutation.isPending) && (
-                          <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                        )}
-                      {editingSpecialistId ? "Atualizar" : "Criar"}
-                    </Button>
-                  </form>
-                </DialogContent>
-              </Dialog>
+      <div className="max-w-lg mx-auto mt-12">
+        <Card className="shadow-xl border-none rounded-2xl bg-white/90 backdrop-blur-lg">
+          <CardHeader className="flex flex-col items-center gap-2 pb-0">
+            <div className="flex flex-col items-center gap-2">
+              <div {...getRootProps()} className="relative group cursor-pointer">
+                <input {...getInputProps()} />
+                <div className="w-36 h-36 rounded-full bg-gradient-to-tr from-blue-100 to-slate-100 flex items-center justify-center border-4 border-white shadow-lg overflow-hidden">
+                  {uploading ? (
+                    <Loader2 className="h-10 w-10 animate-spin text-blue-400" />
+                  ) : profileImage ? (
+                    <img src={profileImage} alt="Foto de perfil" className="w-full h-full object-cover" />
+                  ) : isDragActive ? (
+                    <span className="text-slate-400">Solte a imagem aqui...</span>
+                  ) : (
+                    <span className="text-slate-400">Clique ou arraste para enviar foto</span>
+                  )}
+                  <span className="absolute bottom-2 right-2 bg-blue-500 text-white text-xs px-2 py-1 rounded shadow opacity-0 group-hover:opacity-100 transition">Alterar foto</span>
+                </div>
+              </div>
+              {success && <div className="text-green-600 text-sm mt-2">{success}</div>}
+              {error && <div className="text-red-600 text-sm mt-2">{error}</div>}
             </div>
-
-            <Card>
-              <CardHeader>
-                <CardTitle>Especialistas</CardTitle>
-                <CardDescription>
-                  Gerencie os especialistas do seu salão
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                {specialistsQuery.isLoading ? (
-                  <div className="space-y-2">
-                    {[...Array(3)].map((_, i) => (
-                      <Skeleton key={"skeleton-" + i} className="h-16 w-full" />
-                    ))}
-                  </div>
-                ) : specialistsQuery.data && specialistsQuery.data.length > 0 ? (
-                  <div className="space-y-2">
-                    {specialistsQuery.data.map((specialist: { id: string; name: string; specialty?: string; email?: string; phone?: string; }) => (
-                      <div
-                        key={specialist.id}
-                        className="flex items-center justify-between p-3 border rounded-lg hover:bg-slate-50"
-                      >
-                        <div className="flex-1">
-                          <p className="font-medium">{specialist.name}</p>
-                          <p className="text-sm text-muted-foreground">
-                            {specialist.specialty || "Sem especialidade"} •{" "}
-                            {specialist.email || "Sem email"}
-                          </p>
-                        </div>
-                        <div className="flex gap-2">
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={() => handleEditSpecialist(specialist)}
-                          >
-                            <Edit2 className="h-4 w-4" />
-                          </Button>
-                          <Button
-                            variant="destructive"
-                            size="sm"
-                            onClick={() =>
-                              deleteSpecialistMutation.mutate({ id: specialist.id })
-                            }
-                          >
-                            <Trash2 className="h-4 w-4" />
-                          </Button>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                ) : (
-                  <p className="text-center text-muted-foreground py-8">
-                    Nenhum especialista cadastrado
-                  </p>
-                )}
-              </CardContent>
-            </Card>
-          </TabsContent>
-        </Tabs>
+            <CardTitle className="text-2xl font-bold mt-2">{name}</CardTitle>
+            <CardDescription className="text-slate-500">{email}</CardDescription>
+          </CardHeader>
+          <CardContent className="pt-0">
+            <form onSubmit={handleSaveProfile} className="space-y-4 mb-8">
+              <div className="grid grid-cols-1 gap-4">
+                <div>
+                  <label htmlFor="name" className="text-sm font-medium text-slate-700">Nome</label>
+                  <Input id="name" value={name} onChange={e => setName(e.target.value)} className="mt-1" />
+                </div>
+                <div>
+                  <label htmlFor="email" className="text-sm font-medium text-slate-700">Email</label>
+                  <Input id="email" type="email" value={email} onChange={e => setEmail(e.target.value)} className="mt-1" />
+                </div>
+                <div>
+                  <label htmlFor="phone" className="text-sm font-medium text-slate-700">Telefone</label>
+                  <Input id="phone" value={phone} onChange={e => setPhone(e.target.value)} className="mt-1" />
+                </div>
+              </div>
+              <Button type="submit" className="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2 rounded-xl transition">Salvar dados</Button>
+              {success && <div className="text-green-600 text-sm mt-2">{success}</div>}
+              {error && <div className="text-red-600 text-sm mt-2">{error}</div>}
+            </form>
+            <form onSubmit={handleChangePassword} className="space-y-4">
+              <div>
+                <label htmlFor="newPassword" className="text-sm font-medium text-slate-700">Nova senha</label>
+                <Input
+                  id="newPassword"
+                  type="password"
+                  value={newPassword}
+                  onChange={e => setNewPassword(e.target.value)}
+                  placeholder="••••••••"
+                  className="mt-1"
+                />
+              </div>
+              <Button type="submit" className="w-full bg-slate-700 hover:bg-slate-800 text-white font-semibold py-2 rounded-xl transition" disabled={changePasswordMutation.isPending}>
+                {changePasswordMutation.isPending ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
+                Trocar senha
+              </Button>
+            </form>
+          </CardContent>
+        </Card>
       </div>
     </DashboardLayout>
   );

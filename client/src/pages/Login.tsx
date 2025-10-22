@@ -117,11 +117,7 @@ export default function Login() {
             </div>
 
             <div className="flex justify-end">
-              <Link href="/recuperar-senha">
-                <Button variant="link" size="sm" className="p-0" type="button">
-                  Esqueceu sua senha?
-                </Button>
-              </Link>
+              {/* Link de recuperação de senha removido, pois apenas o admin pode resetar */}
             </div>
 
             <Button

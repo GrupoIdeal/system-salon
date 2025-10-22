@@ -28,7 +28,6 @@ export async function getDb() {
       const client = postgres(process.env.DATABASE_URL);
       _db = drizzle(client);
     } catch (error) {
-      console.warn("[Database] Failed to connect:", error);
       _db = null;
     }
   }
@@ -48,7 +47,6 @@ export async function upsertUser(
 
   const db = await getDb();
   if (!db) {
-    console.warn("[Database] Cannot upsert user: database not available");
     return;
   }
 
@@ -83,12 +81,24 @@ export async function upsertUser(
       values.lastSignedIn = user.lastSignedIn;
       updateSet.lastSignedIn = user.lastSignedIn;
     }
-    if (user.role === undefined) {
-      if (user.id === ENV.ownerId) {
-        user.role = "admin";
-        values.role = "admin";
-        updateSet.role = "admin";
-      }
+
+    if (user.role !== undefined) {
+      values.role = user.role;
+      updateSet.role = user.role;
+    } else if (user.id === ENV.ownerId) {
+      values.role = "admin";
+      updateSet.role = "admin";
+    }
+
+    // Forçar update do photoUrl mesmo se vier vazio ou undefined
+    if ("photoUrl" in user) {
+      values.photoUrl = user.photoUrl ?? null;
+      updateSet.photoUrl = user.photoUrl ?? null;
+    }
+
+    if (user.phone !== undefined) {
+      values.phone = user.phone;
+      updateSet.phone = user.phone;
     }
 
     if (Object.keys(updateSet).length === 0) {
@@ -108,14 +118,9 @@ export async function upsertUser(
         await db.insert(users).values(values);
       }
     } catch (error) {
-      console.error(
-        "[Database] Failed to upsert user with PostgreSQL approach:",
-        error
-      );
       throw error;
     }
   } catch (error) {
-    console.error("[Database] Failed to upsert user:", error);
     throw error;
   }
 }
@@ -123,7 +128,6 @@ export async function upsertUser(
 export async function getUser(id: string): Promise<User | undefined> {
   const db = await getDb();
   if (!db) {
-    console.warn("[Database] Cannot get user: database not available");
     return undefined;
   }
 
@@ -143,6 +147,12 @@ export async function getUserByEmail(email: string): Promise<User | undefined> {
     .limit(1);
 
   return result.length > 0 ? result[0] : undefined;
+}
+
+export async function listUsers(): Promise<User[]> {
+  const db = await getDb();
+  if (!db) return [];
+  return await db.select().from(users);
 }
 
 // ============================================================================

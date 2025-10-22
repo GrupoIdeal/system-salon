@@ -30,7 +30,6 @@ const GET_USER_INFO_WITH_JWT_PATH = `/webdev.v1.WebDevAuthPublicService/GetUserI
 
 class OAuthService {
   constructor(private client: ReturnType<typeof axios.create>) {
-    console.log("[OAuth] Initialized with baseURL:", ENV.oAuthServerUrl);
     if (!ENV.oAuthServerUrl) {
       console.error(
         "[OAuth] ERROR: OAUTH_SERVER_URL is not configured! Set OAUTH_SERVER_URL environment variable."
@@ -150,12 +149,7 @@ class SDKServer {
       return new Map<string, string>();
     }
 
-    console.log("[Auth] Raw cookie header:", cookieHeader);
     const parsed = parseCookieHeader(cookieHeader);
-    console.log("[Auth] Parsed cookies:", parsed);
-
-    // Procurar especificamente pelo cookie de sessão
-    console.log("[Auth] Procurando cookie:", COOKIE_NAME);
 
     return new Map(Object.entries(parsed));
   }
@@ -174,7 +168,6 @@ class SDKServer {
     userId: string,
     options: { expiresInMs?: number; name?: string } = {}
   ): Promise<string> {
-    console.log("[Auth] Criando token de sessão para usuário:", userId);
     const token = await this.signSession(
       {
         openId: userId,
@@ -183,7 +176,6 @@ class SDKServer {
       },
       options
     );
-    console.log("[Auth] Token criado:", token.substring(0, 20) + "...");
     return token;
   }
 
@@ -210,21 +202,14 @@ class SDKServer {
     cookieValue: string | undefined | null
   ): Promise<{ openId: string; appId: string; name: string } | null> {
     if (!cookieValue) {
-      console.warn("[Auth] Missing session cookie");
       return null;
     }
 
     try {
-      console.log(
-        "[Auth] Verificando sessão com token:",
-        cookieValue.substring(0, 20) + "..."
-      );
       const secretKey = this.getSessionSecret();
-      console.log("[Auth] Usando chave secreta:", typeof secretKey);
       const { payload } = await jwtVerify(cookieValue, secretKey, {
         algorithms: ["HS256"],
       });
-      console.log("[Auth] JWT verificado com sucesso, payload:", payload);
       const { openId, appId, name } = payload as Record<string, unknown>;
 
       if (
@@ -232,7 +217,6 @@ class SDKServer {
         !isNonEmptyString(appId) ||
         !isNonEmptyString(name)
       ) {
-        console.warn("[Auth] Session payload missing required fields");
         return null;
       }
 
@@ -242,7 +226,6 @@ class SDKServer {
         name,
       };
     } catch (error) {
-      console.warn("[Auth] Session verification failed", String(error));
       return null;
     }
   }
@@ -273,44 +256,26 @@ class SDKServer {
 
   async authenticateRequest(req: Request): Promise<User> {
     // Regular authentication flow
-    console.log("[Auth] Autenticando requisição...");
-    console.log("[Auth] URL da requisição:", req.url);
-    console.log("[Auth] Método HTTP:", req.method);
 
     // Tentar autenticar por cookie
     const cookies = this.parseCookies(req.headers.cookie);
-    console.log("[Auth] Cookies recebidos:", Array.from(cookies.entries()));
     const sessionCookie = cookies.get(COOKIE_NAME);
-    console.log(
-      "[Auth] Cookie de sessão:",
-      sessionCookie ? sessionCookie.substring(0, 20) + "..." : "Ausente"
-    );
 
     // Tentar autenticar por token Bearer no cabeçalho Authorization
     let bearerToken = null;
     const authHeader = req.headers.authorization;
-    console.log(
-      "[Auth] Authorization header:",
-      authHeader ? "Presente" : "Ausente"
-    );
     if (authHeader && authHeader.startsWith("Bearer ")) {
       bearerToken = authHeader.substring(7);
-      console.log(
-        "[Auth] Token Bearer encontrado:",
-        bearerToken.substring(0, 20) + "..."
-      );
     }
 
     // Se não houver token, nem em cookie nem em bearer, falhe imediatamente
     const token = sessionCookie || bearerToken;
     if (!token) {
-      console.log("[Auth] Nenhum token encontrado, rejeitando autenticação");
       throw ForbiddenError("No authentication token provided");
     }
 
     // Verificar token (de cookie ou bearer)
     const session = await this.verifySession(token);
-    console.log("[Auth] Sessão verificada:", session);
 
     if (!session) {
       throw ForbiddenError("Invalid session cookie");
@@ -326,14 +291,13 @@ class SDKServer {
         const userInfo = await this.getUserInfoWithJwt(sessionCookie ?? "");
         await db.upsertUser({
           id: userInfo.openId,
-          name: userInfo.name || null,
-          email: userInfo.email ?? null,
-          loginMethod: userInfo.loginMethod ?? userInfo.platform ?? null,
+          name: userInfo.name ?? undefined,
+          email: userInfo.email ?? undefined,
+          loginMethod: userInfo.loginMethod ?? userInfo.platform ?? undefined,
           lastSignedIn: signedInAt,
         });
         user = await db.getUser(userInfo.openId);
       } catch (error) {
-        console.error("[Auth] Failed to sync user from OAuth:", error);
         throw ForbiddenError("Failed to sync user info");
       }
     }

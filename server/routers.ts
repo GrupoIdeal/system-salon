@@ -37,6 +37,8 @@ import {
   createPasswordReset,
   getPasswordResetByToken,
   markPasswordResetAsUsed,
+  listUsers,
+  upsertUser,
 } from "./db";
 import {
   loginSchema,
@@ -62,8 +64,6 @@ export const appRouter = router({
 
   auth: router({
     me: publicProcedure.query(({ ctx }) => {
-      console.log("[Auth] me endpoint chamado");
-      console.log("[Auth] ctx.user:", ctx.user);
       return ctx.user;
     }),
 
@@ -88,10 +88,14 @@ export const appRouter = router({
         const userId = generateId();
 
         // Create user
-        await getUser(userId); // Ensure DB is available
+        await upsertUser({
+          id: userId,
+          name: input.name,
+          email: input.email,
+          password: hashedPassword,
+          role: input.role || "user",
+        });
 
-        // In production, you would create the user here
-        // For now, we'll return success
         return {
           success: true,
           userId,
@@ -102,11 +106,8 @@ export const appRouter = router({
     login: publicProcedure
       .input(loginSchema)
       .mutation(async ({ input, ctx }) => {
-        console.log("Tentativa de login:", input);
         const user = await getUserByEmail(input.email);
-        console.log("Usuário encontrado:", user);
         if (!user) {
-          console.log("Login falhou: usuário não encontrado");
           throw new TRPCError({
             code: "UNAUTHORIZED",
             message: "Email ou senha inválidos",
@@ -117,16 +118,12 @@ export const appRouter = router({
           input.password,
           user.password
         );
-        console.log("Senha confere:", passwordMatch);
         if (!passwordMatch) {
-          console.log("Login falhou: senha incorreta");
           throw new TRPCError({
             code: "UNAUTHORIZED",
             message: "Email ou senha inválidos",
           });
         }
-
-        console.log("Login bem-sucedido:", user.email);
 
         // Configurar cookie de sessão com JWT
         const sessionToken = await sdk.createSessionToken(user.id, {
@@ -138,17 +135,7 @@ export const appRouter = router({
           maxAge: ONE_YEAR_MS,
         };
 
-        console.log(
-          `Configurando cookie de sessão:
-        - Nome: ${COOKIE_NAME}
-        - Token: ${sessionToken.substring(0, 20)}...
-        - Opções:`,
-          cookieOptions
-        );
-
         ctx.res?.cookie(COOKIE_NAME, sessionToken, cookieOptions);
-
-        console.log("Cookie de sessão JWT configurado");
 
         return {
           success: true,
@@ -816,6 +803,74 @@ export const appRouter = router({
           appointmentId: generateId(),
           message: "Agendamento realizado com sucesso",
         };
+      }),
+  }),
+
+  // ============================================================================
+  // USERS PROCEDURES
+  // ============================================================================
+
+  users: router({
+    list: protectedProcedure.query(async ({ ctx }) => {
+      // Apenas admin pode listar todos os usuários
+      if (!ctx.user || ctx.user.role !== "admin") {
+        throw new TRPCError({ code: "FORBIDDEN", message: "Acesso negado" });
+      }
+      return await listUsers();
+    }),
+    edit: protectedProcedure
+      .input(
+        z.object({
+          id: z.string(),
+          data: z.object({
+            name: z.string().optional(),
+            email: z.string().optional(),
+            role: z.string().optional(),
+            photoUrl: z.string().optional(),
+            phone: z.string().optional(),
+          }),
+        })
+      )
+      .mutation(async ({ ctx, input }) => {
+        // Permite que o próprio usuário edite seus dados OU admin
+        if (
+          !ctx.user ||
+          (ctx.user.role !== "admin" && ctx.user.id !== input.id)
+        ) {
+          throw new TRPCError({ code: "FORBIDDEN", message: "Acesso negado" });
+        }
+        const user = await getUser(input.id);
+        if (!user) {
+          throw new TRPCError({
+            code: "NOT_FOUND",
+            message: "Usuário não encontrado",
+          });
+        }
+        await upsertUser({ id: input.id, ...input.data });
+        return { success: true };
+      }),
+    resetPassword: protectedProcedure
+      .input(z.object({ id: z.string(), password: z.string() }))
+      .mutation(async ({ ctx, input }) => {
+        // Permite que o próprio usuário troque a senha OU admin
+        if (
+          !ctx.user ||
+          (ctx.user.role !== "admin" && ctx.user.id !== input.id)
+        ) {
+          throw new TRPCError({ code: "FORBIDDEN", message: "Acesso negado" });
+        }
+        const user = await getUser(input.id);
+        if (!user) {
+          throw new TRPCError({
+            code: "NOT_FOUND",
+            message: "Usuário não encontrado",
+          });
+        }
+        await upsertUser({
+          id: input.id,
+          password: await bcrypt.hash(input.password, 10),
+        });
+        return { success: true };
       }),
   }),
 });
