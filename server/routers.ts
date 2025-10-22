@@ -7,6 +7,7 @@ import { z } from "zod";
 import bcrypt from "bcrypt";
 import crypto from "crypto";
 import { sdk } from "./_core/sdk";
+import { eq } from "drizzle-orm";
 import {
   getUser,
   getUserByEmail,
@@ -39,6 +40,8 @@ import {
   markPasswordResetAsUsed,
   listUsers,
   upsertUser,
+  getDb,
+  users,
 } from "./db";
 import {
   loginSchema,
@@ -870,6 +873,36 @@ export const appRouter = router({
           id: input.id,
           password: await bcrypt.hash(input.password, 10),
         });
+        return { success: true };
+      }),
+    delete: protectedProcedure
+      .input(z.object({ id: z.string() }))
+      .mutation(async ({ ctx, input }) => {
+        // Apenas admin pode remover usuários
+        if (!ctx.user || ctx.user.role !== "admin") {
+          throw new TRPCError({ code: "FORBIDDEN", message: "Acesso negado" });
+        }
+        const user = await getUser(input.id);
+        if (!user) {
+          throw new TRPCError({
+            code: "NOT_FOUND",
+            message: "Usuário não encontrado",
+          });
+        }
+        // Não permitir que o admin remova a si mesmo
+        if (ctx.user.id === input.id) {
+          throw new TRPCError({
+            code: "FORBIDDEN",
+            message: "Você não pode remover a si mesmo",
+          });
+        }
+        const db = await getDb();
+        if (!db)
+          throw new TRPCError({
+            code: "INTERNAL_SERVER_ERROR",
+            message: "Database não disponível",
+          });
+        await db.delete(users).where(eq(users.id, input.id));
         return { success: true };
       }),
   }),

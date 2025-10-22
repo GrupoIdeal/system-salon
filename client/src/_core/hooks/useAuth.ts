@@ -60,9 +60,12 @@ export function useAuth(options?: UseAuthOptions) {
         JSON.stringify(meQuery.data)
       );
     }
-
+    // Adiciona isAdmin para facilitar checagem
+    const user = meQuery.data
+      ? { ...meQuery.data, isAdmin: meQuery.data.role === "admin" }
+      : null;
     return {
-      user: meQuery.data ?? null,
+      user,
       // Só considera como carregando se tivermos um token e a consulta estiver em andamento
       loading: hasToken && (meQuery.isLoading || logoutMutation.isPending),
       error: meQuery.error ?? logoutMutation.error ?? null,

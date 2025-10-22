@@ -508,3 +508,6 @@ export async function markPasswordResetAsUsed(resetId: string): Promise<void> {
     .set({ used: true })
     .where(eq(passwordResets.id, resetId));
 }
+
+export { users };
+export { eq } from "drizzle-orm";

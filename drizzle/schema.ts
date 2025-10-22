@@ -50,7 +50,14 @@ export const salons = pgTable(
     logo: text("logo"),
     workingHours:
       jsonb("workingHours").$type<
-        Record<string, { start: string; end: string }>
+        Record<
+          string,
+          Array<{
+            start: string;
+            end: string;
+            lunch?: { start: string; end: string };
+          }>
+        >
       >(),
     createdAt: timestamp("createdAt").defaultNow(),
     updatedAt: timestamp("updatedAt").defaultNow(),
@@ -89,7 +96,14 @@ export const specialists = pgTable(
     phone: varchar("phone", { length: 20 }),
     workingDays:
       jsonb("workingDays").$type<
-        Record<string, { start: string; end: string }>
+        Record<
+          string,
+          Array<{
+            start: string;
+            end: string;
+            lunch?: { start: string; end: string };
+          }>
+        >
       >(),
     status: specialistStatusEnum("status").default("active"),
     createdAt: timestamp("createdAt").defaultNow(),

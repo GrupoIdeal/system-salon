@@ -237,17 +237,30 @@ function DashboardLayoutContent({
               })}
               {/* Menu de administração só para admin */}
               {user?.role === "admin" && (
-                <SidebarMenuItem>
-                  <SidebarMenuButton
-                    isActive={location === "/admin"}
-                    onClick={() => setLocation("/admin")}
-                    tooltip="Administração"
-                    className="h-10 transition-all font-normal text-red-600"
-                  >
-                    <Users className="h-4 w-4" />
-                    <span>Administração</span>
-                  </SidebarMenuButton>
-                </SidebarMenuItem>
+                <>
+                  <SidebarMenuItem>
+                    <SidebarMenuButton
+                      isActive={location === "/empresa"}
+                      onClick={() => setLocation("/empresa")}
+                      tooltip="Empresa"
+                      className="h-10 transition-all font-normal text-blue-600"
+                    >
+                      <User className="h-4 w-4" />
+                      <span>Empresa</span>
+                    </SidebarMenuButton>
+                  </SidebarMenuItem>
+                  <SidebarMenuItem>
+                    <SidebarMenuButton
+                      isActive={location === "/admin"}
+                      onClick={() => setLocation("/admin")}
+                      tooltip="Administração"
+                      className="h-10 transition-all font-normal text-red-600"
+                    >
+                      <Users className="h-4 w-4" />
+                      <span>Administração</span>
+                    </SidebarMenuButton>
+                  </SidebarMenuItem>
+                </>
               )}
             </SidebarMenu>
           </SidebarContent>

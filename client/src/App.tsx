@@ -14,10 +14,11 @@ import Profile from "./pages/Profile";
 import RecuperarSenha from "./pages/RecuperarSenha";
 import RedefinirSenha from "./pages/RedefinirSenha";
 import Admin from "./pages/Admin";
+import Empresa from "./pages/Empresa";
 import { useAuth } from "@/_core/hooks/useAuth";
 import { useEffect } from "react";
 
-function ProtectedRoute({ component: Component }: { component: React.ComponentType }) {
+function ProtectedRoute({ component: Component, adminOnly }: { component: React.ComponentType; adminOnly?: boolean }) {
   const { user, loading, isAuthenticated } = useAuth();
   const [, navigate] = useLocation();
 
@@ -26,7 +27,12 @@ function ProtectedRoute({ component: Component }: { component: React.ComponentTy
     if (!isAuthenticated && !loading) {
       navigate("/login");
     }
-  }, [isAuthenticated, loading, navigate]);
+
+    // Se a rota for apenas para admin e o usuário não for admin, redirecione
+    if (adminOnly && user && !user.isAdmin) {
+      navigate("/dashboard");
+    }
+  }, [isAuthenticated, loading, navigate, adminOnly, user]);
 
   if (loading) {
     return <div className="flex items-center justify-center min-h-screen">Carregando...</div>;
@@ -57,6 +63,7 @@ function Router() {
       <Route path="/servicos" component={() => <ProtectedRoute component={Services} />} />
       <Route path="/agendamentos" component={() => <ProtectedRoute component={Appointments} />} />
       <Route path="/perfil" component={() => <ProtectedRoute component={Profile} />} />
+      <Route path="/empresa" component={() => <ProtectedRoute component={Empresa} adminOnly />} />
       <Route path="/404" component={NotFound} />
       {/* Final fallback route */}
       <Route component={NotFound} />
