@@ -15,6 +15,7 @@ import RecuperarSenha from "./pages/RecuperarSenha";
 import RedefinirSenha from "./pages/RedefinirSenha";
 import Admin from "./pages/Admin";
 import Empresa from "./pages/Empresa";
+import Specialists from "./pages/Specialists";
 import { useAuth } from "@/_core/hooks/useAuth";
 import { useEffect } from "react";
 
@@ -64,6 +65,7 @@ function Router() {
       <Route path="/agendamentos" component={() => <ProtectedRoute component={Appointments} />} />
       <Route path="/perfil" component={() => <ProtectedRoute component={Profile} />} />
       <Route path="/empresa" component={() => <ProtectedRoute component={Empresa} adminOnly />} />
+      <Route path="/especialistas" component={() => <ProtectedRoute component={Specialists} />} />
       <Route path="/404" component={NotFound} />
       {/* Final fallback route */}
       <Route component={NotFound} />

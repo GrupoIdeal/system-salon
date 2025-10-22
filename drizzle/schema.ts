@@ -48,17 +48,16 @@ export const salons = pgTable(
     phone: varchar("phone", { length: 20 }),
     email: varchar("email", { length: 320 }),
     logo: text("logo"),
-    workingHours:
-      jsonb("workingHours").$type<
-        Record<
-          string,
-          Array<{
-            start: string;
-            end: string;
-            lunch?: { start: string; end: string };
-          }>
-        >
-      >(),
+    workingHours: jsonb("workingHours").$type<
+      Record<
+        string,
+        Array<{
+          start: string;
+          end: string;
+          lunch?: { start: string; end: string };
+        }>
+      >
+    >(),
     createdAt: timestamp("createdAt").defaultNow(),
     updatedAt: timestamp("updatedAt").defaultNow(),
   },
@@ -94,17 +93,17 @@ export const specialists = pgTable(
     photo: text("photo"),
     email: varchar("email", { length: 320 }),
     phone: varchar("phone", { length: 20 }),
-    workingDays:
-      jsonb("workingDays").$type<
-        Record<
-          string,
-          Array<{
-            start: string;
-            end: string;
-            lunch?: { start: string; end: string };
-          }>
-        >
-      >(),
+    bio: text("bio"),
+    workingDays: jsonb("workingDays").$type<
+      Record<
+        string,
+        Array<{
+          start: string;
+          end: string;
+          lunch?: { start: string; end: string };
+        }>
+      >
+    >(),
     status: specialistStatusEnum("status").default("active"),
     createdAt: timestamp("createdAt").defaultNow(),
     updatedAt: timestamp("updatedAt").defaultNow(),
@@ -130,7 +129,6 @@ export const clients = pgTable(
     name: text("name").notNull(),
     email: varchar("email", { length: 320 }),
     phone: varchar("phone", { length: 20 }),
-    birthDate: timestamp("birthDate"),
     notes: text("notes"),
     createdAt: timestamp("createdAt").defaultNow(),
     updatedAt: timestamp("updatedAt").defaultNow(),

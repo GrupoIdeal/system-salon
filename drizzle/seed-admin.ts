@@ -8,7 +8,7 @@ const client = postgres(process.env.DATABASE_URL!);
 const db = drizzle(client);
 
 async function main() {
-  const passwordHash = await bcrypt.hash("adm123123", 10);
+  const passwordHash = await bcrypt.hash("123123", 10);
 
   await db.insert(users).values({
     id: nanoid(),

@@ -36,6 +36,20 @@
       "when": 1761141652113,
       "tag": "0004_grey_swarm",
       "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "7",
+      "when": 1761161765360,
+      "tag": "0005_slim_bishop",
+      "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "7",
+      "when": 1761163323888,
+      "tag": "0006_short_harrier",
+      "breakpoints": true
     }
   ]
 }

@@ -59,6 +59,7 @@ export const specialistSchema = z.object({
   photo: z.string().optional(),
   email: z.string().email().optional(),
   phone: z.string().optional(),
+  bio: z.string().optional(),
   workingDays: z
     .record(
       z.string(),

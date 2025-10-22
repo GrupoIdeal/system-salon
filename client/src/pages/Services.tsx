@@ -63,7 +63,7 @@ export default function Services() {
     duration: "60",
     price: "",
     status: "active",
-    specialistId: "",
+    specialistId: "none",
   });
 
   const servicesQuery = trpc.services.list.useQuery();
@@ -78,7 +78,7 @@ export default function Services() {
         duration: "60",
         price: "",
         status: "active",
-        specialistId: "",
+        specialistId: "none",
       });
       setIsDialogOpen(false);
     },
@@ -93,7 +93,7 @@ export default function Services() {
         duration: "60",
         price: "",
         status: "active",
-        specialistId: "",
+        specialistId: "none",
       });
       setEditingId(null);
       setIsDialogOpen(false);
@@ -136,7 +136,7 @@ export default function Services() {
       duration: service.duration.toString(),
       price: service.price,
       status: service.status ?? "active",
-      specialistId: service.specialistId ?? "",
+      specialistId: service.specialistId ? service.specialistId : "none",
     });
     setEditingId(service.id);
     setIsDialogOpen(true);
@@ -167,7 +167,7 @@ export default function Services() {
                     duration: "60",
                     price: "",
                     status: "active",
-                    specialistId: "",
+                    specialistId: "none",
                   });
                 }}
               >
@@ -267,7 +267,7 @@ export default function Services() {
                     onValueChange={(value) =>
                       setFormData({
                         ...formData,
-                        specialistId: value,
+                        specialistId: value === "none" ? "" : value,
                       })
                     }
                   >
@@ -275,7 +275,7 @@ export default function Services() {
                       <SelectValue placeholder="Selecione um especialista (opcional)" />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="">Nenhum especialista</SelectItem>
+                      <SelectItem value="none">Nenhum especialista</SelectItem>
                       {specialistsQuery.data?.map((specialist) => (
                         <SelectItem key={specialist.id} value={specialist.id}>
                           {specialist.name}

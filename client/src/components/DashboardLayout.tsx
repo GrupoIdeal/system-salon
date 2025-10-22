@@ -32,6 +32,7 @@ const menuItems = [
   { icon: LayoutDashboard, label: "Dashboard", path: "/dashboard" },
   { icon: Users, label: "Clientes", path: "/clientes" },
   { icon: Scissors, label: "Serviços", path: "/servicos" },
+  { icon: User, label: "Especialistas", path: "/especialistas" },
   { icon: Calendar, label: "Agendamentos", path: "/agendamentos" },
   { icon: User, label: "Perfil", path: "/perfil" },
   // Adiciona menu de administração apenas para admin

@@ -1,4 +1,4 @@
-CREATE TYPE "public"."role" AS ENUM('user', 'admin');--> statement-breakpoint
+-- CREATE TYPE "public"."role" AS ENUM('user', 'admin');--> statement-breakpoint
 CREATE TABLE "appointments" (
 	"id" varchar(64) PRIMARY KEY NOT NULL,
 	"salonId" varchar(64) NOT NULL,

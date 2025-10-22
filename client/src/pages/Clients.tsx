@@ -34,11 +34,10 @@ export default function Clients() {
   const [isDialogOpen, setIsDialogOpen] = useState<boolean>(false);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [deleteId, setDeleteId] = useState<string | null>(null);
-  const [formData, setFormData] = useState<{ name: string; email: string; phone: string; birthDate: string; notes: string; }>({
+  const [formData, setFormData] = useState<{ name: string; email: string; phone: string; notes: string; }>({
     name: "",
     email: "",
     phone: "",
-    birthDate: "",
     notes: "",
   });
 
@@ -49,7 +48,7 @@ export default function Clients() {
   const createMutation = trpc.clients.create.useMutation({
     onSuccess: () => {
       clientsQuery.refetch();
-      setFormData({ name: "", email: "", phone: "" });
+      setFormData({ name: "", email: "", phone: "", notes: "" });
       setIsDialogOpen(false);
     },
   });
@@ -57,7 +56,7 @@ export default function Clients() {
   const updateMutation = trpc.clients.update.useMutation({
     onSuccess: () => {
       clientsQuery.refetch();
-      setFormData({ name: "", email: "", phone: "" });
+      setFormData({ name: "", email: "", phone: "", notes: "" });
       setEditingId(null);
       setIsDialogOpen(false);
     },
@@ -74,22 +73,25 @@ export default function Clients() {
     e.preventDefault();
     if (!formData.name) return;
 
+    const dataToSend = {
+      ...formData,
+    };
+
     if (editingId) {
       updateMutation.mutate({
         id: editingId,
-        data: formData,
+        data: dataToSend,
       });
     } else {
-      createMutation.mutate(formData);
+      createMutation.mutate(dataToSend);
     }
   };
 
-  const handleEdit = (client: { id: string; name: string; email?: string; phone?: string; birthDate?: string; notes?: string; }) => {
+  const handleEdit = (client: { id: string; name: string; email?: string; phone?: string; notes?: string; }) => {
     setFormData({
       name: client.name,
       email: client.email || "",
       phone: client.phone || "",
-      birthDate: client.birthDate ? new Date(client.birthDate).toISOString().split('T')[0] : "",
       notes: client.notes || "",
     });
     setEditingId(client.id);
@@ -115,7 +117,7 @@ export default function Clients() {
               <Button
                 onClick={() => {
                   setEditingId(null);
-                  setFormData({ name: "", email: "", phone: "" });
+                  setFormData({ name: "", email: "", phone: "", notes: "" });
                 }}
               >
                 <Plus className="mr-2 h-4 w-4" />
@@ -167,17 +169,6 @@ export default function Clients() {
                       setFormData({ ...formData, phone: e.target.value })
                     }
                     placeholder="(11) 99999-9999"
-                  />
-                </div>
-                <div>
-                  <label htmlFor="birthDate" className="text-sm font-medium">Data de Nascimento</label>
-                  <Input
-                    id="birthDate"
-                    type="date"
-                    value={formData.birthDate}
-                    onChange={(e) =>
-                      setFormData({ ...formData, birthDate: e.target.value })
-                    }
                   />
                 </div>
                 <div>
@@ -234,7 +225,7 @@ export default function Clients() {
               </div>
             ) : clientsQuery.data && clientsQuery.data.length > 0 ? (
               <div className="space-y-2">
-                {clientsQuery.data.map((client: { id: string; name: string; email?: string; phone?: string; birthDate?: string; notes?: string; }) => (
+                {clientsQuery.data.map((client: { id: string; name: string; email?: string; phone?: string; notes?: string; }) => (
                   <div
                     key={client.id}
                     className="flex items-center justify-between p-3 border rounded-lg hover:bg-slate-50"
@@ -244,13 +235,8 @@ export default function Clients() {
                       <p className="text-sm text-muted-foreground">
                         {client.email || "Sem email"} • {client.phone || "Sem telefone"}
                       </p>
-                      {(client.birthDate || client.notes) && (
+                      {(client.notes) && (
                         <div className="mt-1 flex flex-wrap gap-2 text-xs text-muted-foreground">
-                          {client.birthDate && (
-                            <span className="bg-muted px-2 py-0.5 rounded-md">
-                              Nasc: {new Date(client.birthDate).toLocaleDateString("pt-BR")}
-                            </span>
-                          )}
                           {client.notes && (
                             <span className="bg-muted px-2 py-0.5 rounded-md truncate max-w-[200px]">
                               {client.notes}
