@@ -33,9 +33,11 @@ COPY --from=builder /app/package.json /app/pnpm-lock.yaml ./
 COPY --from=builder /app/patches ./patches
 COPY --from=builder /app/dist ./dist
 COPY --from=builder /app/drizzle ./drizzle
+COPY --from=builder /app/vite.config.ts ./
 
-# Instalando apenas as dependências de produção
-RUN pnpm install --prod --frozen-lockfile
+# Instalando dependências de produção mais as necessárias para execução
+RUN pnpm install --prod --frozen-lockfile && \
+    pnpm add @tailwindcss/vite vite vite-plugin-manus-runtime @vitejs/plugin-react
 
 # Expondo a porta (ajuste conforme necessário)
 EXPOSE 3000
@@ -44,5 +46,8 @@ EXPOSE 3000
 ENV NODE_ENV=production
 ENV PORT=3000
 
-# Comando para iniciar a aplicação
-CMD ["node", "dist/index.js"]
+# Criar script de verificação de dependências
+RUN echo '#!/bin/sh\nnode -e "console.log(\`Verificando dependências...\`); Promise.all([import(\"vite\"), import(\"@tailwindcss/vite\")]).then(() => { console.log(\`Dependências verificadas com sucesso!\`); process.exit(0); }).catch(err => { console.error(\`Erro ao carregar dependências:\`, err); process.exit(1); });" > /app/check-deps.js'
+
+# Comando para verificar dependências e iniciar a aplicação
+CMD node /app/check-deps.js && node dist/index.js
