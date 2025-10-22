@@ -23,7 +23,7 @@ Este repositório contém um sistema de agendamento para salões de beleza com f
 
 As seguintes variáveis de ambiente são necessárias:
 
-```
+```bash
 DATABASE_URL=postgres://postgres:postgres@db:5432/salon
 POSTGRES_PASSWORD=sua_senha_segura
 POSTGRES_USER=postgres
