@@ -3,48 +3,61 @@ import fs from "fs";
 import { type Server } from "http";
 import { nanoid } from "nanoid";
 import path from "path";
-import { createServer as createViteServer } from "vite";
-import viteConfig from "../../vite.config";
+// Remova a importação estática do vite
+// Importação dinâmica será usada apenas quando necessário
 
 export async function setupVite(app: Express, server: Server) {
-  const serverOptions = {
-    middlewareMode: true,
-    hmr: { server },
-    allowedHosts: true as const,
-  };
+  try {
+    // Importação dinâmica do Vite - só ocorre em desenvolvimento
+    const { createServer: createViteServer } = await import("vite");
+    const viteConfig = await import("../../vite.config");
 
-  const vite = await createViteServer({
-    ...viteConfig,
-    configFile: false,
-    server: serverOptions,
-    appType: "custom",
-  });
+    const serverOptions = {
+      middlewareMode: true,
+      hmr: { server },
+      allowedHosts: true as const,
+    };
 
-  app.use(vite.middlewares);
-  app.use("*", async (req, res, next) => {
-    const url = req.originalUrl;
+    const vite = await createViteServer({
+      ...viteConfig.default,
+      configFile: false,
+      server: serverOptions,
+      appType: "custom",
+    });
 
-    try {
-      const clientTemplate = path.resolve(
-        import.meta.dirname,
-        "../..",
-        "client",
-        "index.html"
-      );
+    app.use(vite.middlewares);
+    app.use("*", async (req, res, next) => {
+      const url = req.originalUrl;
 
-      // always reload the index.html file from disk incase it changes
-      let template = await fs.promises.readFile(clientTemplate, "utf-8");
-      template = template.replace(
-        `src="/src/main.tsx"`,
-        `src="/src/main.tsx?v=${nanoid()}"`
-      );
-      const page = await vite.transformIndexHtml(url, template);
-      res.status(200).set({ "Content-Type": "text/html" }).end(page);
-    } catch (e) {
-      vite.ssrFixStacktrace(e as Error);
-      next(e);
-    }
-  });
+      try {
+        const clientTemplate = path.resolve(
+          import.meta.dirname,
+          "../..",
+          "client",
+          "index.html"
+        );
+
+        // always reload the index.html file from disk incase it changes
+        let template = await fs.promises.readFile(clientTemplate, "utf-8");
+        template = template.replace(
+          `src="/src/main.tsx"`,
+          `src="/src/main.tsx?v=${nanoid()}"`
+        );
+        const page = await vite.transformIndexHtml(url, template);
+        res.status(200).set({ "Content-Type": "text/html" }).end(page);
+      } catch (e) {
+        vite.ssrFixStacktrace(e as Error);
+        next(e);
+      }
+    });
+  } catch (error) {
+    console.error(
+      "Falha ao configurar o Vite em modo de desenvolvimento:",
+      error
+    );
+    // Em caso de erro na importação do Vite, serve os arquivos estáticos como fallback
+    serveStatic(app);
+  }
 }
 
 export function serveStatic(app: Express) {
