@@ -176,12 +176,12 @@ export default function Specialists() {
                                     </label>
                                 </div>
                             </div>
-                            <CardTitle className="text-2xl font-bold mt-2">
+                            <CardTitle className="text-2xl text-gray-600 font-bold mt-2">
                                 {isEditing ? "Editar Especialista" : "Novo Especialista"}
                             </CardTitle>
                         </CardHeader>
                         <CardContent className="pt-0">
-                            <form onSubmit={handleSubmit} className="space-y-4 mb-8">
+                            <form onSubmit={handleSubmit} className="space-y-4 mb-8 ">
                                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                     <div>
                                         <label htmlFor={nameId} className="text-sm font-medium text-slate-700">Nome</label>
@@ -219,50 +219,50 @@ export default function Specialists() {
                     </Card>
                     {/* Listagem dos especialistas */}
                     <div className="flex-1">
-                        <h2 className="text-xl font-bold mb-6 text-primary">Especialistas cadastrados</h2>
+                        <h2 className="text-xl font-bold mb-6 text-gray-600">Especialistas cadastrados</h2>
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                             {specialistsQuery.isLoading && <div>Carregando...</div>}
                             {specialistsQuery.data?.length === 0 && <div className="col-span-full text-center text-muted-foreground">Nenhum especialista cadastrado.</div>}
                             {specialistsQuery.data?.map((spec) => (
                                 <Card key={spec.id} className="flex items-center gap-6 p-6 shadow rounded-xl border border-muted bg-white">
-                                    <Avatar className="h-24 w-24 border-2 border-primary shadow-md">
+                                    <Avatar className="h-24 w-24 border-2 border-white shadow-lg">
                                         {spec.photo ? (
                                             <AvatarImage src={spec.photo} alt={spec.name} className="object-cover" />
                                         ) : (
-                                            <AvatarFallback><User2 className="h-12 w-12 text-muted-foreground" /></AvatarFallback>
+                                            <AvatarFallback><User2 className="h-12 w-12 text-muted-foreground " /></AvatarFallback>
                                         )}
                                     </Avatar>
                                     <div className="flex-1">
-                                        <div className="font-bold text-lg text-primary mb-1">{spec.name}</div>
+                                        <div className="font-bold text-lg text-gray-600 mb-1">{spec.name}</div>
                                         <div className="text-muted-foreground text-sm mb-1">{spec.specialty}</div>
                                         <div className="text-muted-foreground text-sm">{spec.email}</div>
                                         <div className="text-muted-foreground text-sm mb-2">{spec.phone}</div>
                                         {spec.bio && <div className="text-xs text-muted-foreground italic mt-2">{spec.bio}</div>}
                                     </div>
-                                    <div className="flex flex-row gap-2">
+                                    <div className="flex flex-row gap-2 mt-4">
                                         <Button
-                                            variant="ghost"
-                                            size="icon"
-                                            className="h-8 w-8 text-blue-600 hover:text-blue-800 hover:bg-blue-100"
+                                            variant="outline"
+                                            className="flex items-center gap-2 px-4 py-2 text-blue-700 border-blue-300 hover:bg-blue-50 hover:text-blue-900 font-medium rounded-lg shadow-sm"
                                             onClick={() => handleEditSpecialist({
                                                 id: spec.id,
                                                 name: spec.name,
-                                                email: spec.email ?? undefined,
-                                                phone: spec.phone ?? undefined,
-                                                photo: spec.photo ?? undefined,
-                                                specialty: spec.specialty ?? undefined,
-                                                bio: spec.bio ?? undefined,
+                                                email: spec.email,
+                                                phone: spec.phone,
+                                                photo: spec.photo,
+                                                specialty: spec.specialty,
+                                                bio: spec.bio,
                                             })}
                                         >
-                                            <Edit size={18} />
+                                            <Edit size={18} className="mr-1" />
+                                            Editar
                                         </Button>
                                         <Button
-                                            variant="ghost"
-                                            size="icon"
-                                            className="h-8 w-8 text-red-600 hover:text-red-800 hover:bg-red-100"
+                                            variant="outline"
+                                            className="flex items-center gap-2 px-4 py-2 text-red-700 border-red-300 hover:bg-red-50 hover:text-red-900 font-medium rounded-lg shadow-sm"
                                             onClick={() => confirmDelete(spec.id)}
                                         >
-                                            <Trash2 size={18} />
+                                            <Trash2 size={18} className="mr-1" />
+                                            Excluir
                                         </Button>
                                     </div>
                                 </Card>

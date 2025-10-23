@@ -111,9 +111,7 @@ export default function Empresa() {
                     <h1 className="text-3xl font-bold tracking-tight">Empresa</h1>
                     <p className="text-muted-foreground">Gerencie os dados e horários do salão</p>
                 </div>
-            </div>
-            <div className="w-full mx-auto mt-8">
-                <div className="flex justify-end mb-4">
+                <div>
                     {editMode ? (
                         <Button type="button" className="px-6" onClick={handleSubmit}>
                             Salvar Alterações
@@ -124,6 +122,8 @@ export default function Empresa() {
                         </Button>
                     )}
                 </div>
+            </div>
+            <div className="w-full mx-auto mt-8">
                 <Card className="w-full mb-8">
                     <CardHeader>
                         <CardTitle>Dados da Empresa</CardTitle>
