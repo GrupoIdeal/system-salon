@@ -1,3 +1,4 @@
+// biome-ignore assist/source/organizeImports: false positive
 import { useAuth } from "@/_core/hooks/useAuth";
 import {
   Sidebar,
@@ -15,7 +16,7 @@ import {
 import { APP_LOGO, APP_TITLE, getLoginUrl } from "@/const";
 import { useIsMobile } from "@/hooks/useMobile";
 import { Calendar, LayoutDashboard, LogOut, PanelLeft, Scissors, User, Users } from "lucide-react";
-import { CSSProperties, useEffect, useRef, useState } from "react";
+import { type CSSProperties, useEffect, useRef, useState } from "react";
 import { useLocation } from "wouter";
 import { DashboardLayoutSkeleton } from './DashboardLayoutSkeleton';
 import { Button } from "./ui/button";
@@ -256,7 +257,10 @@ function DashboardLayoutContent({
 
           <SidebarFooter className="flex items-center p-4 border-t">
             <Button
-              onClick={logout}
+              onClick={async () => {
+                await logout();
+                setLocation("/login");
+              }}
               className="w-full flex items-center justify-center gap-2 text-destructive font-semibold"
               variant="outline"
             >
