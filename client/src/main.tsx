@@ -5,7 +5,7 @@ import { httpBatchLink, TRPCClientError } from "@trpc/client";
 import { createRoot } from "react-dom/client";
 import superjson from "superjson";
 import App from "./App";
-import { getLoginUrl } from "./const";
+import { getLoginUrl, APP_TITLE } from "./const";
 import { getAuthToken } from "@/lib/auth-utils";
 import "./index.css";
 
@@ -21,6 +21,11 @@ const redirectToLoginIfUnauthorized = (error: unknown) => {
 
   window.location.href = getLoginUrl();
 };
+
+// Atualiza o título da página dinamicamente com o valor da variável de ambiente
+if (typeof document !== "undefined" && APP_TITLE) {
+  document.title = APP_TITLE;
+}
 
 // Log de estado inicial da autenticação
 console.log("[Auth] Estado inicial:", {
@@ -59,7 +64,7 @@ const trpcClient = trpc.createClient({
         console.log("[TRPC] Token de autenticação disponível:", authToken ? "Sim" : "Não");
 
         // Adicionar o token ao header de autorização se disponível
-        const headers = new Headers((init?.headers as any) || {});
+        const headers = new Headers((init?.headers as Record<string, string>) || {});
         if (authToken) {
           headers.set("Authorization", `Bearer ${authToken}`);
         }
@@ -74,7 +79,7 @@ const trpcClient = trpc.createClient({
   ],
 });
 
-createRoot(document.getElementById("root")!).render(
+createRoot(document.getElementById("root") as HTMLElement).render(
   <trpc.Provider client={trpcClient} queryClient={queryClient}>
     <QueryClientProvider client={queryClient}>
       <App />
