@@ -1,4 +1,4 @@
-import { eq, and, gte, lte, like, desc, asc } from "drizzle-orm";
+import { eq, and, gte, lte, like, asc } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/postgres-js";
 import postgres from "postgres";
 import {
@@ -9,14 +9,18 @@ import {
   services,
   appointments,
   passwordResets,
-  type InsertUser,
-  type User,
-  type Salon,
-  type Specialist,
-  type Client,
-  type Service,
-  type Appointment,
-  type PasswordReset,
+  InsertUser,
+  InsertSpecialist,
+  InsertClient,
+  InsertService,
+  InsertAppointment,
+  InsertPasswordReset,
+  User,
+  Specialist,
+  Client,
+  Service,
+  Appointment,
+  PasswordReset,
 } from "../drizzle/schema";
 import { ENV } from "./_core/env";
 
@@ -27,7 +31,7 @@ export async function getDb() {
     try {
       const client = postgres(process.env.DATABASE_URL);
       _db = drizzle(client);
-    } catch (error) {
+    } catch {
       _db = null;
     }
   }
@@ -51,11 +55,18 @@ export async function upsertUser(
   }
 
   try {
-    const values: any = {
+    // Monta objeto do tipo InsertUser explicitamente
+    const values: InsertUser = {
       id: user.id,
       name: user.name || "",
       email: user.email || "",
       password: user.password || "",
+      role: user.role ?? (user.id === ENV.ownerId ? "admin" : "user"),
+      lastSignedIn: user.lastSignedIn,
+      photoUrl: user.photoUrl ?? null,
+      phone: user.phone,
+      createdAt: undefined,
+      updatedAt: undefined,
     };
     const updateSet: Record<string, unknown> = {};
 
@@ -66,7 +77,7 @@ export async function upsertUser(
       const value = user[field];
       if (value === undefined) return;
       const normalized = value ?? null;
-      (values as any)[field] = normalized;
+      values[field] = normalized;
       updateSet[field] = normalized;
     };
 
@@ -117,11 +128,11 @@ export async function upsertUser(
       if (result.length === 0) {
         await db.insert(users).values(values);
       }
-    } catch (error) {
-      throw error;
+    } catch {
+      throw new Error("Failed to upsert user");
     }
-  } catch (error) {
-    throw error;
+  } catch {
+    throw new Error("Failed to upsert user");
   }
 }
 
@@ -230,12 +241,13 @@ export async function getSpecialistById(
   return result.length > 0 ? result[0] : undefined;
 }
 
-export async function createSpecialist(data: any): Promise<Specialist> {
+export async function createSpecialist(
+  data: InsertSpecialist
+): Promise<Specialist> {
   const db = await getDb();
-  if (!db) throw new Error("Database not available");
-
+  if (db == null) throw new Error("Database not available");
   await db.insert(specialists).values(data);
-  return data;
+  return data as Specialist;
 }
 
 export async function updateSpecialist(
@@ -298,12 +310,11 @@ export async function getClientById(
   return result.length > 0 ? result[0] : undefined;
 }
 
-export async function createClient(data: any): Promise<Client> {
+export async function createClient(data: InsertClient): Promise<Client> {
   const db = await getDb();
-  if (!db) throw new Error("Database not available");
-
+  if (db == null) throw new Error("Database not available");
   await db.insert(clients).values(data);
-  return data;
+  return data as Client;
 }
 
 export async function updateClient(
@@ -351,12 +362,11 @@ export async function getServiceById(
   return result.length > 0 ? result[0] : undefined;
 }
 
-export async function createService(data: any): Promise<Service> {
+export async function createService(data: InsertService): Promise<Service> {
   const db = await getDb();
-  if (!db) throw new Error("Database not available");
-
+  if (db == null) throw new Error("Database not available");
   await db.insert(services).values(data);
-  return data;
+  return data as Service;
 }
 
 export async function updateService(
@@ -432,7 +442,7 @@ export async function getAppointmentsBySpecialistAndDate(
   const endOfDay = new Date(date);
   endOfDay.setHours(23, 59, 59, 999);
 
-  return (await db
+  return await db
     .select()
     .from(appointments)
     .where(
@@ -441,15 +451,16 @@ export async function getAppointmentsBySpecialistAndDate(
         gte(appointments.appointmentDate, startOfDay),
         lte(appointments.appointmentDate, endOfDay)
       )
-    )) as any;
+    );
 }
 
-export async function createAppointment(data: any): Promise<Appointment> {
+export async function createAppointment(
+  data: InsertAppointment
+): Promise<Appointment> {
   const db = await getDb();
-  if (!db) throw new Error("Database not available");
-
+  if (db == null) throw new Error("Database not available");
   await db.insert(appointments).values(data);
-  return data;
+  return data as Appointment;
 }
 
 export async function updateAppointment(
@@ -476,12 +487,13 @@ export async function deleteAppointment(appointmentId: string): Promise<void> {
 // PASSWORD RESET QUERIES
 // ============================================================================
 
-export async function createPasswordReset(data: any): Promise<PasswordReset> {
+export async function createPasswordReset(
+  data: InsertPasswordReset
+): Promise<PasswordReset> {
   const db = await getDb();
-  if (!db) throw new Error("Database not available");
-
+  if (db == null) throw new Error("Database not available");
   await db.insert(passwordResets).values(data);
-  return data;
+  return data as PasswordReset;
 }
 
 export async function getPasswordResetByToken(

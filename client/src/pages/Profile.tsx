@@ -86,7 +86,7 @@ export default function Profile() {
       }
       setProfileImage(data.secure_url);
       handleImageSave(data.secure_url);
-    } catch (err) {
+    } catch {
       setError("Erro ao enviar imagem");
     } finally {
       setUploading(false);

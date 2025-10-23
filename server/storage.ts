@@ -1,7 +1,7 @@
 // Preconfigured storage helpers for Manus WebDev templates
 // Uses the Biz-provided storage proxy (Authorization: Bearer <token>)
 
-import { ENV } from './_core/env';
+import { ENV } from "./_core/env";
 
 type StorageConfig = { baseUrl: string; apiKey: string };
 
@@ -50,14 +50,14 @@ function normalizeKey(relKey: string): string {
 }
 
 function toFormData(
-  data: Buffer | Uint8Array | string,
+  data: Uint8Array | string,
   contentType: string,
   fileName: string
 ): FormData {
   const blob =
     typeof data === "string"
       ? new Blob([data], { type: contentType })
-      : new Blob([data as any], { type: contentType });
+      : new Blob([data as Uint8Array], { type: contentType });
   const form = new FormData();
   form.append("file", blob, fileName || "file");
   return form;
@@ -69,7 +69,7 @@ function buildAuthHeaders(apiKey: string): HeadersInit {
 
 export async function storagePut(
   relKey: string,
-  data: Buffer | Uint8Array | string,
+  data: Uint8Array | string,
   contentType = "application/octet-stream"
 ): Promise<{ key: string; url: string }> {
   const { baseUrl, apiKey } = getStorageConfig();
@@ -95,7 +95,7 @@ export async function storagePut(
 export async function storageGet(
   relKey: string,
   _expiresIn = 300
-): Promise<{ key: string; url: string; }> {
+): Promise<{ key: string; url: string }> {
   const { baseUrl, apiKey } = getStorageConfig();
   const key = normalizeKey(relKey);
   return {

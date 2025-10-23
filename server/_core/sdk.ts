@@ -30,11 +30,7 @@ const GET_USER_INFO_WITH_JWT_PATH = `/webdev.v1.WebDevAuthPublicService/GetUserI
 
 class OAuthService {
   constructor(private client: ReturnType<typeof axios.create>) {
-    if (!ENV.oAuthServerUrl) {
-      console.error(
-        "[OAuth] ERROR: OAUTH_SERVER_URL is not configured! Set OAUTH_SERVER_URL environment variable."
-      );
-    }
+    // Removido log de erro para OAUTH_SERVER_URL não configurado
   }
 
   private decodeState(state: string): string {
@@ -134,14 +130,14 @@ class SDKServer {
       accessToken,
     } as ExchangeTokenResponse);
     const loginMethod = this.deriveLoginMethod(
-      (data as any)?.platforms,
-      (data as any)?.platform ?? data.platform ?? null
+      Array.isArray(data.platforms) ? data.platforms : [],
+      typeof data.platform === "string" ? data.platform : null
     );
     return {
-      ...(data as any),
+      ...data,
       platform: loginMethod,
       loginMethod,
-    } as GetUserInfoResponse;
+    };
   }
 
   private parseCookies(cookieHeader: string | undefined) {
@@ -225,7 +221,7 @@ class SDKServer {
         appId,
         name,
       };
-    } catch (error) {
+    } catch {
       return null;
     }
   }
@@ -244,14 +240,14 @@ class SDKServer {
     );
 
     const loginMethod = this.deriveLoginMethod(
-      (data as any)?.platforms,
-      (data as any)?.platform ?? data.platform ?? null
+      Array.isArray(data.platforms) ? data.platforms : [],
+      typeof data.platform === "string" ? data.platform : null
     );
     return {
-      ...(data as any),
+      ...data,
       platform: loginMethod,
       loginMethod,
-    } as GetUserInfoWithJwtResponse;
+    };
   }
 
   async authenticateRequest(req: Request): Promise<User> {
@@ -293,11 +289,11 @@ class SDKServer {
           id: userInfo.openId,
           name: userInfo.name ?? undefined,
           email: userInfo.email ?? undefined,
-          loginMethod: userInfo.loginMethod ?? userInfo.platform ?? undefined,
           lastSignedIn: signedInAt,
-        });
+          // Adicione outros campos do tipo InsertUser se necessário, sempre validando o tipo
+        } as import("../../drizzle/schema").InsertUser & { id: string });
         user = await db.getUser(userInfo.openId);
-      } catch (error) {
+      } catch {
         throw ForbiddenError("Failed to sync user info");
       }
     }
