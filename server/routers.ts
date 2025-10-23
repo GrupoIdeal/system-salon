@@ -1,3 +1,4 @@
+// biome-ignore assist/source/organizeImports: false positive
 import { TRPCError } from "@trpc/server";
 import { publicProcedure, router, protectedProcedure } from "./_core/trpc";
 import { systemRouter } from "./_core/systemRouter";
@@ -5,6 +6,7 @@ import { COOKIE_NAME, ONE_YEAR_MS } from "@shared/const";
 import { getSessionCookieOptions } from "./_core/cookies";
 import { z } from "zod";
 import bcrypt from "bcrypt";
+// biome-ignore lint/style/useNodejsImportProtocol: false positive
 import crypto from "crypto";
 import { sdk } from "./_core/sdk";
 import { eq } from "drizzle-orm";
@@ -38,6 +40,7 @@ import {
   upsertUser,
   getDb,
   users,
+  getClientsBySalonId,
 } from "./db";
 import {
   loginSchema,
