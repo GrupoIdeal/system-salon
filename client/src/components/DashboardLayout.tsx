@@ -27,8 +27,6 @@ const menuItems = [
   { icon: Scissors, label: "Serviços", path: "/servicos" },
   { icon: User, label: "Especialistas", path: "/especialistas" },
   { icon: Calendar, label: "Agendamentos", path: "/agendamentos" },
-  { icon: User, label: "Perfil", path: "/perfil" },
-  // Adiciona menu de administração apenas para admin
 ];
 
 const SIDEBAR_WIDTH_KEY = "sidebar-width";
@@ -237,17 +235,6 @@ function DashboardLayoutContent({
                     >
                       <User className="h-6 w-6" />
                       <span>Empresa</span>
-                    </SidebarMenuButton>
-                  </SidebarMenuItem>
-                  <SidebarMenuItem>
-                    <SidebarMenuButton
-                      isActive={location === "/admin"}
-                      onClick={() => setLocation("/admin")}
-                      tooltip="Administração"
-                      className="h-12 transition-all font-normal"
-                    >
-                      <Users className="h-6 w-6" />
-                      <span>Administração</span>
                     </SidebarMenuButton>
                   </SidebarMenuItem>
                 </>

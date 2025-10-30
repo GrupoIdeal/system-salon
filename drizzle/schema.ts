@@ -223,6 +223,13 @@ export const appointments = pgTable(
 export type Appointment = typeof appointments.$inferSelect;
 export type InsertAppointment = typeof appointments.$inferInsert;
 
+// Type for appointment with full relations
+export type AppointmentWithDetails = Appointment & {
+  client: Client;
+  service: Service;
+  specialist: Specialist;
+};
+
 /**
  * Password reset token table
  */

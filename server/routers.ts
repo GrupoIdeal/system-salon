@@ -14,6 +14,7 @@ import {
   getUser,
   getUserByEmail,
   getSalonByUserId,
+  getSpecialistsBySalonId,
   getSpecialistById,
   createSpecialist,
   updateSpecialist,
@@ -27,9 +28,8 @@ import {
   createService,
   updateService,
   deleteService,
-  getAppointmentsBySalonId,
+  getAppointmentsWithDetailsBySalonId,
   getAppointmentById,
-  getAppointmentsBySpecialistAndDate,
   createAppointment,
   updateAppointment,
   deleteAppointment,
@@ -41,7 +41,39 @@ import {
   getDb,
   users,
   getClientsBySalonId,
+  getAvailableTimeSlots,
+  validateAppointmentSlot,
+  timeToMinutes,
 } from "./db";
+import {
+  scheduleAppointmentNotifications,
+  sendNotification,
+  defaultTemplates,
+} from "./notifications";
+import {
+  addToWaitlist,
+  removeFromWaitlist,
+  getActiveWaitlistEntries,
+  checkWaitlistForSlot,
+  confirmWaitlistSlot,
+  getWaitlistStats,
+} from "./waitlist";
+import {
+  generateAppointmentStats,
+  generateSpecialistPerformance,
+  generateServicePopularity,
+  generateClientAnalytics,
+  generateDailyReport,
+  exportToCSV,
+} from "./reports";
+import {
+  updateSpecialistSchedule,
+  generateSpecialistTimeSlots,
+  getSpecialistScheduleForDisplay,
+  addCustomUnavailableDate,
+  removeCustomUnavailableDate,
+  updateWorkingHoursForDay,
+} from "./specialist-schedule";
 import {
   loginSchema,
   registerSchema,
@@ -263,8 +295,7 @@ export const appRouter = router({
           message: "Salão não encontrado",
         });
       }
-      // Removido getSpecialistsBySalonId, pois não está importado nem implementado
-      return [];
+      return await getSpecialistsBySalonId(salon.id);
     }),
 
     get: protectedProcedure
@@ -630,7 +661,7 @@ export const appRouter = router({
           });
         }
 
-        return await getAppointmentsBySalonId(
+        return await getAppointmentsWithDetailsBySalonId(
           salon.id,
           _input.startDate,
           _input.endDate
@@ -695,30 +726,54 @@ export const appRouter = router({
           });
         }
 
-        // Check for conflicts
-        const existingAppointments = await getAppointmentsBySpecialistAndDate(
+        // Validação robusta do agendamento
+        const validation = await validateAppointmentSlot(
           _input.specialistId,
-          _input.appointmentDate
+          _input.serviceId,
+          _input.appointmentDate,
+          _input.appointmentTime
         );
 
-        const hasConflict = existingAppointments.some(
-          apt =>
-            apt.appointmentTime === _input.appointmentTime &&
-            apt.status !== "cancelled"
-        );
-
-        if (hasConflict) {
+        if (!validation.valid) {
           throw new TRPCError({
             code: "CONFLICT",
-            message: "Horário já está ocupado",
+            message: validation.reason || "Horário não disponível",
           });
         }
 
+        const appointmentId = generateId();
         const appointment = await createAppointment({
-          id: generateId(),
+          id: appointmentId,
           salonId: salon.id,
           ..._input,
         });
+
+        // Agendar notificações automáticas
+        try {
+          await scheduleAppointmentNotifications(appointmentId);
+          console.log(
+            `📅 Notificações agendadas para agendamento: ${appointmentId}`
+          );
+        } catch (error) {
+          console.error("❌ Erro ao agendar notificações:", error);
+          // Não falhar o agendamento por causa das notificações
+        }
+
+        // Verificar se algum cliente da lista de espera pode ser notificado
+        try {
+          const waitlistEntry = await checkWaitlistForSlot(
+            _input.serviceId,
+            _input.specialistId,
+            _input.appointmentDate,
+            _input.appointmentTime
+          );
+
+          if (waitlistEntry) {
+            console.log(`📋 Processando lista de espera para horário liberado`);
+          }
+        } catch (error) {
+          console.error("❌ Erro ao processar lista de espera:", error);
+        }
 
         return appointment;
       }),
@@ -739,6 +794,47 @@ export const appRouter = router({
           throw new TRPCError({
             code: "FORBIDDEN",
             message: "Acesso negado",
+          });
+        }
+
+        // Verifica entidades relacionadas
+        const client = await getClientById(_input.data.clientId);
+        if (!client || client.salonId !== salon.id) {
+          throw new TRPCError({
+            code: "NOT_FOUND",
+            message: "Cliente não encontrado",
+          });
+        }
+
+        const service = await getServiceById(_input.data.serviceId);
+        if (!service || service.salonId !== salon.id) {
+          throw new TRPCError({
+            code: "NOT_FOUND",
+            message: "Serviço não encontrado",
+          });
+        }
+
+        const specialist = await getSpecialistById(_input.data.specialistId);
+        if (!specialist || specialist.salonId !== salon.id) {
+          throw new TRPCError({
+            code: "NOT_FOUND",
+            message: "Especialista não encontrado",
+          });
+        }
+
+        // Validação robusta do novo horário (excluindo o agendamento atual)
+        const validation = await validateAppointmentSlot(
+          _input.data.specialistId,
+          _input.data.serviceId,
+          _input.data.appointmentDate,
+          _input.data.appointmentTime,
+          _input.id
+        );
+
+        if (!validation.valid) {
+          throw new TRPCError({
+            code: "CONFLICT",
+            message: validation.reason || "Horário não disponível",
           });
         }
 
@@ -768,6 +864,143 @@ export const appRouter = router({
         await deleteAppointment(_input.id);
         return { success: true };
       }),
+
+    getAvailableSlots: protectedProcedure
+      .input(
+        z.object({
+          specialistId: z.string(),
+          serviceId: z.string(),
+          date: z.date(),
+        })
+      )
+      .query(async ({ ctx: _ctx, input: _input }) => {
+        const salon = await getSalonByUserId(_ctx.user.id);
+        if (!salon) {
+          throw new TRPCError({
+            code: "NOT_FOUND",
+            message: "Salão não encontrado",
+          });
+        }
+
+        // Verifica se o especialista e serviço pertencem ao salão
+        const specialist = await getSpecialistById(_input.specialistId);
+        const service = await getServiceById(_input.serviceId);
+
+        if (!specialist || specialist.salonId !== salon.id) {
+          throw new TRPCError({
+            code: "NOT_FOUND",
+            message: "Especialista não encontrado",
+          });
+        }
+
+        if (!service || service.salonId !== salon.id) {
+          throw new TRPCError({
+            code: "NOT_FOUND",
+            message: "Serviço não encontrado",
+          });
+        }
+
+        return await getAvailableTimeSlots(
+          _input.specialistId,
+          _input.serviceId,
+          _input.date
+        );
+      }),
+
+    validateSlot: protectedProcedure
+      .input(
+        z.object({
+          specialistId: z.string(),
+          serviceId: z.string(),
+          date: z.date(),
+          time: z.string(),
+          excludeAppointmentId: z.string().optional(),
+        })
+      )
+      .query(async ({ ctx: _ctx, input: _input }) => {
+        const salon = await getSalonByUserId(_ctx.user.id);
+        if (!salon) {
+          throw new TRPCError({
+            code: "NOT_FOUND",
+            message: "Salão não encontrado",
+          });
+        }
+
+        return await validateAppointmentSlot(
+          _input.specialistId,
+          _input.serviceId,
+          _input.date,
+          _input.time,
+          _input.excludeAppointmentId
+        );
+      }),
+
+    getSuggestions: protectedProcedure
+      .input(
+        z.object({
+          specialistId: z.string(),
+          serviceId: z.string(),
+          date: z.date(),
+          preferredTime: z.string(),
+          maxSuggestions: z.number().min(1).max(10).default(3),
+        })
+      )
+      .query(async ({ ctx: _ctx, input: _input }) => {
+        const salon = await getSalonByUserId(_ctx.user.id);
+        if (!salon) {
+          throw new TRPCError({
+            code: "NOT_FOUND",
+            message: "Salão não encontrado",
+          });
+        }
+
+        // Verifica se o especialista e serviço pertencem ao salão
+        const specialist = await getSpecialistById(_input.specialistId);
+        const service = await getServiceById(_input.serviceId);
+
+        if (!specialist || specialist.salonId !== salon.id) {
+          throw new TRPCError({
+            code: "NOT_FOUND",
+            message: "Especialista não encontrado",
+          });
+        }
+
+        if (!service || service.salonId !== salon.id) {
+          throw new TRPCError({
+            code: "NOT_FOUND",
+            message: "Serviço não encontrado",
+          });
+        }
+
+        // Busca todos os horários disponíveis
+        const allSlots = await getAvailableTimeSlots(
+          _input.specialistId,
+          _input.serviceId,
+          _input.date
+        );
+
+        // Se o horário preferido está disponível, retorna ele primeiro
+        if (allSlots.includes(_input.preferredTime)) {
+          return [
+            _input.preferredTime,
+            ...allSlots.filter(slot => slot !== _input.preferredTime),
+          ].slice(0, _input.maxSuggestions);
+        }
+
+        // Caso contrário, ordena por proximidade ao horário preferido
+        const preferredMinutes = timeToMinutes(_input.preferredTime);
+
+        const sortedSlots = allSlots
+          .map(slot => ({
+            time: slot,
+            distance: Math.abs(timeToMinutes(slot) - preferredMinutes),
+          }))
+          .sort((a, b) => a.distance - b.distance)
+          .slice(0, _input.maxSuggestions)
+          .map(slot => slot.time);
+
+        return sortedSlots;
+      }),
   }),
 
   // ============================================================================
@@ -791,26 +1024,35 @@ export const appRouter = router({
       .input(
         z.object({
           salonId: z.string(),
-          specialistId: z.string().optional(),
+          specialistId: z.string(),
           serviceId: z.string(),
           date: z.date(),
         })
       )
       .query(async ({ input: _input }) => {
-        // In production, calculate available slots based on specialist schedule
-        // and existing appointments
-        return [
-          "09:00",
-          "09:30",
-          "10:00",
-          "10:30",
-          "11:00",
-          "14:00",
-          "14:30",
-          "15:00",
-          "15:30",
-          "16:00",
-        ];
+        // Verifica se especialista e serviço existem e pertencem ao salão
+        const specialist = await getSpecialistById(_input.specialistId);
+        const service = await getServiceById(_input.serviceId);
+
+        if (!specialist || specialist.salonId !== _input.salonId) {
+          throw new TRPCError({
+            code: "NOT_FOUND",
+            message: "Especialista não encontrado",
+          });
+        }
+
+        if (!service || service.salonId !== _input.salonId) {
+          throw new TRPCError({
+            code: "NOT_FOUND",
+            message: "Serviço não encontrado",
+          });
+        }
+
+        return await getAvailableTimeSlots(
+          _input.specialistId,
+          _input.serviceId,
+          _input.date
+        );
       }),
 
     createPublicAppointment: publicProcedure
@@ -920,6 +1162,403 @@ export const appRouter = router({
           });
         await db.delete(users).where(eq(users.id, _input.id));
         return { success: true };
+      }),
+  }),
+
+  // ============================================================================
+  // NOTIFICATIONS & ADVANCED FEATURES
+  // ============================================================================
+
+  notifications: router({
+    sendAppointmentNotification: protectedProcedure
+      .input(
+        z.object({
+          appointmentId: z.string(),
+          type: z.enum(["confirmation", "reminder_24h", "reminder_2h"]),
+          channel: z.enum(["email", "sms", "whatsapp", "push"]),
+        })
+      )
+      .mutation(async ({ input }) => {
+        return await sendNotification(
+          input.appointmentId,
+          input.type,
+          input.channel
+        );
+      }),
+
+    getTemplates: protectedProcedure.query(async () => {
+      return Object.values(defaultTemplates);
+    }),
+  }),
+
+  waitlist: router({
+    add: protectedProcedure
+      .input(
+        z.object({
+          clientId: z.string(),
+          serviceId: z.string(),
+          specialistId: z.string().optional(),
+          preferredDate: z.date().optional(),
+          preferredTimeStart: z.string().optional(),
+          preferredTimeEnd: z.string().optional(),
+          maxWaitDays: z.number().min(1).max(365).default(7),
+          notificationPreference: z
+            .enum(["sms", "whatsapp", "email"])
+            .default("whatsapp"),
+          priority: z.number().min(1).max(3).default(2),
+        })
+      )
+      .mutation(async ({ ctx, input }) => {
+        const salon = await getSalonByUserId(ctx.user.id);
+        if (!salon) {
+          throw new TRPCError({
+            code: "NOT_FOUND",
+            message: "Salão não encontrado",
+          });
+        }
+
+        return await addToWaitlist(input);
+      }),
+
+    remove: protectedProcedure
+      .input(z.object({ waitlistId: z.string() }))
+      .mutation(async ({ input }) => {
+        return await removeFromWaitlist(input.waitlistId);
+      }),
+
+    list: protectedProcedure
+      .input(
+        z.object({
+          serviceId: z.string().optional(),
+          specialistId: z.string().optional(),
+        })
+      )
+      .query(async ({ input }) => {
+        return await getActiveWaitlistEntries(
+          input.serviceId,
+          input.specialistId
+        );
+      }),
+
+    confirm: protectedProcedure
+      .input(z.object({ waitlistId: z.string() }))
+      .mutation(async ({ input }) => {
+        return await confirmWaitlistSlot(input.waitlistId);
+      }),
+
+    stats: protectedProcedure.query(async () => {
+      return await getWaitlistStats();
+    }),
+  }),
+
+  reports: router({
+    appointmentStats: protectedProcedure
+      .input(
+        z.object({
+          startDate: z.date().optional(),
+          endDate: z.date().optional(),
+          specialistId: z.string().optional(),
+          serviceId: z.string().optional(),
+          status: z
+            .enum(["pending", "confirmed", "completed", "cancelled"])
+            .optional(),
+        })
+      )
+      .query(async ({ ctx, input }) => {
+        const salon = await getSalonByUserId(ctx.user.id);
+        if (!salon) {
+          throw new TRPCError({
+            code: "NOT_FOUND",
+            message: "Salão não encontrado",
+          });
+        }
+
+        return await generateAppointmentStats(salon.id, input);
+      }),
+
+    specialistPerformance: protectedProcedure
+      .input(
+        z.object({
+          startDate: z.date().optional(),
+          endDate: z.date().optional(),
+          specialistId: z.string().optional(),
+        })
+      )
+      .query(async ({ ctx, input }) => {
+        const salon = await getSalonByUserId(ctx.user.id);
+        if (!salon) {
+          throw new TRPCError({
+            code: "NOT_FOUND",
+            message: "Salão não encontrado",
+          });
+        }
+
+        return await generateSpecialistPerformance(salon.id, input);
+      }),
+
+    servicePopularity: protectedProcedure
+      .input(
+        z.object({
+          startDate: z.date().optional(),
+          endDate: z.date().optional(),
+        })
+      )
+      .query(async ({ ctx, input }) => {
+        const salon = await getSalonByUserId(ctx.user.id);
+        if (!salon) {
+          throw new TRPCError({
+            code: "NOT_FOUND",
+            message: "Salão não encontrado",
+          });
+        }
+
+        return await generateServicePopularity(salon.id, input);
+      }),
+
+    clientAnalytics: protectedProcedure
+      .input(
+        z.object({
+          startDate: z.date().optional(),
+          endDate: z.date().optional(),
+          riskThreshold: z.number().min(0).max(100).default(70),
+        })
+      )
+      .query(async ({ ctx, input }) => {
+        const salon = await getSalonByUserId(ctx.user.id);
+        if (!salon) {
+          throw new TRPCError({
+            code: "NOT_FOUND",
+            message: "Salão não encontrado",
+          });
+        }
+
+        const analytics = await generateClientAnalytics(salon.id, input);
+
+        // Filtrar clientes com risco alto se especificado
+        return {
+          all: analytics,
+          highRisk: analytics.filter(
+            client => client.riskScore >= input.riskThreshold
+          ),
+        };
+      }),
+
+    dailyReport: protectedProcedure
+      .input(z.object({ date: z.date() }))
+      .query(async ({ ctx, input }) => {
+        const salon = await getSalonByUserId(ctx.user.id);
+        if (!salon) {
+          throw new TRPCError({
+            code: "NOT_FOUND",
+            message: "Salão não encontrado",
+          });
+        }
+
+        return await generateDailyReport(salon.id, input.date);
+      }),
+
+    exportCSV: protectedProcedure
+      .input(
+        z.object({
+          reportType: z.enum([
+            "appointments",
+            "specialists",
+            "services",
+            "clients",
+          ]),
+          data: z.any(),
+        })
+      )
+      .query(async ({ input }) => {
+        const filename = `${input.reportType}_${new Date().toISOString().split("T")[0]}.csv`;
+        const csvContent = exportToCSV(input.data, filename);
+
+        return {
+          filename,
+          content: csvContent,
+          mimeType: "text/csv",
+        };
+      }),
+  }),
+
+  schedule: router({
+    getSpecialistSchedule: protectedProcedure
+      .input(z.object({ specialistId: z.string() }))
+      .query(async ({ ctx, input }) => {
+        const salon = await getSalonByUserId(ctx.user.id);
+        if (!salon) {
+          throw new TRPCError({
+            code: "NOT_FOUND",
+            message: "Salão não encontrado",
+          });
+        }
+
+        // Verificar se especialista pertence ao salão
+        const specialist = await getSpecialistById(input.specialistId);
+        if (!specialist || specialist.salonId !== salon.id) {
+          throw new TRPCError({
+            code: "NOT_FOUND",
+            message: "Especialista não encontrado",
+          });
+        }
+
+        return await getSpecialistScheduleForDisplay(input.specialistId);
+      }),
+
+    updateSpecialistSchedule: protectedProcedure
+      .input(
+        z.object({
+          specialistId: z.string(),
+          timeSlotDuration: z.number().min(15).max(120).optional(),
+          bufferTime: z.number().min(0).max(60).optional(),
+          allowBookingDaysInAdvance: z.number().min(1).max(365).optional(),
+          minimumNoticeHours: z.number().min(0).max(72).optional(),
+          autoConfirmBookings: z.boolean().optional(),
+          allowOnlineBooking: z.boolean().optional(),
+        })
+      )
+      .mutation(async ({ ctx, input }) => {
+        const salon = await getSalonByUserId(ctx.user.id);
+        if (!salon) {
+          throw new TRPCError({
+            code: "NOT_FOUND",
+            message: "Salão não encontrado",
+          });
+        }
+
+        const specialist = await getSpecialistById(input.specialistId);
+        if (!specialist || specialist.salonId !== salon.id) {
+          throw new TRPCError({
+            code: "NOT_FOUND",
+            message: "Especialista não encontrado",
+          });
+        }
+
+        const { specialistId, ...updates } = input;
+        return await updateSpecialistSchedule(specialistId, updates);
+      }),
+
+    updateWorkingHours: protectedProcedure
+      .input(
+        z.object({
+          specialistId: z.string(),
+          dayOfWeek: z.number().min(0).max(6),
+          isWorking: z.boolean(),
+          startTime: z.string().optional(),
+          endTime: z.string().optional(),
+          breakStartTime: z.string().optional(),
+          breakEndTime: z.string().optional(),
+        })
+      )
+      .mutation(async ({ ctx, input }) => {
+        const salon = await getSalonByUserId(ctx.user.id);
+        if (!salon) {
+          throw new TRPCError({
+            code: "NOT_FOUND",
+            message: "Salão não encontrado",
+          });
+        }
+
+        const specialist = await getSpecialistById(input.specialistId);
+        if (!specialist || specialist.salonId !== salon.id) {
+          throw new TRPCError({
+            code: "NOT_FOUND",
+            message: "Especialista não encontrado",
+          });
+        }
+
+        const { specialistId, dayOfWeek, ...workingHours } = input;
+        await updateWorkingHoursForDay(specialistId, dayOfWeek, workingHours);
+
+        return { success: true };
+      }),
+
+    addUnavailableDate: protectedProcedure
+      .input(
+        z.object({
+          specialistId: z.string(),
+          date: z.date(),
+        })
+      )
+      .mutation(async ({ ctx, input }) => {
+        const salon = await getSalonByUserId(ctx.user.id);
+        if (!salon) {
+          throw new TRPCError({
+            code: "NOT_FOUND",
+            message: "Salão não encontrado",
+          });
+        }
+
+        const specialist = await getSpecialistById(input.specialistId);
+        if (!specialist || specialist.salonId !== salon.id) {
+          throw new TRPCError({
+            code: "NOT_FOUND",
+            message: "Especialista não encontrado",
+          });
+        }
+
+        await addCustomUnavailableDate(input.specialistId, input.date);
+        return { success: true };
+      }),
+
+    removeUnavailableDate: protectedProcedure
+      .input(
+        z.object({
+          specialistId: z.string(),
+          date: z.date(),
+        })
+      )
+      .mutation(async ({ ctx, input }) => {
+        const salon = await getSalonByUserId(ctx.user.id);
+        if (!salon) {
+          throw new TRPCError({
+            code: "NOT_FOUND",
+            message: "Salão não encontrado",
+          });
+        }
+
+        const specialist = await getSpecialistById(input.specialistId);
+        if (!specialist || specialist.salonId !== salon.id) {
+          throw new TRPCError({
+            code: "NOT_FOUND",
+            message: "Especialista não encontrado",
+          });
+        }
+
+        await removeCustomUnavailableDate(input.specialistId, input.date);
+        return { success: true };
+      }),
+
+    getAvailableSlots: protectedProcedure
+      .input(
+        z.object({
+          specialistId: z.string(),
+          date: z.date(),
+          serviceDuration: z.number().min(15).max(480).default(60),
+        })
+      )
+      .query(async ({ ctx, input }) => {
+        const salon = await getSalonByUserId(ctx.user.id);
+        if (!salon) {
+          throw new TRPCError({
+            code: "NOT_FOUND",
+            message: "Salão não encontrado",
+          });
+        }
+
+        const specialist = await getSpecialistById(input.specialistId);
+        if (!specialist || specialist.salonId !== salon.id) {
+          throw new TRPCError({
+            code: "NOT_FOUND",
+            message: "Especialista não encontrado",
+          });
+        }
+
+        return await generateSpecialistTimeSlots(
+          input.specialistId,
+          input.date,
+          input.serviceDuration
+        );
       }),
   }),
 });

@@ -10,10 +10,8 @@ import Dashboard from "./pages/Dashboard";
 import Clients from "./pages/Clients";
 import Services from "./pages/Services";
 import Appointments from "./pages/Appointments";
-import Profile from "./pages/Profile";
 import RecuperarSenha from "./pages/RecuperarSenha";
 import RedefinirSenha from "./pages/RedefinirSenha";
-import Admin from "./pages/Admin";
 import Empresa from "./pages/Empresa";
 import Specialists from "./pages/Specialists";
 import { useAuth } from "@/_core/hooks/useAuth";
@@ -56,14 +54,12 @@ function Router() {
         return <div />;
       }} />
       <Route path="/login" component={Login} />
-      <Route path="/admin" component={Admin} />
       <Route path="/recuperar-senha" component={RecuperarSenha} />
       <Route path="/redefinir-senha" component={RedefinirSenha} />
       <Route path="/dashboard" component={() => <ProtectedRoute component={Dashboard} />} />
       <Route path="/clientes" component={() => <ProtectedRoute component={Clients} />} />
       <Route path="/servicos" component={() => <ProtectedRoute component={Services} />} />
       <Route path="/agendamentos" component={() => <ProtectedRoute component={Appointments} />} />
-      <Route path="/perfil" component={() => <ProtectedRoute component={Profile} />} />
       <Route path="/empresa" component={() => <ProtectedRoute component={Empresa} adminOnly />} />
       <Route path="/especialistas" component={() => <ProtectedRoute component={Specialists} />} />
       <Route path="/404" component={NotFound} />

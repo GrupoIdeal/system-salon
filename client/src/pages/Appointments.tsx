@@ -4,18 +4,28 @@ import { Button } from "@/components/ui/button";
 import {
   Card,
   CardContent,
-  CardDescription,
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import { Input } from "@/components/ui/input";
+import { trpc } from "@/lib/trpc";
+import { Plus, Calendar, Search, Edit, Trash2, User, Scissors, Settings } from "lucide-react";
+import { Label } from "@/components/ui/label";
+import { Skeleton } from "@/components/ui/skeleton";
+import { CalendarPicker } from "@/components/CalendarPicker";
+import { AppointmentModal } from "@/components/AppointmentModal";
+import { AppointmentStats } from "@/components/AppointmentStats";
+import { WaitlistManagement } from "@/components/WaitlistManagement";
+import { ReportsManagement } from "@/components/ReportsManagement";
+import { SpecialistScheduleManagement } from "@/components/SpecialistScheduleManagement";
 import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from "@/components/ui/dialog";
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import {
   Select,
   SelectContent,
@@ -23,63 +33,100 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Input } from "@/components/ui/input";
-import { trpc } from "@/lib/trpc";
-import { Plus, Calendar, Loader2 } from "lucide-react";
-import { Skeleton } from "@/components/ui/skeleton";
+
+interface AppointmentData {
+  id: string;
+  clientId: string;
+  serviceId: string;
+  specialistId: string;
+  appointmentDate: Date;
+  appointmentTime: string;
+  status: "pending" | "confirmed" | "completed" | "cancelled" | null;
+  notes?: string | null;
+  client?: { id: string; name: string; phone?: string | null } | null;
+  service?: { id: string; name: string; duration: number; price: string } | null;
+  specialist?: { id: string; name: string; specialty?: string | null } | null;
+}
 
 export default function Appointments() {
-  const [isDialogOpen, setIsDialogOpen] = useState(false);
-  const [selectedDate, setSelectedDate] = useState(
-    new Date().toISOString().split("T")[0]
-  );
-  const [formData, setFormData] = useState({
-    clientId: "",
-    serviceId: "",
-    specialistId: "",
-    appointmentDate: new Date(),
-    appointmentTime: "09:00",
-    status: "pending" as "pending" | "confirmed" | "completed" | "cancelled",
-  });
+  const [selectedDate, setSelectedDate] = useState(new Date());
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [editingAppointment, setEditingAppointment] = useState<AppointmentData | null>(null);
+  const [searchTerm, setSearchTerm] = useState("");
+  const [statusFilter, setStatusFilter] = useState<string>("all");
+  const [viewMode, setViewMode] = useState<"day" | "week" | "month">("day");
 
-  const appointmentsQuery = trpc.appointments.list.useQuery({
-    startDate: new Date(selectedDate),
-    endDate: new Date(new Date(selectedDate).getTime() + 24 * 60 * 60 * 1000),
-  });
+  // Novos estados para funcionalidades avançadas
+  const [isWaitlistOpen, setIsWaitlistOpen] = useState(false);
+  const [isReportsOpen, setIsReportsOpen] = useState(false);
+  const [isScheduleOpen, setIsScheduleOpen] = useState(false);
+  const [selectedSpecialistForSchedule, setSelectedSpecialistForSchedule] = useState<string>("");
 
-  const clientsQuery = trpc.clients.list.useQuery({});
-  const servicesQuery = trpc.services.list.useQuery();
-  const specialistsQuery = trpc.specialists.list.useQuery();
+  // Calcular range de datas baseado no modo de visualização
+  const getDateRange = () => {
+    const start = new Date(selectedDate);
+    let end = new Date(selectedDate);
 
-  const createMutation = trpc.appointments.create.useMutation({
-    onSuccess: () => {
-      appointmentsQuery.refetch();
-      setFormData({
-        clientId: "",
-        serviceId: "",
-        specialistId: "",
-        appointmentDate: new Date(),
-        appointmentTime: "09:00",
-        status: "pending",
-      });
-      setIsDialogOpen(false);
-    },
-  });
-
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!formData.clientId || !formData.serviceId || !formData.specialistId) {
-      return;
+    switch (viewMode) {
+      case "day":
+        end = new Date(start.getTime() + 24 * 60 * 60 * 1000);
+        break;
+      case "week":
+        start.setDate(start.getDate() - start.getDay()); // Começo da semana
+        end = new Date(start.getTime() + 7 * 24 * 60 * 60 * 1000);
+        break;
+      case "month":
+        start.setDate(1); // Primeiro dia do mês
+        end = new Date(start.getFullYear(), start.getMonth() + 1, 0); // Último dia do mês
+        break;
     }
 
-    const [hours, minutes] = formData.appointmentTime.split(":").map(Number);
-    const appointmentDate = new Date(selectedDate);
-    appointmentDate.setHours(hours, minutes, 0, 0);
+    return { start, end };
+  };
 
-    createMutation.mutate({
-      ...formData,
-      appointmentDate,
-    });
+  const { start: startDate, end: endDate } = getDateRange();
+
+  const appointmentsQuery = trpc.appointments.list.useQuery({
+    startDate,
+    endDate,
+  });
+
+  // Contagem de agendamentos por data para o calendário
+  const appointmentCounts = appointmentsQuery.data?.reduce((acc, apt) => {
+    const dateKey = new Date(apt.appointmentDate).toISOString().split('T')[0];
+    acc[dateKey] = (acc[dateKey] || 0) + 1;
+    return acc;
+  }, {} as Record<string, number>) || {};
+
+  // Filtrar agendamentos
+  const filteredAppointments = appointmentsQuery.data?.filter((apt) => {
+    const matchesSearch = searchTerm === "" ||
+      apt.client?.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      apt.service?.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      apt.specialist?.name.toLowerCase().includes(searchTerm.toLowerCase());
+
+    const matchesStatus = statusFilter === "all" || apt.status === statusFilter;
+
+    return matchesSearch && matchesStatus;
+  }) || [];
+
+  const handleEditAppointment = (appointment: AppointmentData) => {
+    setEditingAppointment(appointment);
+    setIsModalOpen(true);
+  };
+
+  const handleCreateAppointment = () => {
+    setEditingAppointment(null);
+    setIsModalOpen(true);
+  };
+
+  const handleModalClose = () => {
+    setIsModalOpen(false);
+    setEditingAppointment(null);
+  };
+
+  const handleSuccess = () => {
+    appointmentsQuery.refetch();
   };
 
   const getStatusColor = (status: string) => {
@@ -110,6 +157,7 @@ export default function Appointments() {
   return (
     <DashboardLayout>
       <div className="space-y-6">
+        {/* Header */}
         <div className="flex items-center justify-between">
           <div>
             <h1 className="text-3xl font-bold tracking-tight">Agendamentos</h1>
@@ -117,181 +165,321 @@ export default function Appointments() {
               Gerencie os agendamentos do salão
             </p>
           </div>
-          <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-            <DialogTrigger asChild>
-              <Button>
-                <Plus className="mr-2 h-4 w-4" />
-                Novo Agendamento
-              </Button>
-            </DialogTrigger>
-            <DialogContent className="max-w-md">
-              <DialogHeader>
-                <DialogTitle>Novo Agendamento</DialogTitle>
-                <DialogDescription>
-                  Crie um novo agendamento para um cliente
-                </DialogDescription>
-              </DialogHeader>
-              <form onSubmit={handleSubmit} className="space-y-4">
-                <div>
-                  <label className="text-sm font-medium">Cliente</label>
-                  <Select
-                    value={formData.clientId}
-                    onValueChange={(value) =>
-                      setFormData({ ...formData, clientId: value })
-                    }
-                  >
-                    <SelectTrigger>
-                      <SelectValue placeholder="Selecione um cliente" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {clientsQuery.data?.map((client) => (
-                        <SelectItem key={client.id} value={client.id}>
-                          {client.name}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-
-                <div>
-                  <label className="text-sm font-medium">Serviço</label>
-                  <Select
-                    value={formData.serviceId}
-                    onValueChange={(value) =>
-                      setFormData({ ...formData, serviceId: value })
-                    }
-                  >
-                    <SelectTrigger>
-                      <SelectValue placeholder="Selecione um serviço" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {servicesQuery.data?.map((service) => (
-                        <SelectItem key={service.id} value={service.id}>
-                          {service.name} - R$ {service.price}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-
-                <div>
-                  <label className="text-sm font-medium">Especialista</label>
-                  <Select
-                    value={formData.specialistId}
-                    onValueChange={(value) =>
-                      setFormData({ ...formData, specialistId: value })
-                    }
-                  >
-                    <SelectTrigger>
-                      <SelectValue placeholder="Selecione um especialista" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {specialistsQuery.data?.map((specialist) => (
-                        <SelectItem key={specialist.id} value={specialist.id}>
-                          {specialist.name}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-
-                <div>
-                  <label className="text-sm font-medium">Data</label>
-                  <Input
-                    type="date"
-                    value={selectedDate}
-                    onChange={(e) => setSelectedDate(e.target.value)}
-                  />
-                </div>
-
-                <div>
-                  <label className="text-sm font-medium">Horário</label>
-                  <Input
-                    type="time"
-                    value={formData.appointmentTime}
-                    onChange={(e) =>
-                      setFormData({
-                        ...formData,
-                        appointmentTime: e.target.value,
-                      })
-                    }
-                  />
-                </div>
-
-                <Button
-                  type="submit"
-                  className="w-full"
-                  disabled={createMutation.isPending}
-                >
-                  {createMutation.isPending && (
-                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  )}
-                  Criar Agendamento
-                </Button>
-              </form>
-            </DialogContent>
-          </Dialog>
+          <div className="flex gap-2">
+            <Button onClick={handleCreateAppointment}>
+              <Plus className="mr-2 h-4 w-4" />
+              Novo Agendamento
+            </Button>
+            <Button
+              variant="outline"
+              onClick={() => setIsWaitlistOpen(true)}
+            >
+              <User className="mr-2 h-4 w-4" />
+              Lista de Espera
+            </Button>
+            <Button
+              variant="outline"
+              onClick={() => setIsReportsOpen(true)}
+            >
+              <Calendar className="mr-2 h-4 w-4" />
+              Relatórios
+            </Button>
+            <Button
+              variant="outline"
+              onClick={() => setIsScheduleOpen(true)}
+            >
+              <Settings className="mr-2 h-4 w-4" />
+              Configurar Horários
+            </Button>
+          </div>
         </div>
 
-        {/* Date Filter */}
-        <div className="flex gap-2">
-          <Input
-            type="date"
-            value={selectedDate}
-            onChange={(e) => setSelectedDate(e.target.value)}
-            className="max-w-xs"
-          />
-        </div>
+        {/* Estatísticas */}
+        <AppointmentStats
+          totalAppointments={appointmentsQuery.data?.length || 0}
+          pendingAppointments={appointmentsQuery.data?.filter(apt => apt.status === "pending").length || 0}
+          confirmedAppointments={appointmentsQuery.data?.filter(apt => apt.status === "confirmed").length || 0}
+          completedAppointments={appointmentsQuery.data?.filter(apt => apt.status === "completed").length || 0}
+          cancelledAppointments={appointmentsQuery.data?.filter(apt => apt.status === "cancelled").length || 0}
+          selectedDate={selectedDate}
+          viewMode={viewMode}
+        />
 
-        {/* Appointments List */}
-        <Card>
-          <CardHeader>
-            <CardTitle>Agendamentos</CardTitle>
-            <CardDescription>
-              {appointmentsQuery.data?.length || 0} agendamentos para{" "}
-              {new Date(selectedDate).toLocaleDateString("pt-BR")}
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            {appointmentsQuery.isLoading ? (
-              <div className="space-y-2">
-                {[...Array(3)].map((_, i) => (
-                  <Skeleton key={i} className="h-16 w-full" />
-                ))}
-              </div>
-            ) : appointmentsQuery.data && appointmentsQuery.data.length > 0 ? (
-              <div className="space-y-2">
-                {appointmentsQuery.data.map((apt) => (
-                  <div
-                    key={apt.id}
-                    className="flex items-center justify-between p-4 border rounded-lg hover:bg-slate-50"
-                  >
-                    <div className="flex-1">
-                      <div className="flex items-center gap-2">
-                        <Calendar className="h-4 w-4 text-muted-foreground" />
-                        <p className="font-medium">{apt.appointmentTime}</p>
-                      </div>
-                      <p className="text-sm text-muted-foreground mt-1">
-                        Cliente • Serviço • Especialista
-                      </p>
-                    </div>
-                    <span
-                      className={`text-xs font-semibold px-3 py-1 rounded ${getStatusColor(
-                        apt.status
-                      )}`}
-                    >
-                      {getStatusLabel(apt.status)}
-                    </span>
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          {/* Sidebar - Calendário e Filtros */}
+          <div className="lg:col-span-1 space-y-6">
+            <CalendarPicker
+              selectedDate={selectedDate}
+              onDateSelect={setSelectedDate}
+              appointmentCounts={appointmentCounts}
+            />
+
+            {/* Filtros */}
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-lg">Filtros</CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                {/* Busca */}
+                <div>
+                  <Label htmlFor="search">Buscar</Label>
+                  <div className="relative">
+                    <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                    <Input
+                      id="search"
+                      placeholder="Cliente, serviço ou especialista..."
+                      value={searchTerm}
+                      onChange={(e) => setSearchTerm(e.target.value)}
+                      className="pl-10"
+                    />
                   </div>
+                </div>
+
+                {/* Filtro por status */}
+                <div>
+                  <Label htmlFor="status-filter">Status</Label>
+                  <Select value={statusFilter} onValueChange={setStatusFilter}>
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">Todos</SelectItem>
+                      <SelectItem value="pending">Pendente</SelectItem>
+                      <SelectItem value="confirmed">Confirmado</SelectItem>
+                      <SelectItem value="completed">Concluído</SelectItem>
+                      <SelectItem value="cancelled">Cancelado</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                {/* Modo de visualização */}
+                <div>
+                  <Label>Visualização</Label>
+                  <div className="flex gap-1 mt-2">
+                    <Button
+                      variant={viewMode === "day" ? "default" : "outline"}
+                      size="sm"
+                      onClick={() => setViewMode("day")}
+                      className="flex-1"
+                    >
+                      Dia
+                    </Button>
+                    <Button
+                      variant={viewMode === "week" ? "default" : "outline"}
+                      size="sm"
+                      onClick={() => setViewMode("week")}
+                      className="flex-1"
+                    >
+                      Semana
+                    </Button>
+                    <Button
+                      variant={viewMode === "month" ? "default" : "outline"}
+                      size="sm"
+                      onClick={() => setViewMode("month")}
+                      className="flex-1"
+                    >
+                      Mês
+                    </Button>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+
+          {/* Conteúdo Principal */}
+          <div className="lg:col-span-2 space-y-4">
+            {/* Header da lista */}
+            <div className="flex items-center justify-between">
+              <div>
+                <h2 className="text-xl font-semibold">
+                  {viewMode === "day" && `Agendamentos de ${selectedDate.toLocaleDateString('pt-BR')}`}
+                  {viewMode === "week" && "Agendamentos da Semana"}
+                  {viewMode === "month" && `Agendamentos de ${selectedDate.toLocaleDateString('pt-BR', { month: 'long', year: 'numeric' })}`}
+                </h2>
+                <p className="text-sm text-muted-foreground">
+                  {filteredAppointments.length} agendamento{filteredAppointments.length !== 1 ? 's' : ''} encontrado{filteredAppointments.length !== 1 ? 's' : ''}
+                </p>
+              </div>
+            </div>
+
+            {/* Lista de agendamentos */}
+            {appointmentsQuery.isLoading ? (
+              <div className="space-y-4">
+                {Array.from({ length: 3 }).map((_, i) => (
+                  <Card key={`skeleton-${i}`}>
+                    <CardContent className="p-4">
+                      <div className="space-y-3">
+                        <div className="flex items-center justify-between">
+                          <Skeleton className="h-4 w-32" />
+                          <Skeleton className="h-6 w-20" />
+                        </div>
+                        <div className="space-y-2">
+                          <Skeleton className="h-3 w-40" />
+                          <Skeleton className="h-3 w-28" />
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
                 ))}
               </div>
+            ) : filteredAppointments.length === 0 ? (
+              <Card>
+                <CardContent className="p-8 text-center">
+                  <Calendar className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
+                  <h3 className="text-lg font-medium mb-2">Nenhum agendamento encontrado</h3>
+                  <p className="text-muted-foreground mb-4">
+                    {appointmentsQuery.data?.length === 0
+                      ? "Não há agendamentos para este período"
+                      : "Nenhum agendamento corresponde aos filtros aplicados"
+                    }
+                  </p>
+                  <Button onClick={handleCreateAppointment} variant="outline">
+                    <Plus className="mr-2 h-4 w-4" />
+                    Criar Primeiro Agendamento
+                  </Button>
+                </CardContent>
+              </Card>
             ) : (
-              <p className="text-center text-muted-foreground py-8">
-                Nenhum agendamento para esta data
-              </p>
+              <div className="space-y-4">
+                {filteredAppointments
+                  .sort((a, b) => {
+                    // Ordenar por data e horário
+                    const dateA = new Date(a.appointmentDate).getTime();
+                    const dateB = new Date(b.appointmentDate).getTime();
+                    if (dateA !== dateB) return dateA - dateB;
+                    return a.appointmentTime.localeCompare(b.appointmentTime);
+                  })
+                  .map((appointment) => (
+                    <Card key={appointment.id} className="hover:shadow-md transition-shadow">
+                      <CardContent className="p-4">
+                        <div className="flex items-start justify-between">
+                          <div className="flex-1 space-y-3">
+                            {/* Header do agendamento */}
+                            <div className="flex items-center justify-between">
+                              <div className="flex items-center gap-2">
+                                <Badge className={getStatusColor(appointment.status || "pending")}>
+                                  {getStatusLabel(appointment.status || "pending")}
+                                </Badge>
+                                <span className="text-lg font-semibold">
+                                  {appointment.appointmentTime}
+                                </span>
+                              </div>
+
+                              <DropdownMenu>
+                                <DropdownMenuTrigger asChild>
+                                  <Button variant="ghost" size="sm">
+                                    <svg className="h-4 w-4" viewBox="0 0 24 24" fill="currentColor">
+                                      <circle cx="12" cy="12" r="2" />
+                                      <circle cx="12" cy="5" r="2" />
+                                      <circle cx="12" cy="19" r="2" />
+                                    </svg>
+                                  </Button>
+                                </DropdownMenuTrigger>
+                                <DropdownMenuContent align="end">
+                                  <DropdownMenuItem onClick={() => handleEditAppointment(appointment)}>
+                                    <Edit className="mr-2 h-4 w-4" />
+                                    Editar
+                                  </DropdownMenuItem>
+                                  <DropdownMenuSeparator />
+                                  <DropdownMenuItem
+                                    onClick={() => handleEditAppointment(appointment)}
+                                    className="text-destructive"
+                                  >
+                                    <Trash2 className="mr-2 h-4 w-4" />
+                                    Excluir
+                                  </DropdownMenuItem>
+                                </DropdownMenuContent>
+                              </DropdownMenu>
+                            </div>
+
+                            {/* Informações do agendamento */}
+                            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm">
+                              <div className="flex items-center gap-2">
+                                <User className="h-4 w-4 text-muted-foreground" />
+                                <div>
+                                  <p className="font-medium">{appointment.client?.name}</p>
+                                  {appointment.client?.phone && (
+                                    <p className="text-muted-foreground">{appointment.client.phone}</p>
+                                  )}
+                                </div>
+                              </div>
+
+                              <div className="flex items-center gap-2">
+                                <Scissors className="h-4 w-4 text-muted-foreground" />
+                                <div>
+                                  <p className="font-medium">{appointment.service?.name}</p>
+                                  <p className="text-muted-foreground">
+                                    {appointment.service?.duration}min • R$ {appointment.service?.price}
+                                  </p>
+                                </div>
+                              </div>
+
+                              <div className="flex items-center gap-2">
+                                <User className="h-4 w-4 text-muted-foreground" />
+                                <div>
+                                  <p className="font-medium">{appointment.specialist?.name}</p>
+                                  {appointment.specialist?.specialty && (
+                                    <p className="text-muted-foreground">{appointment.specialist.specialty}</p>
+                                  )}
+                                </div>
+                              </div>
+                            </div>
+
+                            {/* Data (apenas se não for vista diária) */}
+                            {viewMode !== "day" && (
+                              <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                                <Calendar className="h-4 w-4" />
+                                <span>
+                                  {new Date(appointment.appointmentDate).toLocaleDateString('pt-BR', {
+                                    weekday: 'short',
+                                    day: 'numeric',
+                                    month: 'short'
+                                  })}
+                                </span>
+                              </div>
+                            )}
+
+                            {/* Observações */}
+                            {appointment.notes && (
+                              <div className="text-sm text-muted-foreground bg-muted/30 p-2 rounded">
+                                <strong>Obs:</strong> {appointment.notes}
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                      </CardContent>
+                    </Card>
+                  ))}
+              </div>
             )}
-          </CardContent>
-        </Card>
+          </div>
+        </div>
+
+        {/* Modal de criação/edição */}
+        <AppointmentModal
+          isOpen={isModalOpen}
+          onClose={handleModalClose}
+          onSuccess={handleSuccess}
+          appointment={editingAppointment || undefined}
+          initialDate={selectedDate}
+        />
+
+        {/* Modais das Funcionalidades Avançadas */}
+        <WaitlistManagement
+          isOpen={isWaitlistOpen}
+          onClose={() => setIsWaitlistOpen(false)}
+        />
+
+        <ReportsManagement
+          isOpen={isReportsOpen}
+          onClose={() => setIsReportsOpen(false)}
+        />
+
+        <SpecialistScheduleManagement
+          isOpen={isScheduleOpen}
+          onClose={() => setIsScheduleOpen(false)}
+          specialistId={selectedSpecialistForSchedule}
+        />
       </div>
     </DashboardLayout>
   );
