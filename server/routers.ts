@@ -33,6 +33,8 @@ import {
   createAppointment,
   updateAppointment,
   deleteAppointment,
+  recordAppointmentRevenue,
+  getTransactionsBySalonId,
   createPasswordReset,
   getPasswordResetByToken,
   markPasswordResetAsUsed,
@@ -1000,6 +1002,131 @@ export const appRouter = router({
           .map(slot => slot.time);
 
         return sortedSlots;
+      }),
+
+    // Ação rápida: Concluir agendamento
+    complete: protectedProcedure
+      .input(
+        z.object({
+          id: z.string(),
+          paymentMethod: z
+            .enum([
+              "cash",
+              "credit_card",
+              "debit_card",
+              "pix",
+              "bank_transfer",
+              "other",
+            ])
+            .optional(),
+        })
+      )
+      .mutation(async ({ ctx: _ctx, input: _input }) => {
+        const salon = await getSalonByUserId(_ctx.user.id);
+        if (!salon) {
+          throw new TRPCError({
+            code: "NOT_FOUND",
+            message: "Salão não encontrado",
+          });
+        }
+
+        // Verifica se o agendamento pertence ao salão
+        const appointment = await getAppointmentById(_input.id);
+        if (!appointment || appointment.salonId !== salon.id) {
+          throw new TRPCError({
+            code: "NOT_FOUND",
+            message: "Agendamento não encontrado",
+          });
+        }
+
+        // Verifica se o agendamento pode ser concluído
+        if (appointment.status === "completed") {
+          throw new TRPCError({
+            code: "BAD_REQUEST",
+            message: "Agendamento já foi concluído",
+          });
+        }
+
+        if (appointment.status === "cancelled") {
+          throw new TRPCError({
+            code: "BAD_REQUEST",
+            message: "Agendamento cancelado não pode ser concluído",
+          });
+        }
+
+        // Atualizar status do agendamento
+        await updateAppointment(_input.id, {
+          status: "completed",
+          updatedAt: new Date(),
+        });
+
+        // Registrar transação financeira
+        try {
+          await recordAppointmentRevenue(
+            _input.id,
+            _input.paymentMethod || "cash"
+          );
+        } catch (error) {
+          console.error("Erro ao registrar receita:", error);
+          // Não falha a operação se não conseguir registrar a receita
+        }
+
+        return { success: true, message: "Agendamento concluído com sucesso" };
+      }),
+
+    // Ação rápida: Cancelar agendamento
+    cancel: protectedProcedure
+      .input(
+        z.object({
+          id: z.string(),
+          reason: z.string().optional(),
+        })
+      )
+      .mutation(async ({ ctx: _ctx, input: _input }) => {
+        const salon = await getSalonByUserId(_ctx.user.id);
+        if (!salon) {
+          throw new TRPCError({
+            code: "NOT_FOUND",
+            message: "Salão não encontrado",
+          });
+        }
+
+        // Verifica se o agendamento pertence ao salão
+        const appointment = await getAppointmentById(_input.id);
+        if (!appointment || appointment.salonId !== salon.id) {
+          throw new TRPCError({
+            code: "NOT_FOUND",
+            message: "Agendamento não encontrado",
+          });
+        }
+
+        // Verifica se o agendamento pode ser cancelado
+        if (appointment.status === "cancelled") {
+          throw new TRPCError({
+            code: "BAD_REQUEST",
+            message: "Agendamento já foi cancelado",
+          });
+        }
+
+        if (appointment.status === "completed") {
+          throw new TRPCError({
+            code: "BAD_REQUEST",
+            message: "Agendamento concluído não pode ser cancelado",
+          });
+        }
+
+        // Atualizar status do agendamento
+        const updatedNotes = appointment.notes
+          ? `${appointment.notes}\n\nCancelado: ${_input.reason || "Sem motivo especificado"}`
+          : `Cancelado: ${_input.reason || "Sem motivo especificado"}`;
+
+        await updateAppointment(_input.id, {
+          status: "cancelled",
+          notes: updatedNotes,
+          updatedAt: new Date(),
+        });
+
+        return { success: true, message: "Agendamento cancelado com sucesso" };
       }),
   }),
 

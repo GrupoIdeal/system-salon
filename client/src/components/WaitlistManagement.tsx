@@ -277,7 +277,7 @@ export function WaitlistManagement({ isOpen, onClose }: WaitlistManagementProps)
                                                             size="sm"
                                                             variant="outline"
                                                             onClick={() => confirmWaitlistMutation.mutate({ waitlistId: entry.id })}
-                                                            disabled={confirmWaitlistMutation.isLoading}
+                                                            disabled={confirmWaitlistMutation.isPending}
                                                         >
                                                             <CheckCircle className="h-4 w-4" />
                                                         </Button>
@@ -286,7 +286,7 @@ export function WaitlistManagement({ isOpen, onClose }: WaitlistManagementProps)
                                                         size="sm"
                                                         variant="outline"
                                                         onClick={() => removeFromWaitlistMutation.mutate({ waitlistId: entry.id })}
-                                                        disabled={removeFromWaitlistMutation.isLoading}
+                                                        disabled={removeFromWaitlistMutation.isPending}
                                                     >
                                                         <Trash2 className="h-4 w-4" />
                                                     </Button>
@@ -568,8 +568,8 @@ function AddToWaitlistModal({ isOpen, onClose, onSuccess }: AddToWaitlistModalPr
                         <Button type="button" variant="outline" onClick={onClose}>
                             Cancelar
                         </Button>
-                        <Button type="submit" disabled={addToWaitlistMutation.isLoading}>
-                            {addToWaitlistMutation.isLoading ? "Adicionando..." : "Adicionar"}
+                        <Button type="submit" disabled={addToWaitlistMutation.isPending}>
+                            {addToWaitlistMutation.isPending ? "Adicionando..." : "Adicionar"}
                         </Button>
                     </DialogFooter>
                 </form>

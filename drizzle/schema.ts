@@ -253,3 +253,92 @@ export const passwordResets = pgTable(
 
 export type PasswordReset = typeof passwordResets.$inferSelect;
 export type InsertPasswordReset = typeof passwordResets.$inferInsert;
+
+/**
+ * Enums para transações financeiras
+ */
+export const transactionTypeEnum = pgEnum("transaction_type", [
+  "income", // Receita (agendamento concluído)
+  "expense", // Despesa
+  "refund", // Estorno
+]);
+
+export const transactionStatusEnum = pgEnum("transaction_status", [
+  "pending", // Pendente
+  "completed", // Concluída
+  "cancelled", // Cancelada
+]);
+
+export const paymentMethodEnum = pgEnum("payment_method", [
+  "cash", // Dinheiro
+  "credit_card", // Cartão de crédito
+  "debit_card", // Cartão de débito
+  "pix", // PIX
+  "bank_transfer", // Transferência bancária
+  "other", // Outros
+]);
+
+/**
+ * Tabela de transações financeiras
+ */
+export const transactions = pgTable(
+  "transactions",
+  {
+    id: varchar("id", { length: 64 }).primaryKey(),
+    salonId: varchar("salonId", { length: 64 })
+      .notNull()
+      .references(() => salons.id, { onDelete: "cascade" }),
+
+    // Referências opcionais
+    appointmentId: varchar("appointmentId", { length: 64 }).references(
+      () => appointments.id,
+      { onDelete: "set null" }
+    ),
+    clientId: varchar("clientId", { length: 64 }).references(() => clients.id, {
+      onDelete: "set null",
+    }),
+    serviceId: varchar("serviceId", { length: 64 }).references(
+      () => services.id,
+      { onDelete: "set null" }
+    ),
+    specialistId: varchar("specialistId", { length: 64 }).references(
+      () => specialists.id,
+      { onDelete: "set null" }
+    ),
+
+    // Dados da transação
+    type: transactionTypeEnum("type").notNull(),
+    status: transactionStatusEnum("status").default("completed").notNull(),
+    paymentMethod: paymentMethodEnum("paymentMethod"),
+
+    // Valores monetários
+    amount: decimal("amount", { precision: 10, scale: 2 }).notNull(), // Valor total
+    serviceFee: decimal("serviceFee", { precision: 10, scale: 2 }), // Taxa do serviço
+    specialistCommission: decimal("specialistCommission", {
+      precision: 10,
+      scale: 2,
+    }), // Comissão do especialista
+
+    // Descrições
+    description: text("description").notNull(),
+    notes: text("notes"), // Observações adicionais
+
+    // Metadados
+    transactionDate: timestamp("transactionDate").notNull(),
+    createdAt: timestamp("createdAt").defaultNow(),
+    updatedAt: timestamp("updatedAt").defaultNow(),
+  },
+  table => ({
+    salonIdIdx: index("transactions_salonId_idx").on(table.salonId),
+    appointmentIdIdx: index("transactions_appointmentId_idx").on(
+      table.appointmentId
+    ),
+    clientIdIdx: index("transactions_clientId_idx").on(table.clientId),
+    typeIdx: index("transactions_type_idx").on(table.type),
+    statusIdx: index("transactions_status_idx").on(table.status),
+    dateIdx: index("transactions_date_idx").on(table.transactionDate),
+  })
+);
+
+export type Transaction = typeof transactions.$inferSelect;
+export type InsertTransaction = typeof transactions.$inferInsert;

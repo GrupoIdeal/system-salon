@@ -375,7 +375,7 @@ export function SpecialistScheduleManagement({ isOpen, onClose, specialistId }: 
                                         />
                                         <Button
                                             onClick={handleAddUnavailableDate}
-                                            disabled={!newUnavailableDate || addUnavailableDateMutation.isLoading}
+                                            disabled={!newUnavailableDate || addUnavailableDateMutation.isPending}
                                             size="sm"
                                         >
                                             <Plus className="h-4 w-4 mr-2" />
@@ -397,7 +397,7 @@ export function SpecialistScheduleManagement({ isOpen, onClose, specialistId }: 
                                                             size="sm"
                                                             variant="outline"
                                                             onClick={() => handleRemoveUnavailableDate(dateInfo.date)}
-                                                            disabled={removeUnavailableDateMutation.isLoading}
+                                                            disabled={removeUnavailableDateMutation.isPending}
                                                         >
                                                             <Trash2 className="h-4 w-4" />
                                                         </Button>

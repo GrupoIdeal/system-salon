@@ -10,15 +10,12 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { trpc } from "@/lib/trpc";
-import { Plus, Calendar, Search, Edit, Trash2, User, Scissors, Settings } from "lucide-react";
+import { Plus, Calendar, Search, Edit, Trash2, User, Scissors, CheckCircle, X } from "lucide-react";
 import { Label } from "@/components/ui/label";
 import { Skeleton } from "@/components/ui/skeleton";
 import { CalendarPicker } from "@/components/CalendarPicker";
 import { AppointmentModal } from "@/components/AppointmentModal";
 import { AppointmentStats } from "@/components/AppointmentStats";
-import { WaitlistManagement } from "@/components/WaitlistManagement";
-import { ReportsManagement } from "@/components/ReportsManagement";
-import { SpecialistScheduleManagement } from "@/components/SpecialistScheduleManagement";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -56,12 +53,6 @@ export default function Appointments() {
   const [statusFilter, setStatusFilter] = useState<string>("all");
   const [viewMode, setViewMode] = useState<"day" | "week" | "month">("day");
 
-  // Novos estados para funcionalidades avançadas
-  const [isWaitlistOpen, setIsWaitlistOpen] = useState(false);
-  const [isReportsOpen, setIsReportsOpen] = useState(false);
-  const [isScheduleOpen, setIsScheduleOpen] = useState(false);
-  const [selectedSpecialistForSchedule, setSelectedSpecialistForSchedule] = useState<string>("");
-
   // Calcular range de datas baseado no modo de visualização
   const getDateRange = () => {
     const start = new Date(selectedDate);
@@ -91,6 +82,22 @@ export default function Appointments() {
     endDate,
   });
 
+  // Mutations para ações rápidas
+  const completeAppointmentMutation = trpc.appointments.complete.useMutation({
+    onSuccess: () => appointmentsQuery.refetch(),
+    onError: (error) => alert(`Erro ao concluir agendamento: ${error.message}`),
+  });
+
+  const cancelAppointmentMutation = trpc.appointments.cancel.useMutation({
+    onSuccess: () => appointmentsQuery.refetch(),
+    onError: (error) => alert(`Erro ao cancelar agendamento: ${error.message}`),
+  });
+
+  const deleteAppointmentMutation = trpc.appointments.delete.useMutation({
+    onSuccess: () => appointmentsQuery.refetch(),
+    onError: (error) => alert(`Erro ao excluir agendamento: ${error.message}`),
+  });
+
   // Contagem de agendamentos por data para o calendário
   const appointmentCounts = appointmentsQuery.data?.reduce((acc, apt) => {
     const dateKey = new Date(apt.appointmentDate).toISOString().split('T')[0];
@@ -110,6 +117,7 @@ export default function Appointments() {
     return matchesSearch && matchesStatus;
   }) || [];
 
+  // Handlers
   const handleEditAppointment = (appointment: AppointmentData) => {
     setEditingAppointment(appointment);
     setIsModalOpen(true);
@@ -129,6 +137,32 @@ export default function Appointments() {
     appointmentsQuery.refetch();
   };
 
+  // Handlers para ações rápidas
+  const handleQuickComplete = (appointmentId: string) => {
+    if (confirm("Confirma a conclusão deste agendamento? Isso registrará a receita no sistema.")) {
+      completeAppointmentMutation.mutate({
+        id: appointmentId,
+        paymentMethod: "cash" as const
+      });
+    }
+  };
+
+  const handleQuickCancel = (appointmentId: string) => {
+    const reason = prompt("Motivo do cancelamento (opcional):");
+    if (reason !== null) {
+      cancelAppointmentMutation.mutate({
+        id: appointmentId,
+        reason: reason || undefined
+      });
+    }
+  };
+
+  const handleDeleteAppointment = (appointmentId: string) => {
+    if (confirm("Tem certeza que deseja excluir permanentemente este agendamento?")) {
+      deleteAppointmentMutation.mutate({ id: appointmentId });
+    }
+  };
+
   const getStatusColor = (status: string) => {
     switch (status) {
       case "confirmed":
@@ -145,13 +179,18 @@ export default function Appointments() {
   };
 
   const getStatusLabel = (status: string) => {
-    const labels: Record<string, string> = {
-      pending: "Pendente",
-      confirmed: "Confirmado",
-      completed: "Concluído",
-      cancelled: "Cancelado",
-    };
-    return labels[status] || status;
+    switch (status) {
+      case "confirmed":
+        return "Confirmado";
+      case "pending":
+        return "Pendente";
+      case "completed":
+        return "Concluído";
+      case "cancelled":
+        return "Cancelado";
+      default:
+        return "Desconhecido";
+    }
   };
 
   return (
@@ -160,38 +199,15 @@ export default function Appointments() {
         {/* Header */}
         <div className="flex items-center justify-between">
           <div>
-            <h1 className="text-3xl font-bold tracking-tight">Agendamentos</h1>
-            <p className="text-muted-foreground mt-2">
-              Gerencie os agendamentos do salão
+            <h1 className="text-3xl font-bold">Agendamentos</h1>
+            <p className="text-muted-foreground">
+              Gerencie os agendamentos do seu salão
             </p>
           </div>
-          <div className="flex gap-2">
-            <Button onClick={handleCreateAppointment}>
-              <Plus className="mr-2 h-4 w-4" />
-              Novo Agendamento
-            </Button>
-            <Button
-              variant="outline"
-              onClick={() => setIsWaitlistOpen(true)}
-            >
-              <User className="mr-2 h-4 w-4" />
-              Lista de Espera
-            </Button>
-            <Button
-              variant="outline"
-              onClick={() => setIsReportsOpen(true)}
-            >
-              <Calendar className="mr-2 h-4 w-4" />
-              Relatórios
-            </Button>
-            <Button
-              variant="outline"
-              onClick={() => setIsScheduleOpen(true)}
-            >
-              <Settings className="mr-2 h-4 w-4" />
-              Configurar Horários
-            </Button>
-          </div>
+          <Button onClick={handleCreateAppointment}>
+            <Plus className="mr-2 h-4 w-4" />
+            Novo Agendamento
+          </Button>
         </div>
 
         {/* Estatísticas */}
@@ -306,7 +322,7 @@ export default function Appointments() {
             {appointmentsQuery.isLoading ? (
               <div className="space-y-4">
                 {Array.from({ length: 3 }).map((_, i) => (
-                  <Card key={`skeleton-${i}`}>
+                  <Card key={`skeleton-loading-${Date.now()}-${i}`}>
                     <CardContent className="p-4">
                       <div className="space-y-3">
                         <div className="flex items-center justify-between">
@@ -365,31 +381,58 @@ export default function Appointments() {
                                 </span>
                               </div>
 
-                              <DropdownMenu>
-                                <DropdownMenuTrigger asChild>
-                                  <Button variant="ghost" size="sm">
-                                    <svg className="h-4 w-4" viewBox="0 0 24 24" fill="currentColor">
-                                      <circle cx="12" cy="12" r="2" />
-                                      <circle cx="12" cy="5" r="2" />
-                                      <circle cx="12" cy="19" r="2" />
-                                    </svg>
-                                  </Button>
-                                </DropdownMenuTrigger>
-                                <DropdownMenuContent align="end">
-                                  <DropdownMenuItem onClick={() => handleEditAppointment(appointment)}>
-                                    <Edit className="mr-2 h-4 w-4" />
-                                    Editar
-                                  </DropdownMenuItem>
-                                  <DropdownMenuSeparator />
-                                  <DropdownMenuItem
-                                    onClick={() => handleEditAppointment(appointment)}
-                                    className="text-destructive"
-                                  >
-                                    <Trash2 className="mr-2 h-4 w-4" />
-                                    Excluir
-                                  </DropdownMenuItem>
-                                </DropdownMenuContent>
-                              </DropdownMenu>
+                              <div className="flex items-center gap-2">
+                                {/* Botões de ação rápida */}
+                                {(appointment.status === "pending" || appointment.status === "confirmed") && (
+                                  <>
+                                    <Button
+                                      size="sm"
+                                      variant="outline"
+                                      onClick={() => handleQuickComplete(appointment.id)}
+                                      className="text-green-600 border-green-600 hover:bg-green-50"
+                                      disabled={completeAppointmentMutation.isPending}
+                                    >
+                                      <CheckCircle className="h-4 w-4" />
+                                    </Button>
+                                    <Button
+                                      size="sm"
+                                      variant="outline"
+                                      onClick={() => handleQuickCancel(appointment.id)}
+                                      className="text-red-600 border-red-600 hover:bg-red-50"
+                                      disabled={cancelAppointmentMutation.isPending}
+                                    >
+                                      <X className="h-4 w-4" />
+                                    </Button>
+                                  </>
+                                )}
+
+                                <DropdownMenu>
+                                  <DropdownMenuTrigger asChild>
+                                    <Button variant="ghost" size="sm">
+                                      <svg className="h-4 w-4" viewBox="0 0 24 24" fill="currentColor" aria-label="Menu de opções">
+                                        <title>Menu de opções</title>
+                                        <circle cx="12" cy="12" r="2" />
+                                        <circle cx="12" cy="5" r="2" />
+                                        <circle cx="12" cy="19" r="2" />
+                                      </svg>
+                                    </Button>
+                                  </DropdownMenuTrigger>
+                                  <DropdownMenuContent align="end">
+                                    <DropdownMenuItem onClick={() => handleEditAppointment(appointment)}>
+                                      <Edit className="mr-2 h-4 w-4" />
+                                      Editar
+                                    </DropdownMenuItem>
+                                    <DropdownMenuSeparator />
+                                    <DropdownMenuItem
+                                      onClick={() => handleDeleteAppointment(appointment.id)}
+                                      className="text-destructive"
+                                    >
+                                      <Trash2 className="mr-2 h-4 w-4" />
+                                      Excluir
+                                    </DropdownMenuItem>
+                                  </DropdownMenuContent>
+                                </DropdownMenu>
+                              </div>
                             </div>
 
                             {/* Informações do agendamento */}
@@ -455,33 +498,19 @@ export default function Appointments() {
           </div>
         </div>
 
-        {/* Modal de criação/edição */}
+        {/* Modal de agendamento */}
         <AppointmentModal
           isOpen={isModalOpen}
           onClose={handleModalClose}
           onSuccess={handleSuccess}
-          appointment={editingAppointment || undefined}
+          appointment={editingAppointment ? {
+            ...editingAppointment,
+            status: editingAppointment.status || "pending",
+            notes: editingAppointment.notes || undefined
+          } : undefined}
           initialDate={selectedDate}
-        />
-
-        {/* Modais das Funcionalidades Avançadas */}
-        <WaitlistManagement
-          isOpen={isWaitlistOpen}
-          onClose={() => setIsWaitlistOpen(false)}
-        />
-
-        <ReportsManagement
-          isOpen={isReportsOpen}
-          onClose={() => setIsReportsOpen(false)}
-        />
-
-        <SpecialistScheduleManagement
-          isOpen={isScheduleOpen}
-          onClose={() => setIsScheduleOpen(false)}
-          specialistId={selectedSpecialistForSchedule}
         />
       </div>
     </DashboardLayout>
   );
 }
-

@@ -1,4 +1,16 @@
-import { eq, and, gte, lte, like, asc, or, sql } from "drizzle-orm";
+import {
+  eq,
+  and,
+  gte,
+  lte,
+  like,
+  asc,
+  or,
+  sql,
+  desc,
+  sum,
+  count,
+} from "drizzle-orm";
 import { drizzle } from "drizzle-orm/postgres-js";
 import postgres from "postgres";
 import {
@@ -9,12 +21,14 @@ import {
   services,
   appointments,
   passwordResets,
+  transactions,
   InsertUser,
   InsertSpecialist,
   InsertClient,
   InsertService,
   InsertAppointment,
   InsertPasswordReset,
+  InsertTransaction,
   User,
   Salon,
   Specialist,
@@ -23,6 +37,7 @@ import {
   Appointment,
   AppointmentWithDetails,
   PasswordReset,
+  Transaction,
 } from "../drizzle/schema";
 import * as schema from "../drizzle/schema";
 import * as relations from "../drizzle/relations";
@@ -593,360 +608,245 @@ export async function deleteAppointment(appointmentId: string): Promise<void> {
 }
 
 // ============================================================================
-// APPOINTMENT UTILITY FUNCTIONS
+// TRANSACTION FUNCTIONS
 // ============================================================================
 
+export type { Transaction, InsertTransaction } from "../drizzle/schema";
+
 /**
- * Converte string de horário "HH:MM" para minutos desde 00:00
+ * Cria uma nova transação financeira
  */
-export function timeToMinutes(time: string): number {
-  const [hours, minutes] = time.split(":").map(Number);
-  return hours * 60 + minutes;
+export async function createTransaction(transaction: InsertTransaction) {
+  const db = await getDb();
+  if (!db) throw new Error("Database não disponível");
+
+  const [newTransaction] = await db
+    .insert(transactions)
+    .values(transaction)
+    .returning();
+
+  return newTransaction;
 }
 
 /**
- * Converte minutos desde 00:00 para string "HH:MM"
+ * Busca transações por salão
  */
-export function minutesToTime(minutes: number): string {
-  const hours = Math.floor(minutes / 60);
-  const mins = minutes % 60;
-  return `${hours.toString().padStart(2, "0")}:${mins.toString().padStart(2, "0")}`;
-}
-
-/**
- * Calcula horário de fim de um agendamento
- */
-export function calculateEndTime(
-  startTime: string,
-  durationMinutes: number
-): string {
-  const startMinutes = timeToMinutes(startTime);
-  const endMinutes = startMinutes + durationMinutes;
-  return minutesToTime(endMinutes);
-}
-
-/**
- * Verifica se há sobreposição entre dois intervalos de tempo
- */
-export function hasTimeOverlap(
-  start1: string,
-  end1: string,
-  start2: string,
-  end2: string
-): boolean {
-  const start1Min = timeToMinutes(start1);
-  const end1Min = timeToMinutes(end1);
-  const start2Min = timeToMinutes(start2);
-  const end2Min = timeToMinutes(end2);
-
-  return start1Min < end2Min && start2Min < end1Min;
-}
-
-/**
- * Gera slots de horários disponíveis considerando intervalo de tempo
- */
-export function generateTimeSlots(
-  startTime: string,
-  endTime: string,
-  intervalMinutes: number = 30
-): string[] {
-  const slots: string[] = [];
-  const startMinutes = timeToMinutes(startTime);
-  const endMinutes = timeToMinutes(endTime);
-
-  for (
-    let minutes = startMinutes;
-    minutes < endMinutes;
-    minutes += intervalMinutes
-  ) {
-    slots.push(minutesToTime(minutes));
+export async function getTransactionsBySalonId(
+  salonId: string,
+  filters?: {
+    type?: "income" | "expense" | "refund";
+    status?: "pending" | "completed" | "cancelled";
+    startDate?: Date;
+    endDate?: Date;
+    limit?: number;
+    offset?: number;
   }
-
-  return slots;
-}
-
-/**
- * Tipo para horários de trabalho do especialista
- */
-type WorkingDays = Record<
-  string,
-  Array<{
-    start: string;
-    end: string;
-    lunch?: { start: string; end: string };
-  }>
->;
-
-/**
- * Verifica se um horário está dentro do horário de trabalho do especialista
- */
-export function isWithinWorkingHours(
-  appointmentTime: string,
-  serviceDuration: number,
-  workingDays: WorkingDays | null,
-  dayOfWeek: string
-): boolean {
-  if (!workingDays || !workingDays[dayOfWeek]) {
-    return false;
-  }
-
-  const endTime = calculateEndTime(appointmentTime, serviceDuration);
-  const daySchedule = workingDays[dayOfWeek];
-
-  for (const period of daySchedule) {
-    // Verifica se o agendamento cabe no período de trabalho
-    if (appointmentTime >= period.start && endTime <= period.end) {
-      // Se há horário de almoço, verifica se não há conflito
-      if (period.lunch) {
-        if (
-          hasTimeOverlap(
-            appointmentTime,
-            endTime,
-            period.lunch.start,
-            period.lunch.end
-          )
-        ) {
-          continue; // Conflita com almoço, tenta próximo período
-        }
-      }
-      return true;
-    }
-  }
-
-  return false;
-}
-
-/**
- * Busca agendamentos que podem ter conflito com novo agendamento
- */
-export async function getConflictingAppointments(
-  specialistId: string,
-  date: Date,
-  startTime: string,
-  duration: number,
-  excludeAppointmentId?: string
-): Promise<AppointmentWithDetails[]> {
+) {
   const db = await getDb();
   if (!db) return [];
 
-  const endTime = calculateEndTime(startTime, duration);
-
-  const startOfDay = new Date(date);
-  startOfDay.setHours(0, 0, 0, 0);
-
-  const endOfDay = new Date(date);
-  endOfDay.setHours(23, 59, 59, 999);
-
-  const results = await db
+  let query = db
     .select({
-      appointment: appointments,
-      service: services,
-      client: clients,
-      specialist: specialists,
+      transaction: transactions,
+      client: {
+        id: clients.id,
+        name: clients.name,
+      },
+      service: {
+        id: services.id,
+        name: services.name,
+        duration: services.duration,
+      },
+      specialist: {
+        id: specialists.id,
+        name: specialists.name,
+        specialty: specialists.specialty,
+      },
+      appointment: {
+        id: appointments.id,
+        appointmentDate: appointments.appointmentDate,
+        appointmentTime: appointments.appointmentTime,
+      },
     })
-    .from(appointments)
-    .innerJoin(services, eq(appointments.serviceId, services.id))
-    .innerJoin(clients, eq(appointments.clientId, clients.id))
-    .innerJoin(specialists, eq(appointments.specialistId, specialists.id))
+    .from(transactions)
+    .leftJoin(clients, eq(transactions.clientId, clients.id))
+    .leftJoin(services, eq(transactions.serviceId, services.id))
+    .leftJoin(specialists, eq(transactions.specialistId, specialists.id))
+    .leftJoin(appointments, eq(transactions.appointmentId, appointments.id))
+    .where(eq(transactions.salonId, salonId));
+
+  // Aplicar filtros
+  if (filters?.type) {
+    query = query.where(
+      and(
+        eq(transactions.salonId, salonId),
+        eq(transactions.type, filters.type)
+      )
+    );
+  }
+
+  if (filters?.status) {
+    query = query.where(
+      and(
+        eq(transactions.salonId, salonId),
+        eq(transactions.status, filters.status)
+      )
+    );
+  }
+
+  if (filters?.startDate && filters?.endDate) {
+    query = query.where(
+      and(
+        eq(transactions.salonId, salonId),
+        gte(transactions.transactionDate, filters.startDate),
+        lte(transactions.transactionDate, filters.endDate)
+      )
+    );
+  }
+
+  // Ordenar por data (mais recente primeiro)
+  query = query.orderBy(desc(transactions.transactionDate));
+
+  // Aplicar limit e offset
+  if (filters?.limit) {
+    query = query.limit(filters.limit);
+  }
+  if (filters?.offset) {
+    query = query.offset(filters.offset);
+  }
+
+  return query;
+}
+
+/**
+ * Busca estatísticas financeiras do salão
+ */
+export async function getFinancialStatistics(
+  salonId: string,
+  startDate: Date,
+  endDate: Date
+) {
+  const db = await getDb();
+  if (!db) return null;
+
+  // Receitas
+  const incomeResult = await db
+    .select({
+      total: sum(transactions.amount),
+      count: count(transactions.id),
+    })
+    .from(transactions)
     .where(
       and(
-        eq(appointments.specialistId, specialistId),
-        gte(appointments.appointmentDate, startOfDay),
-        lte(appointments.appointmentDate, endOfDay),
-        or(
-          eq(appointments.status, "pending"),
-          eq(appointments.status, "confirmed")
-        ),
-        excludeAppointmentId
-          ? sql`${appointments.id} != ${excludeAppointmentId}`
-          : sql`1=1`
+        eq(transactions.salonId, salonId),
+        eq(transactions.type, "income"),
+        eq(transactions.status, "completed"),
+        gte(transactions.transactionDate, startDate),
+        lte(transactions.transactionDate, endDate)
       )
     );
 
-  // Filtra apenas agendamentos que realmente conflitam
-  return results
-    .filter(result => {
-      const existingStartTime = result.appointment.appointmentTime;
-      const existingDuration = result.service.duration;
-      const existingEndTime = calculateEndTime(
-        existingStartTime,
-        existingDuration
-      );
-
-      return hasTimeOverlap(
-        startTime,
-        endTime,
-        existingStartTime,
-        existingEndTime
-      );
+  // Despesas
+  const expenseResult = await db
+    .select({
+      total: sum(transactions.amount),
+      count: count(transactions.id),
     })
-    .map(result => ({
-      ...result.appointment,
-      service: result.service,
-      client: result.client,
-      specialist: result.specialist,
-    }));
-}
-
-/**
- * Gera horários disponíveis para um especialista em uma data específica
- */
-export async function getAvailableTimeSlots(
-  specialistId: string,
-  serviceId: string,
-  date: Date
-): Promise<string[]> {
-  const db = await getDb();
-  if (!db) return [];
-
-  // Busca dados do especialista e serviço
-  const specialist = await getSpecialistById(specialistId);
-  const service = await getServiceById(serviceId);
-
-  if (!specialist || !service) {
-    return [];
-  }
-
-  // Determina dia da semana (0 = domingo, 1 = segunda, etc.)
-  const dayOfWeek = date.getDay();
-  const dayNames = [
-    "sunday",
-    "monday",
-    "tuesday",
-    "wednesday",
-    "thursday",
-    "friday",
-    "saturday",
-  ];
-  const dayName = dayNames[dayOfWeek];
-
-  // Verifica se especialista trabalha neste dia
-  if (!specialist.workingDays || !specialist.workingDays[dayName]) {
-    return [];
-  }
-
-  const workingPeriods = specialist.workingDays[dayName];
-  const allSlots: string[] = [];
-
-  // Gera todos os slots possíveis para cada período de trabalho
-  for (const period of workingPeriods) {
-    const periodSlots = generateTimeSlots(period.start, period.end, 30); // Slots de 30 em 30 minutos
-
-    // Remove slots que conflitam com horário de almoço
-    const filteredSlots = periodSlots.filter(slot => {
-      if (!period.lunch) return true;
-
-      const slotEndTime = calculateEndTime(slot, service.duration);
-      return !hasTimeOverlap(
-        slot,
-        slotEndTime,
-        period.lunch.start,
-        period.lunch.end
-      );
-    });
-
-    allSlots.push(...filteredSlots);
-  }
-
-  // Busca agendamentos existentes
-  const existingAppointments = await getAppointmentsBySpecialistAndDate(
-    specialistId,
-    date
-  );
-
-  // Filtra slots que não conflitam com agendamentos existentes
-  const availableSlots = allSlots.filter(slot => {
-    const slotEndTime = calculateEndTime(slot, service.duration);
-
-    return !existingAppointments.some(apt => {
-      if (apt.status === "cancelled") return false;
-
-      // Para calcular conflito, precisamos da duração do serviço do agendamento existente
-      // Por simplicidade, assumimos 60 minutos se não temos a duração
-      const aptEndTime = calculateEndTime(apt.appointmentTime, 60);
-      return hasTimeOverlap(slot, slotEndTime, apt.appointmentTime, aptEndTime);
-    });
-  });
-
-  return availableSlots.sort();
-}
-
-/**
- * Versão melhorada que considera duração real dos serviços
- */
-export async function getAvailableTimeSlotsAdvanced(
-  specialistId: string,
-  serviceId: string,
-  date: Date
-): Promise<string[]> {
-  const db = await getDb();
-  if (!db) return [];
-
-  const specialist = await getSpecialistById(specialistId);
-  const service = await getServiceById(serviceId);
-
-  if (!specialist || !service) {
-    return [];
-  }
-
-  const dayOfWeek = date.getDay();
-  const dayNames = [
-    "sunday",
-    "monday",
-    "tuesday",
-    "wednesday",
-    "thursday",
-    "friday",
-    "saturday",
-  ];
-  const dayName = dayNames[dayOfWeek];
-
-  if (!specialist.workingDays || !specialist.workingDays[dayName]) {
-    return [];
-  }
-
-  const workingPeriods = specialist.workingDays[dayName];
-  const allSlots: string[] = [];
-
-  for (const period of workingPeriods) {
-    const periodSlots = generateTimeSlots(period.start, period.end, 15); // Slots menores para maior precisão
-    allSlots.push(...periodSlots);
-  }
-
-  // Busca agendamentos com detalhes para ter duração real
-  const conflictingAppointments = await getConflictingAppointments(
-    specialistId,
-    date,
-    "00:00",
-    24 * 60 // Todo o dia
-  );
-
-  const availableSlots = allSlots.filter(slot => {
-    // Verifica se o slot + duração do serviço cabe no horário de trabalho
-    if (
-      !isWithinWorkingHours(
-        slot,
-        service.duration,
-        specialist.workingDays,
-        dayName
+    .from(transactions)
+    .where(
+      and(
+        eq(transactions.salonId, salonId),
+        eq(transactions.type, "expense"),
+        eq(transactions.status, "completed"),
+        gte(transactions.transactionDate, startDate),
+        lte(transactions.transactionDate, endDate)
       )
-    ) {
-      return false;
-    }
+    );
 
-    const slotEndTime = calculateEndTime(slot, service.duration);
+  const totalIncome = Number(incomeResult[0]?.total || 0);
+  const totalExpenses = Number(expenseResult[0]?.total || 0);
+  const netProfit = totalIncome - totalExpenses;
 
-    // Verifica conflitos com agendamentos existentes
-    return !conflictingAppointments.some(apt => {
-      const aptEndTime = calculateEndTime(
-        apt.appointmentTime,
-        apt.service.duration
-      );
-      return hasTimeOverlap(slot, slotEndTime, apt.appointmentTime, aptEndTime);
-    });
+  return {
+    income: {
+      total: totalIncome,
+      count: Number(incomeResult[0]?.count || 0),
+    },
+    expenses: {
+      total: totalExpenses,
+      count: Number(expenseResult[0]?.count || 0),
+    },
+    netProfit,
+  };
+}
+
+/**
+ * Registra receita de um agendamento concluído
+ */
+export async function recordAppointmentRevenue(
+  appointmentId: string,
+  paymentMethod?:
+    | "cash"
+    | "credit_card"
+    | "debit_card"
+    | "pix"
+    | "bank_transfer"
+    | "other"
+) {
+  const db = await getDb();
+  if (!db) throw new Error("Database não disponível");
+
+  // Buscar dados do agendamento
+  const appointmentData = await db
+    .select({
+      appointment: appointments,
+      client: { id: clients.id, name: clients.name },
+      service: { id: services.id, name: services.name, price: services.price },
+      specialist: { id: specialists.id, name: specialists.name },
+      salon: { id: salons.id },
+    })
+    .from(appointments)
+    .leftJoin(clients, eq(appointments.clientId, clients.id))
+    .leftJoin(services, eq(appointments.serviceId, services.id))
+    .leftJoin(specialists, eq(appointments.specialistId, specialists.id))
+    .leftJoin(salons, eq(appointments.salonId, salons.id))
+    .where(eq(appointments.id, appointmentId))
+    .limit(1);
+
+  if (!appointmentData.length || !appointmentData[0].appointment) {
+    throw new Error("Agendamento não encontrado");
+  }
+
+  const { appointment, client, service, specialist, salon } =
+    appointmentData[0];
+
+  if (!salon || !service) {
+    throw new Error("Dados incompletos para registrar transação");
+  }
+
+  const amount = Number(service.price);
+  const specialistCommission = amount * 0.6; // 60% para o especialista
+  const serviceFee = amount - specialistCommission; // 40% para o salão
+
+  // Criar transação
+  const transaction = await createTransaction({
+    id: generateId(),
+    salonId: salon.id,
+    appointmentId: appointment.id,
+    clientId: client?.id || null,
+    serviceId: service.id,
+    specialistId: specialist?.id || null,
+    type: "income",
+    status: "completed",
+    paymentMethod: paymentMethod || "cash",
+    amount: amount.toString(),
+    serviceFee: serviceFee.toString(),
+    specialistCommission: specialistCommission.toString(),
+    description: `Serviço: ${service.name} - Cliente: ${client?.name || "N/A"}`,
+    transactionDate: new Date(),
   });
 
-  return availableSlots.sort();
+  return transaction;
 }
 
 // ============================================================================
@@ -1243,6 +1143,227 @@ export async function createTemporaryBlock(
 export async function removeTemporaryBlock(blockId: string): Promise<void> {
   // Em produção, removeria o bloqueio do cache/tabela temporária
   console.log(`Removendo bloqueio temporário: ${blockId}`);
+}
+
+/**
+ * Gera horários disponíveis para um especialista em uma data específica
+ */
+export async function getAvailableTimeSlots(
+  specialistId: string,
+  serviceId: string,
+  date: Date
+): Promise<string[]> {
+  const db = await getDb();
+  if (!db) return [];
+
+  // Busca dados do especialista e serviço
+  const specialist = await getSpecialistById(specialistId);
+  const service = await getServiceById(serviceId);
+
+  if (!specialist || !service) {
+    return [];
+  }
+
+  // Determina dia da semana (0 = domingo, 1 = segunda, etc.)
+  const dayOfWeek = date.getDay();
+  const dayNames = [
+    "sunday",
+    "monday",
+    "tuesday",
+    "wednesday",
+    "thursday",
+    "friday",
+    "saturday",
+  ];
+  const dayName = dayNames[dayOfWeek];
+
+  // Verifica se especialista trabalha neste dia
+  if (!specialist.workingDays || !specialist.workingDays[dayName]) {
+    return [];
+  }
+
+  const workingPeriods = specialist.workingDays[dayName];
+  const allSlots: string[] = [];
+
+  // Gera todos os slots possíveis para cada período de trabalho
+  for (const period of workingPeriods) {
+    const periodSlots = generateTimeSlots(period.start, period.end, 30); // Slots de 30 em 30 minutos
+
+    // Remove slots que conflitam com horário de almoço
+    const filteredSlots = periodSlots.filter(slot => {
+      if (!period.lunch) return true;
+
+      const slotEndTime = calculateEndTime(slot, service.duration);
+      return !hasTimeOverlap(
+        slot,
+        slotEndTime,
+        period.lunch.start,
+        period.lunch.end
+      );
+    });
+
+    allSlots.push(...filteredSlots);
+  }
+
+  // Busca agendamentos existentes
+  const existingAppointments = await getAppointmentsBySpecialistAndDate(
+    specialistId,
+    date
+  );
+
+  // Filtra slots que não conflitam com agendamentos existentes
+  const availableSlots = allSlots.filter(slot => {
+    const slotEndTime = calculateEndTime(slot, service.duration);
+
+    return !existingAppointments.some(apt => {
+      if (apt.status === "cancelled") return false;
+
+      // Para calcular conflito, assumimos duração padrão de 60 min se não temos a duração
+      const aptEndTime = calculateEndTime(apt.appointmentTime, 60);
+      return hasTimeOverlap(slot, slotEndTime, apt.appointmentTime, aptEndTime);
+    });
+  });
+
+  return availableSlots.sort();
+}
+
+/**
+ * Gera slots de tempo entre dois horários
+ */
+function generateTimeSlots(
+  startTime: string,
+  endTime: string,
+  intervalMinutes: number
+): string[] {
+  const slots: string[] = [];
+  const start = timeToMinutes(startTime);
+  const end = timeToMinutes(endTime);
+
+  for (let minutes = start; minutes < end; minutes += intervalMinutes) {
+    slots.push(minutesToTime(minutes));
+  }
+
+  return slots;
+}
+
+/**
+ * Calcula horário de fim baseado no início e duração
+ */
+function calculateEndTime(startTime: string, durationMinutes: number): string {
+  const startMinutes = timeToMinutes(startTime);
+  const endMinutes = startMinutes + durationMinutes;
+  return minutesToTime(endMinutes);
+}
+
+/**
+ * Verifica se dois períodos de tempo se sobrepõem
+ */
+function hasTimeOverlap(
+  start1: string,
+  end1: string,
+  start2: string,
+  end2: string
+): boolean {
+  const s1 = timeToMinutes(start1);
+  const e1 = timeToMinutes(end1);
+  const s2 = timeToMinutes(start2);
+  const e2 = timeToMinutes(end2);
+
+  return s1 < e2 && s2 < e1;
+}
+
+/**
+ * Converte horário HH:MM para minutos desde meia-noite
+ */
+export function timeToMinutes(time: string): number {
+  const [hours, minutes] = time.split(":").map(Number);
+  return hours * 60 + minutes;
+}
+
+/**
+ * Converte minutos desde meia-noite para horário HH:MM
+ */
+function minutesToTime(minutes: number): string {
+  const hours = Math.floor(minutes / 60);
+  const mins = minutes % 60;
+  return `${hours.toString().padStart(2, "0")}:${mins.toString().padStart(2, "0")}`;
+}
+
+/**
+ * Verifica se um horário está dentro do expediente do especialista
+ */
+export function isWithinWorkingHours(
+  time: string,
+  durationMinutes: number,
+  workingDays: any,
+  dayName: string
+): boolean {
+  if (!workingDays || !workingDays[dayName]) {
+    return false;
+  }
+
+  const periods = workingDays[dayName];
+  const startMinutes = timeToMinutes(time);
+  const endMinutes = startMinutes + durationMinutes;
+
+  for (const period of periods) {
+    const periodStart = timeToMinutes(period.start);
+    const periodEnd = timeToMinutes(period.end);
+
+    // Verifica se o horário está dentro do período de trabalho
+    if (startMinutes >= periodStart && endMinutes <= periodEnd) {
+      // Verifica se não conflita com horário de almoço
+      if (period.lunch) {
+        const lunchStart = timeToMinutes(period.lunch.start);
+        const lunchEnd = timeToMinutes(period.lunch.end);
+
+        // Se há sobreposição com o almoço, não é válido
+        if (!(endMinutes <= lunchStart || startMinutes >= lunchEnd)) {
+          continue;
+        }
+      }
+      return true;
+    }
+  }
+
+  return false;
+}
+
+/**
+ * Busca agendamentos que conflitam com um horário específico
+ */
+async function getConflictingAppointments(
+  specialistId: string,
+  date: Date,
+  time: string,
+  durationMinutes: number,
+  excludeAppointmentId?: string
+): Promise<Appointment[]> {
+  const existingAppointments = await getAppointmentsBySpecialistAndDate(
+    specialistId,
+    date
+  );
+
+  const startMinutes = timeToMinutes(time);
+  const endMinutes = startMinutes + durationMinutes;
+
+  return existingAppointments.filter(apt => {
+    if (apt.status === "cancelled") return false;
+    if (excludeAppointmentId && apt.id === excludeAppointmentId) return false;
+
+    const aptStartMinutes = timeToMinutes(apt.appointmentTime);
+    const aptEndMinutes = aptStartMinutes + 60; // Assumimos 60 min se não temos duração
+
+    // Verifica sobreposição
+    return !(endMinutes <= aptStartMinutes || startMinutes >= aptEndMinutes);
+  });
+}
+
+/**
+ * Gera um ID único para entidades
+ */
+export function generateId(): string {
+  return `${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
 }
 
 export { users };

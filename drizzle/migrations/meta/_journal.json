@@ -50,6 +50,13 @@
       "when": 1761163323888,
       "tag": "0006_short_harrier",
       "breakpoints": true
+    },
+    {
+      "idx": 7,
+      "version": "7",
+      "when": 1761787005003,
+      "tag": "0007_wonderful_red_ghost",
+      "breakpoints": true
     }
   ]
 }

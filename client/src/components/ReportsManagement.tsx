@@ -88,8 +88,14 @@ export function ReportsManagement({ isOpen, onClose }: ReportsManagementProps) {
         date: new Date(dateFilter.endDate)
     });
 
-    const exportCSVMutation = trpc.reports.exportCSV.useMutation({
-        onSuccess: (result) => {
+    const [isExporting, setIsExporting] = useState(false);
+
+    // Função para exportar CSV
+    const handleExportCSV = async (reportType: string, data: any) => {
+        setIsExporting(true);
+        try {
+            const result = await trpc.reports.exportCSV.query({ reportType: reportType as any, data });
+
             // Criar e baixar arquivo CSV
             const blob = new Blob([result.content], { type: result.mimeType });
             const url = window.URL.createObjectURL(blob);
@@ -100,16 +106,16 @@ export function ReportsManagement({ isOpen, onClose }: ReportsManagementProps) {
             a.click();
             document.body.removeChild(a);
             window.URL.revokeObjectURL(url);
-            toast.success("Relatório exportado com sucesso!");
-        },
-        onError: (error) => {
-            toast.error(`Erro ao exportar: ${error.message}`);
-        }
-    });
 
-    const handleExport = (reportType: string, data: any) => {
-        exportCSVMutation.mutate({ reportType: reportType as any, data });
+            toast.success("Relatório exportado com sucesso!");
+        } catch (error: any) {
+            toast.error(`Erro ao exportar: ${error.message}`);
+        } finally {
+            setIsExporting(false);
+        }
     };
+
+
 
     const formatCurrency = (value: number) => {
         return new Intl.NumberFormat('pt-BR', {
@@ -193,8 +199,8 @@ export function ReportsManagement({ isOpen, onClose }: ReportsManagementProps) {
                         <div className="flex justify-between items-center">
                             <h3 className="text-lg font-semibold">Estatísticas Gerais</h3>
                             <Button
-                                onClick={() => handleExport('appointments', statsQuery.data)}
-                                disabled={!statsQuery.data || exportCSVMutation.isLoading}
+                                onClick={() => handleExportCSV('appointments', statsQuery.data)}
+                                disabled={!statsQuery.data || isExporting}
                                 size="sm"
                             >
                                 <Download className="h-4 w-4 mr-2" />
@@ -306,8 +312,8 @@ export function ReportsManagement({ isOpen, onClose }: ReportsManagementProps) {
                         <div className="flex justify-between items-center">
                             <h3 className="text-lg font-semibold">Performance dos Especialistas</h3>
                             <Button
-                                onClick={() => handleExport('specialists', specialistPerformanceQuery.data)}
-                                disabled={!specialistPerformanceQuery.data || exportCSVMutation.isLoading}
+                                onClick={() => handleExportCSV('specialists', specialistPerformanceQuery.data)}
+                                disabled={!specialistPerformanceQuery.data || isExporting}
                                 size="sm"
                             >
                                 <Download className="h-4 w-4 mr-2" />
@@ -344,7 +350,7 @@ export function ReportsManagement({ isOpen, onClose }: ReportsManagementProps) {
                                             <TableCell>
                                                 <div className="flex items-center gap-2">
                                                     <div className={`w-2 h-2 rounded-full ${specialist.completionRate >= 80 ? 'bg-green-500' :
-                                                            specialist.completionRate >= 60 ? 'bg-yellow-500' : 'bg-red-500'
+                                                        specialist.completionRate >= 60 ? 'bg-yellow-500' : 'bg-red-500'
                                                         }`} />
                                                     {formatPercentage(specialist.completionRate)}
                                                 </div>
@@ -383,8 +389,8 @@ export function ReportsManagement({ isOpen, onClose }: ReportsManagementProps) {
                         <div className="flex justify-between items-center">
                             <h3 className="text-lg font-semibold">Popularidade dos Serviços</h3>
                             <Button
-                                onClick={() => handleExport('services', servicePopularityQuery.data)}
-                                disabled={!servicePopularityQuery.data || exportCSVMutation.isLoading}
+                                onClick={() => handleExportCSV('services', servicePopularityQuery.data)}
+                                disabled={!servicePopularityQuery.data || isExporting}
                                 size="sm"
                             >
                                 <Download className="h-4 w-4 mr-2" />
@@ -458,8 +464,8 @@ export function ReportsManagement({ isOpen, onClose }: ReportsManagementProps) {
                         <div className="flex justify-between items-center">
                             <h3 className="text-lg font-semibold">Análise de Clientes</h3>
                             <Button
-                                onClick={() => handleExport('clients', clientAnalyticsQuery.data?.all)}
-                                disabled={!clientAnalyticsQuery.data || exportCSVMutation.isLoading}
+                                onClick={() => handleExportCSV('clients', clientAnalyticsQuery.data?.all)}
+                                disabled={!clientAnalyticsQuery.data || isExporting}
                                 size="sm"
                             >
                                 <Download className="h-4 w-4 mr-2" />
