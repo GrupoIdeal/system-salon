@@ -17,6 +17,13 @@ import {
     AlertDialogHeader,
     AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
+import {
+    WorkingHoursManager,
+    defaultWorkingDays,
+    workingDaysToDatabase,
+    workingDaysFromDatabase,
+    type WorkingDays
+} from "@/components/WorkingHoursManager";
 
 export default function Specialists() {
     const nameId = useId();
@@ -34,6 +41,7 @@ export default function Specialists() {
         specialty: "",
         bio: "",
     });
+    const [workingDays, setWorkingDays] = useState<WorkingDays>(defaultWorkingDays);
     const [isEditing, setIsEditing] = useState(false);
     const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
     const [specialistToDelete, setSpecialistToDelete] = useState<string | null>(null);
@@ -71,6 +79,7 @@ export default function Specialists() {
             specialty: "",
             bio: ""
         });
+        setWorkingDays(defaultWorkingDays);
     };
 
     // Função para lidar com upload de imagem (simples, base64)
@@ -88,11 +97,12 @@ export default function Specialists() {
     const handleEditSpecialist = (specialist: {
         id: string;
         name: string;
-        email?: string;
-        phone?: string;
-        photo?: string;
-        specialty?: string;
-        bio?: string;
+        email?: string | null;
+        phone?: string | null;
+        photo?: string | null;
+        specialty?: string | null;
+        bio?: string | null;
+        workingDays?: Record<string, Array<{ start: string; end: string; lunch?: { start: string; end: string } }>> | null;
     }) => {
         setFormData({
             id: specialist.id,
@@ -103,6 +113,7 @@ export default function Specialists() {
             specialty: specialist.specialty || "",
             bio: specialist.bio || "",
         });
+        setWorkingDays(workingDaysFromDatabase(specialist.workingDays || null));
         setIsEditing(true);
     };
 
@@ -135,6 +146,7 @@ export default function Specialists() {
             photo: formData.photo,
             specialty: formData.specialty,
             bio: formData.bio,
+            workingDays: workingDaysToDatabase(workingDays),
             status: "active" as const,
         };
 
@@ -204,6 +216,14 @@ export default function Specialists() {
                                     <label htmlFor={bioId} className="text-sm font-medium text-slate-700">Bio</label>
                                     <textarea id={bioId} className="w-full min-h-[60px] rounded-md border px-3 py-2 text-sm resize-none focus:outline-none focus:ring-2 focus:ring-primary/40 mt-1" value={formData.bio} onChange={e => setFormData({ ...formData, bio: e.target.value })} placeholder="Breve descrição do profissional" />
                                 </div>
+
+                                {/* Gerenciador de horários de trabalho */}
+                                <div className="col-span-2">
+                                    <WorkingHoursManager
+                                        workingDays={workingDays}
+                                        onChange={setWorkingDays}
+                                    />
+                                </div>
                                 <div className="flex gap-2">
                                     <Button type="submit" className="flex-1 bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2 rounded-xl transition" disabled={createMutation.isPending || updateMutation.isPending}>
                                         {isEditing ? "Atualizar" : "Salvar"}
@@ -251,6 +271,7 @@ export default function Specialists() {
                                                 photo: spec.photo,
                                                 specialty: spec.specialty,
                                                 bio: spec.bio,
+                                                workingDays: spec.workingDays,
                                             })}
                                         >
                                             <Edit size={18} className="mr-1" />

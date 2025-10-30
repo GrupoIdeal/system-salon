@@ -46,6 +46,9 @@ import {
   getAvailableTimeSlots,
   validateAppointmentSlot,
   timeToMinutes,
+  getDashboardMetrics,
+  getRevenueChart,
+  getMonthlyComparison,
 } from "./db";
 import {
   scheduleAppointmentNotifications,
@@ -90,6 +93,71 @@ import {
 } from "@shared/validations";
 
 const generateId = () => crypto.randomBytes(16).toString("hex");
+
+const dashboardRouter = router({
+  // Métricas principais do dashboard
+  metrics: protectedProcedure.query(async ({ ctx }) => {
+    const salon = await getSalonByUserId(ctx.user.id);
+    if (!salon) {
+      throw new TRPCError({
+        code: "NOT_FOUND",
+        message: "Salão não encontrado",
+      });
+    }
+
+    return await getDashboardMetrics(salon.id);
+  }),
+
+  // Gráfico de receita dos últimos 30 dias
+  revenueChart: protectedProcedure
+    .input(
+      z.object({
+        days: z.number().min(7).max(365).default(30),
+      })
+    )
+    .query(async ({ ctx, input }) => {
+      const salon = await getSalonByUserId(ctx.user.id);
+      if (!salon) {
+        throw new TRPCError({
+          code: "NOT_FOUND",
+          message: "Salão não encontrado",
+        });
+      }
+
+      return await getRevenueChart(salon.id, input.days);
+    }),
+
+  // Comparativo mensal
+  monthlyComparison: protectedProcedure.query(async ({ ctx }) => {
+    const salon = await getSalonByUserId(ctx.user.id);
+    if (!salon) {
+      throw new TRPCError({
+        code: "NOT_FOUND",
+        message: "Salão não encontrado",
+      });
+    }
+
+    return await getMonthlyComparison(salon.id);
+  }),
+
+  // Próximos agendamentos (primeiros 10)
+  upcomingAppointments: protectedProcedure.query(async ({ ctx }) => {
+    const salon = await getSalonByUserId(ctx.user.id);
+    if (!salon) {
+      throw new TRPCError({
+        code: "NOT_FOUND",
+        message: "Salão não encontrado",
+      });
+    }
+
+    const now = new Date();
+    return await getAppointmentsBySalonId(salon.id, {
+      startDate: now,
+      status: ["confirmed", "pending"],
+      limit: 10,
+    });
+  }),
+});
 
 export const appRouter = router({
   system: systemRouter,
@@ -1688,6 +1756,8 @@ export const appRouter = router({
         );
       }),
   }),
+
+  dashboard: dashboardRouter,
 });
 
 export type AppRouter = typeof appRouter;

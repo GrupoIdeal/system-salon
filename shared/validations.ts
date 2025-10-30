@@ -63,10 +63,13 @@ export const specialistSchema = z.object({
   workingDays: z
     .record(
       z.string(),
-      z.object({
-        start: z.string(),
-        end: z.string(),
-      })
+      z.array(
+        z.object({
+          start: z.string(),
+          end: z.string(),
+          lunch: z.object({ start: z.string(), end: z.string() }).optional(),
+        })
+      )
     )
     .optional(),
   status: z.enum(["active", "inactive"]).default("active"),

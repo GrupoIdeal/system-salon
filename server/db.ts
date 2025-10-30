@@ -5,7 +5,6 @@ import {
   lte,
   like,
   asc,
-  or,
   sql,
   desc,
   sum,
@@ -37,7 +36,6 @@ import {
   Appointment,
   AppointmentWithDetails,
   PasswordReset,
-  Transaction,
 } from "../drizzle/schema";
 import * as schema from "../drizzle/schema";
 import * as relations from "../drizzle/relations";
@@ -645,7 +643,25 @@ export async function getTransactionsBySalonId(
   const db = await getDb();
   if (!db) return [];
 
-  let query = db
+  // Construir condições WHERE
+  const conditions = [eq(transactions.salonId, salonId)];
+
+  if (filters?.type) {
+    conditions.push(eq(transactions.type, filters.type));
+  }
+
+  if (filters?.status) {
+    conditions.push(eq(transactions.status, filters.status));
+  }
+
+  if (filters?.startDate && filters?.endDate) {
+    conditions.push(
+      gte(transactions.transactionDate, filters.startDate),
+      lte(transactions.transactionDate, filters.endDate)
+    );
+  }
+
+  const baseQuery = db
     .select({
       transaction: transactions,
       client: {
@@ -673,49 +689,19 @@ export async function getTransactionsBySalonId(
     .leftJoin(services, eq(transactions.serviceId, services.id))
     .leftJoin(specialists, eq(transactions.specialistId, specialists.id))
     .leftJoin(appointments, eq(transactions.appointmentId, appointments.id))
-    .where(eq(transactions.salonId, salonId));
-
-  // Aplicar filtros
-  if (filters?.type) {
-    query = query.where(
-      and(
-        eq(transactions.salonId, salonId),
-        eq(transactions.type, filters.type)
-      )
-    );
-  }
-
-  if (filters?.status) {
-    query = query.where(
-      and(
-        eq(transactions.salonId, salonId),
-        eq(transactions.status, filters.status)
-      )
-    );
-  }
-
-  if (filters?.startDate && filters?.endDate) {
-    query = query.where(
-      and(
-        eq(transactions.salonId, salonId),
-        gte(transactions.transactionDate, filters.startDate),
-        lte(transactions.transactionDate, filters.endDate)
-      )
-    );
-  }
-
-  // Ordenar por data (mais recente primeiro)
-  query = query.orderBy(desc(transactions.transactionDate));
+    .where(and(...conditions))
+    .orderBy(desc(transactions.transactionDate));
 
   // Aplicar limit e offset
-  if (filters?.limit) {
-    query = query.limit(filters.limit);
-  }
-  if (filters?.offset) {
-    query = query.offset(filters.offset);
+  if (filters?.limit && filters?.offset) {
+    return baseQuery.limit(filters.limit).offset(filters.offset);
+  } else if (filters?.limit) {
+    return baseQuery.limit(filters.limit);
+  } else if (filters?.offset) {
+    return baseQuery.offset(filters.offset);
   }
 
-  return query;
+  return baseQuery;
 }
 
 /**
@@ -916,8 +902,8 @@ export async function validateAppointmentSlot(
     "saturday",
   ];
   const dayName = dayNames[dayOfWeek];
-
   if (
+    !specialist.workingDays ||
     !isWithinWorkingHours(
       time,
       service.duration,
@@ -1146,6 +1132,67 @@ export async function removeTemporaryBlock(blockId: string): Promise<void> {
 }
 
 /**
+ * Combina horários do salão com horários do especialista
+ * Retorna apenas os períodos onde AMBOS estão funcionando
+ */
+function getCombinedWorkingPeriods(
+  specialistPeriods: Array<{
+    start: string;
+    end: string;
+    lunch?: { start: string; end: string };
+  }>,
+  salonPeriods: Array<{
+    start: string;
+    end: string;
+    lunch?: { start: string; end: string };
+  }>
+): Array<{
+  start: string;
+  end: string;
+  lunch?: { start: string; end: string };
+}> {
+  const combined: Array<{
+    start: string;
+    end: string;
+    lunch?: { start: string; end: string };
+  }> = [];
+
+  for (const salonPeriod of salonPeriods) {
+    for (const specialistPeriod of specialistPeriods) {
+      // Calcula intersecção dos períodos
+      const start = getLatestTime(salonPeriod.start, specialistPeriod.start);
+      const end = getEarliestTime(salonPeriod.end, specialistPeriod.end);
+
+      // Se há intersecção válida
+      if (timeToMinutes(start) < timeToMinutes(end)) {
+        combined.push({
+          start,
+          end,
+          // Usa o horário de almoço do especialista (mais específico)
+          lunch: specialistPeriod.lunch,
+        });
+      }
+    }
+  }
+
+  return combined;
+}
+
+/**
+ * Retorna o horário mais tardio entre dois horários
+ */
+function getLatestTime(time1: string, time2: string): string {
+  return timeToMinutes(time1) > timeToMinutes(time2) ? time1 : time2;
+}
+
+/**
+ * Retorna o horário mais cedo entre dois horários
+ */
+function getEarliestTime(time1: string, time2: string): string {
+  return timeToMinutes(time1) < timeToMinutes(time2) ? time1 : time2;
+}
+
+/**
  * Gera horários disponíveis para um especialista em uma data específica
  */
 export async function getAvailableTimeSlots(
@@ -1153,14 +1200,46 @@ export async function getAvailableTimeSlots(
   serviceId: string,
   date: Date
 ): Promise<string[]> {
+  console.log("🔍 getAvailableTimeSlots DEBUG:", {
+    specialistId,
+    serviceId,
+    date: date.toISOString(),
+    dayOfWeek: date.getDay(),
+  });
+
   const db = await getDb();
-  if (!db) return [];
+  if (!db) {
+    console.log("❌ Database not available");
+    return [];
+  }
 
   // Busca dados do especialista e serviço
   const specialist = await getSpecialistById(specialistId);
   const service = await getServiceById(serviceId);
 
-  if (!specialist || !service) {
+  // Busca dados do salão
+  const salon = specialist ? await getSalonById(specialist.salonId) : null;
+
+  console.log("📊 Specialist data:", {
+    found: !!specialist,
+    name: specialist?.name,
+    workingDays: specialist?.workingDays,
+  });
+
+  console.log("🛠️ Service data:", {
+    found: !!service,
+    name: service?.name,
+    duration: service?.duration,
+  });
+
+  console.log("🏢 Salon data:", {
+    found: !!salon,
+    name: salon?.name,
+    workingHours: salon?.workingHours,
+  });
+
+  if (!specialist || !service || !salon) {
+    console.log("❌ Specialist, service or salon not found");
     return [];
   }
 
@@ -1177,19 +1256,51 @@ export async function getAvailableTimeSlots(
   ];
   const dayName = dayNames[dayOfWeek];
 
-  // Verifica se especialista trabalha neste dia
-  if (!specialist.workingDays || !specialist.workingDays[dayName]) {
+  console.log("📅 Day info:", {
+    dayOfWeek,
+    dayName,
+    specialistWorkingDays: specialist.workingDays?.[dayName],
+    salonWorkingHours: salon.workingHours?.[dayName],
+  });
+
+  // Verifica se o salão funciona neste dia
+  if (
+    !salon.workingHours ||
+    !salon.workingHours[dayName] ||
+    salon.workingHours[dayName].length === 0
+  ) {
+    console.log("❌ Salon is closed on this day");
     return [];
   }
 
-  const workingPeriods = specialist.workingDays[dayName];
+  // Verifica se especialista trabalha neste dia
+  if (!specialist.workingDays || !specialist.workingDays[dayName]) {
+    console.log("❌ Specialist does not work on this day");
+    return [];
+  }
+
+  const specialistPeriods = specialist.workingDays[dayName];
+  const salonPeriods = salon.workingHours[dayName];
   const allSlots: string[] = [];
 
-  // Gera todos os slots possíveis para cada período de trabalho
-  for (const period of workingPeriods) {
-    const periodSlots = generateTimeSlots(period.start, period.end, 30); // Slots de 30 em 30 minutos
+  console.log("⏰ Specialist working periods:", specialistPeriods);
+  console.log("🏢 Salon working hours:", salonPeriods);
 
-    // Remove slots que conflitam com horário de almoço
+  // Combina horários: intersecção entre salão e especialista
+  const combinedPeriods = getCombinedWorkingPeriods(
+    specialistPeriods,
+    salonPeriods
+  );
+
+  console.log("🔄 Combined working periods:", combinedPeriods);
+
+  // Gera todos os slots possíveis para cada período combinado
+  for (const period of combinedPeriods) {
+    console.log("🔄 Generating slots for combined period:", period);
+    const periodSlots = generateTimeSlots(period.start, period.end, 30); // Slots de 30 em 30 minutos
+    console.log("📋 Generated slots:", periodSlots.length, "slots");
+
+    // Remove slots que conflitam com horário de almoço do especialista
     const filteredSlots = periodSlots.filter(slot => {
       if (!period.lunch) return true;
 
@@ -1202,14 +1313,23 @@ export async function getAvailableTimeSlots(
       );
     });
 
+    console.log(
+      "✅ Filtered slots (after lunch filter):",
+      filteredSlots.length,
+      "slots"
+    );
     allSlots.push(...filteredSlots);
   }
+
+  console.log("📅 Total slots before conflict check:", allSlots.length);
 
   // Busca agendamentos existentes
   const existingAppointments = await getAppointmentsBySpecialistAndDate(
     specialistId,
     date
   );
+
+  console.log("📋 Existing appointments:", existingAppointments.length);
 
   // Filtra slots que não conflitam com agendamentos existentes
   const availableSlots = allSlots.filter(slot => {
@@ -1223,6 +1343,12 @@ export async function getAvailableTimeSlots(
       return hasTimeOverlap(slot, slotEndTime, apt.appointmentTime, aptEndTime);
     });
   });
+
+  console.log(
+    "✅ Final available slots:",
+    availableSlots.length,
+    availableSlots
+  );
 
   return availableSlots.sort();
 }
@@ -1295,7 +1421,14 @@ function minutesToTime(minutes: number): string {
 export function isWithinWorkingHours(
   time: string,
   durationMinutes: number,
-  workingDays: any,
+  workingDays: Record<
+    string,
+    Array<{
+      start: string;
+      end: string;
+      lunch?: { start: string; end: string };
+    }>
+  >,
   dayName: string
 ): boolean {
   if (!workingDays || !workingDays[dayName]) {
@@ -1364,6 +1497,292 @@ async function getConflictingAppointments(
  */
 export function generateId(): string {
   return `${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+}
+
+/**
+ * Métricas do Dashboard - Dados financeiros e de negócios
+ */
+export async function getDashboardMetrics(salonId: string) {
+  const db = await getDb();
+  if (!db) return null;
+
+  const today = new Date();
+  const startOfMonth = new Date(today.getFullYear(), today.getMonth(), 1);
+  const startOfWeek = new Date(today);
+  startOfWeek.setDate(today.getDate() - 7);
+
+  // Receita do mês atual
+  const monthlyRevenue = await db
+    .select({
+      total: sum(transactions.amount),
+      count: count(transactions.id),
+    })
+    .from(transactions)
+    .where(
+      and(
+        eq(transactions.salonId, salonId),
+        eq(transactions.type, "income"),
+        eq(transactions.status, "completed"),
+        gte(transactions.transactionDate, startOfMonth)
+      )
+    );
+
+  // Receita semanal
+  const weeklyRevenue = await db
+    .select({
+      total: sum(transactions.amount),
+      count: count(transactions.id),
+    })
+    .from(transactions)
+    .where(
+      and(
+        eq(transactions.salonId, salonId),
+        eq(transactions.type, "income"),
+        eq(transactions.status, "completed"),
+        gte(transactions.transactionDate, startOfWeek)
+      )
+    );
+
+  // Agendamentos de hoje
+  const todayStart = new Date(today);
+  todayStart.setHours(0, 0, 0, 0);
+  const todayEnd = new Date(today);
+  todayEnd.setHours(23, 59, 59, 999);
+
+  const todayAppointments = await db
+    .select({
+      total: count(appointments.id),
+      completed: count(
+        sql`CASE WHEN ${appointments.status} = 'completed' THEN 1 END`
+      ),
+      confirmed: count(
+        sql`CASE WHEN ${appointments.status} = 'confirmed' THEN 1 END`
+      ),
+      pending: count(
+        sql`CASE WHEN ${appointments.status} = 'pending' THEN 1 END`
+      ),
+      cancelled: count(
+        sql`CASE WHEN ${appointments.status} = 'cancelled' THEN 1 END`
+      ),
+    })
+    .from(appointments)
+    .where(
+      and(
+        eq(appointments.salonId, salonId),
+        gte(appointments.appointmentDate, todayStart),
+        lte(appointments.appointmentDate, todayEnd)
+      )
+    );
+
+  // Top 5 serviços mais lucrativos do mês
+  const topServices = await db
+    .select({
+      serviceId: transactions.serviceId,
+      serviceName: services.name,
+      totalRevenue: sum(transactions.amount),
+      totalBookings: count(transactions.id),
+    })
+    .from(transactions)
+    .innerJoin(services, eq(transactions.serviceId, services.id))
+    .where(
+      and(
+        eq(transactions.salonId, salonId),
+        eq(transactions.type, "income"),
+        eq(transactions.status, "completed"),
+        gte(transactions.transactionDate, startOfMonth)
+      )
+    )
+    .groupBy(transactions.serviceId, services.name)
+    .orderBy(desc(sum(transactions.amount)))
+    .limit(5);
+
+  // Top 5 especialistas por receita do mês
+  const topSpecialists = await db
+    .select({
+      specialistId: transactions.specialistId,
+      specialistName: specialists.name,
+      totalRevenue: sum(transactions.amount),
+      totalAppointments: count(transactions.id),
+    })
+    .from(transactions)
+    .innerJoin(specialists, eq(transactions.specialistId, specialists.id))
+    .where(
+      and(
+        eq(transactions.salonId, salonId),
+        eq(transactions.type, "income"),
+        eq(transactions.status, "completed"),
+        gte(transactions.transactionDate, startOfMonth)
+      )
+    )
+    .groupBy(transactions.specialistId, specialists.name)
+    .orderBy(desc(sum(transactions.amount)))
+    .limit(5);
+
+  // Clientes mais valiosos (por valor total gasto)
+  const topClients = await db
+    .select({
+      clientId: transactions.clientId,
+      clientName: clients.name,
+      totalSpent: sum(transactions.amount),
+      totalVisits: count(transactions.id),
+      lastVisit: sql<Date>`MAX(${transactions.transactionDate})`,
+    })
+    .from(transactions)
+    .innerJoin(clients, eq(transactions.clientId, clients.id))
+    .where(
+      and(
+        eq(transactions.salonId, salonId),
+        eq(transactions.type, "income"),
+        eq(transactions.status, "completed")
+      )
+    )
+    .groupBy(transactions.clientId, clients.name)
+    .orderBy(desc(sum(transactions.amount)))
+    .limit(10);
+
+  // Taxa de ocupação hoje
+  const occupationRate = todayAppointments[0]?.completed || 0;
+  const totalSlotsToday = 24; // Assumindo horário comercial de 8h às 20h (12 horas) com slots de 30min
+
+  return {
+    revenue: {
+      monthly: Number(monthlyRevenue[0]?.total || 0),
+      weekly: Number(weeklyRevenue[0]?.total || 0),
+      monthlyTransactions: Number(monthlyRevenue[0]?.count || 0),
+      weeklyTransactions: Number(weeklyRevenue[0]?.count || 0),
+    },
+    appointments: {
+      today: {
+        total: Number(todayAppointments[0]?.total || 0),
+        completed: Number(todayAppointments[0]?.completed || 0),
+        confirmed: Number(todayAppointments[0]?.confirmed || 0),
+        pending: Number(todayAppointments[0]?.pending || 0),
+        cancelled: Number(todayAppointments[0]?.cancelled || 0),
+      },
+      occupationRate: Math.round((occupationRate / totalSlotsToday) * 100),
+    },
+    topServices,
+    topSpecialists,
+    topClients,
+  };
+}
+
+/**
+ * Gráfico de receita dos últimos 30 dias
+ */
+export async function getRevenueChart(salonId: string, days: number = 30) {
+  const db = await getDb();
+  if (!db) return [];
+
+  const endDate = new Date();
+  const startDate = new Date();
+  startDate.setDate(endDate.getDate() - days);
+
+  const dailyRevenue = await db
+    .select({
+      date: sql<string>`DATE(${transactions.transactionDate})`,
+      revenue: sum(transactions.amount),
+      transactions: count(transactions.id),
+    })
+    .from(transactions)
+    .where(
+      and(
+        eq(transactions.salonId, salonId),
+        eq(transactions.type, "income"),
+        eq(transactions.status, "completed"),
+        gte(transactions.transactionDate, startDate),
+        lte(transactions.transactionDate, endDate)
+      )
+    )
+    .groupBy(sql`DATE(${transactions.transactionDate})`)
+    .orderBy(sql`DATE(${transactions.transactionDate})`);
+
+  return dailyRevenue.map(day => ({
+    date: day.date,
+    revenue: Number(day.revenue || 0),
+    transactions: Number(day.transactions || 0),
+  }));
+}
+
+/**
+ * Comparativo de performance mensal
+ */
+export async function getMonthlyComparison(salonId: string) {
+  const db = await getDb();
+  if (!db) return null;
+
+  const today = new Date();
+  const currentMonthStart = new Date(today.getFullYear(), today.getMonth(), 1);
+  const previousMonthStart = new Date(
+    today.getFullYear(),
+    today.getMonth() - 1,
+    1
+  );
+  const previousMonthEnd = new Date(today.getFullYear(), today.getMonth(), 0);
+
+  // Mês atual
+  const currentMonth = await db
+    .select({
+      revenue: sum(transactions.amount),
+      appointments: count(transactions.id),
+    })
+    .from(transactions)
+    .where(
+      and(
+        eq(transactions.salonId, salonId),
+        eq(transactions.type, "income"),
+        eq(transactions.status, "completed"),
+        gte(transactions.transactionDate, currentMonthStart)
+      )
+    );
+
+  // Mês anterior
+  const previousMonth = await db
+    .select({
+      revenue: sum(transactions.amount),
+      appointments: count(transactions.id),
+    })
+    .from(transactions)
+    .where(
+      and(
+        eq(transactions.salonId, salonId),
+        eq(transactions.type, "income"),
+        eq(transactions.status, "completed"),
+        gte(transactions.transactionDate, previousMonthStart),
+        lte(transactions.transactionDate, previousMonthEnd)
+      )
+    );
+
+  const currentRevenue = Number(currentMonth[0]?.revenue || 0);
+  const previousRevenue = Number(previousMonth[0]?.revenue || 0);
+  const currentAppointments = Number(currentMonth[0]?.appointments || 0);
+  const previousAppointments = Number(previousMonth[0]?.appointments || 0);
+
+  const revenueGrowth =
+    previousRevenue > 0
+      ? ((currentRevenue - previousRevenue) / previousRevenue) * 100
+      : 0;
+
+  const appointmentGrowth =
+    previousAppointments > 0
+      ? ((currentAppointments - previousAppointments) / previousAppointments) *
+        100
+      : 0;
+
+  return {
+    current: {
+      revenue: currentRevenue,
+      appointments: currentAppointments,
+    },
+    previous: {
+      revenue: previousRevenue,
+      appointments: previousAppointments,
+    },
+    growth: {
+      revenue: revenueGrowth,
+      appointments: appointmentGrowth,
+    },
+  };
 }
 
 export { users };
