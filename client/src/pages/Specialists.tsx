@@ -266,33 +266,69 @@ export default function Specialists() {
 
     return (
         <DashboardLayout>
-            <div className="flex flex-col md:flex-row items-start md:items-center justify-between mb-8 gap-4">
+            <div className="flex flex-col md:flex-row items-start md:items-center justify-between mb-6 gap-4">
                 <div className="flex-1">
                     <h1 className="text-3xl font-bold tracking-tight">Especialistas</h1>
                     <p className="text-muted-foreground">Gerencie os profissionais do salão</p>
                 </div>
 
-                <div className="w-full md:w-auto">
-                    <Button
-                        variant="outline"
-                        onClick={handleCopyPublicLink}
-                        className="w-full md:w-auto flex items-center gap-2 px-4 py-2 text-green-700 border-green-300 hover:bg-green-50 hover:text-green-900 font-medium rounded-lg shadow-sm"
-                        aria-label="Copiar link de agendamento público"
-                    >
-                        {copiedLinks.has('public') ? (
-                            <>
-                                <CheckCircle size={20} />
-                                <span>Link Copiado!</span>
-                            </>
-                        ) : (
-                            <>
-                                <Link size={20} />
-                                <span>Copiar Link de Agendamento Público</span>
-                            </>
-                        )}
-                    </Button>
-                </div>
+                {/* Botão de copiar link removido do header superior conforme solicitado pelo usuário */}
+
             </div>
+
+            {/* Card com link público de agendamento (moved to top) */}
+            <div className="max-w-6xl mx-auto px-4 mb-6">
+                <Card className="shadow-lg rounded-xl">
+                    <CardHeader>
+                        <CardTitle>Agendamento Público</CardTitle>
+                        <CardDescription>Compartilhe o link para que clientes agendem online.</CardDescription>
+                    </CardHeader>
+                    <CardContent className="flex flex-col gap-4">
+                        <div className="flex items-center gap-4">
+                            <div className="text-sm text-muted-foreground">Link público para reserva (sem necessidade de login)</div>
+                        </div>
+
+                        {/* Linha com campo do link + botão copiar */}
+                        <div className="flex items-center gap-3">
+                            <div className="flex-1">
+                                {/* caixa que imita um input/label grande com truncamento */}
+                                <div className="w-full rounded-md border px-4 py-3 bg-white/80 dark:bg-slate-900 border-gray-200 dark:border-slate-700 text-sm text-gray-900 dark:text-gray-100 truncate">
+                                    {typeof window !== 'undefined' ? `${window.location.origin}/agendar` : '/agendar'}
+                                </div>
+                            </div>
+
+                            <Button
+                                onClick={handleCopyPublicLink}
+                                variant="outline"
+                                className="flex items-center gap-2 px-4 py-2 text-green-700 border-green-300 hover:bg-green-50 hover:text-green-900 font-medium rounded-full shadow-sm"
+                                aria-label="Copiar link de agendamento público"
+                            >
+                                {copiedLinks.has('public') ? (
+                                    <>
+                                        <CheckCircle size={16} />
+                                        <span>Copiado</span>
+                                    </>
+                                ) : (
+                                    <>
+                                        <Link size={16} />
+                                        <span>Copiar</span>
+                                    </>
+                                )}
+                            </Button>
+                        </div>
+
+                        {/* Botão secundário para visualizar a página de agendamento */}
+                        <div>
+                            <a href={typeof window !== 'undefined' ? `${window.location.origin}/agendar` : '/agendar'} target="_blank" rel="noreferrer">
+                                <Button variant="ghost" className="w-full border rounded-md py-3">
+                                    Visualizar página de agendamento
+                                </Button>
+                            </a>
+                        </div>
+                    </CardContent>
+                </Card>
+            </div>
+
             <div className="w-full">
                 <div className="flex flex-col md:flex-row gap-8 max-w-6xl mx-auto py-10">
                     {/* Formulário de cadastro */}
