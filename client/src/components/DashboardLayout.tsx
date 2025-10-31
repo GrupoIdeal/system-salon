@@ -162,20 +162,20 @@ function DashboardLayoutContent({
       <div className="relative" ref={sidebarRef}>
         <Sidebar
           collapsible="icon"
-          className="border-r-0"
+          className="border-r-0 bg-slate-900 text-slate-100 min-h-screen h-screen flex flex-col"
           disableTransition={isResizing}
         >
-          <SidebarHeader className="h-16 justify-center">
-            <div className="flex items-center gap-3 pl-2 group-data-[collapsible=icon]:px-0 transition-all w-full">
+          <SidebarHeader className="h-16 justify-center bg-slate-900 border-b border-slate-800">
+            <div className="flex items-center gap-3 pl-2 group-data-[collapsible=icon]:px-0 transition-all w-full bg-transparent">
               {isCollapsed ? (
                 <div className="relative h-8 w-8 shrink-0 group">
                   {/* Removido a logo quando colapsado */}
                   <button
                     onClick={toggleSidebar}
                     type="button"
-                    className="absolute inset-0 flex items-center justify-center bg-accent rounded-md ring-1 ring-border transition-opacity focus:outline-none focus-visible:ring-2 focus-visible:ring-ring h-8 w-8"
+                    className="absolute inset-0 flex items-center justify-center bg-slate-800 rounded-md ring-1 ring-slate-700 transition-opacity hover:bg-slate-700 focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 h-8 w-8"
                   >
-                    <PanelLeft className="h-4 w-4 text-foreground" />
+                    <PanelLeft className="h-4 w-4 text-slate-100" />
                   </button>
                 </div>
               ) : (
@@ -187,24 +187,24 @@ function DashboardLayoutContent({
                       className="h-8 w-8 rounded-md object-cover ring-1 ring-border shrink-0"
                       alt="Logo"
                     /> */}
-                    <span className="font-semibold tracking-tight truncate">
+                    <span className="font-semibold tracking-tight truncate text-slate-100">
                       {APP_TITLE}
                     </span>
                   </div>
                   <button
                     onClick={toggleSidebar}
                     type="button"
-                    className="ml-auto h-8 w-8 flex items-center justify-center hover:bg-accent rounded-lg transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-ring shrink-0"
+                    className="ml-auto h-8 w-8 flex items-center justify-center bg-transparent hover:bg-slate-800 rounded-lg transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 shrink-0"
                   >
-                    <PanelLeft className="h-4 w-4 text-muted-foreground" />
+                    <PanelLeft className="h-4 w-4 text-slate-300" />
                   </button>
                 </>
               )}
             </div>
           </SidebarHeader>
 
-          <SidebarContent className="gap-0">
-            <SidebarMenu className="px-2 py-1">
+          <SidebarContent className="gap-0 bg-transparent flex-1 overflow-auto">
+            <SidebarMenu className="px-2 py-1 bg-slate-900 flex-1 overflow-auto">
               {menuItems.map(item => {
                 const isActive = location === item.path;
                 return (
@@ -213,12 +213,12 @@ function DashboardLayoutContent({
                       isActive={isActive}
                       onClick={() => setLocation(item.path)}
                       tooltip={item.label}
-                      className={`h-12 transition-all font-normal`}
+                      className={`h-12 transition-all font-normal ${isActive ? 'bg-slate-800 text-white' : 'text-slate-300 hover:bg-slate-800 hover:text-white'}`}
                     >
                       <item.icon
-                        className={`h-6 w-6 ${isActive ? "text-primary" : ""}`}
+                        className={`h-6 w-6 mr-2 ${isActive ? 'text-blue-400' : 'text-slate-300'}`}
                       />
-                      <span>{item.label}</span>
+                      <span className="truncate">{item.label}</span>
                     </SidebarMenuButton>
                   </SidebarMenuItem>
                 );
@@ -231,10 +231,10 @@ function DashboardLayoutContent({
                       isActive={location === "/empresa"}
                       onClick={() => setLocation("/empresa")}
                       tooltip="Empresa"
-                      className="h-12 transition-all font-normal"
+                      className={`h-12 transition-all font-normal ${location === "/empresa" ? 'bg-slate-800 text-white' : 'text-slate-300 hover:bg-slate-800 hover:text-white'}`}
                     >
-                      <User className="h-6 w-6" />
-                      <span>Empresa</span>
+                      <User className={`h-6 w-6 mr-2 ${location === "/empresa" ? 'text-blue-400' : 'text-slate-300'}`} />
+                      <span className="truncate">Empresa</span>
                     </SidebarMenuButton>
                   </SidebarMenuItem>
                 </>
@@ -242,23 +242,22 @@ function DashboardLayoutContent({
             </SidebarMenu>
           </SidebarContent>
 
-          <SidebarFooter className="flex items-center p-4 border-t">
+          <SidebarFooter className="flex items-center p-4 border-t border-slate-700 bg-slate-900">
             <Button
               onClick={async () => {
                 await logout();
                 setLocation("/login");
               }}
-              className="w-full flex items-center justify-center gap-2 text-destructive font-semibold"
-              variant="outline"
+              className="w-full flex items-center justify-center gap-2 text-slate-200 font-semibold bg-slate-800 hover:bg-slate-700"
             >
-              <LogOut className="h-5 w-5" />
+              <LogOut className="h-5 w-5 text-slate-200" />
               Sair
             </Button>
           </SidebarFooter>
         </Sidebar>
         <button
           type="button"
-          className={`absolute top-0 right-0 w-1 h-full cursor-col-resize hover:bg-primary/20 transition-colors ${isCollapsed ? "hidden" : ""}`}
+          className={`absolute top-0 right-0 w-1 h-full cursor-col-resize hover:bg-slate-700 transition-colors ${isCollapsed ? "hidden" : ""}`}
           onMouseDown={() => {
             if (isCollapsed) return;
             setIsResizing(true);
@@ -270,12 +269,12 @@ function DashboardLayoutContent({
 
       <SidebarInset>
         {isMobile && (
-          <div className="flex border-b h-14 items-center justify-between bg-background/95 px-2 backdrop-blur supports-[backdrop-filter]:backdrop-blur sticky top-0 z-40">
+          <div className="flex border-b h-14 items-center justify-between bg-slate-900/95 px-2 backdrop-blur supports-[backdrop-filter]:backdrop-blur sticky top-0 z-40">
             <div className="flex items-center gap-2">
-              <SidebarTrigger className="h-9 w-9 rounded-lg bg-background" />
+              <SidebarTrigger className="h-9 w-9 rounded-lg bg-slate-800 text-slate-100" />
               <div className="flex items-center gap-3">
                 <div className="flex flex-col gap-1">
-                  <span className="tracking-tight text-foreground">
+                  <span className="tracking-tight text-slate-100 font-semibold">
                     {activeMenuItem?.label ?? APP_TITLE}
                   </span>
                 </div>
@@ -283,7 +282,7 @@ function DashboardLayoutContent({
             </div>
           </div>
         )}
-        <main className="flex-1 p-4">{children}</main>
+        <main className="flex-1 p-4 bg-slate-50 dark:bg-slate-800">{children}</main>
       </SidebarInset>
     </>
   );
