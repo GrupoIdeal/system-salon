@@ -7,7 +7,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
-import { Calendar, Clock, User, CheckCircle, ArrowLeft, MapPin, Phone } from "lucide-react";
+import { Calendar, Clock, User, CheckCircle, ArrowLeft, MapPin, Phone, Instagram, MessageSquare } from "lucide-react";
 import { format, addDays, startOfDay, isSameDay } from "date-fns";
 import { ptBR } from "date-fns/locale";
 
@@ -183,30 +183,65 @@ function PublicBookingPage() {
     return (
         <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 py-8 px-4 sm:px-6 lg:px-8">
             <div className="max-w-4xl mx-auto w-full">
-                {/* Header com informações do salão */}
-                <Card className="mb-6 shadow-lg w-full">
-                    <CardContent className="p-6 sm:p-8">
-                        <div className="text-center">
-                            <h1 className="text-3xl font-bold text-gray-900 mb-2">Agendar Horário</h1>
-                            <h2 className="text-xl text-blue-600 font-medium mb-2">{salon?.name}</h2>
+                {/* Header com título à esquerda e card escuro do salão à direita */}
+                <div className="mb-6 w-full flex flex-col lg:flex-row items-start lg:items-center gap-4">
+                    <div className="flex-1">
+                        <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-2">Agendar Horário</h1>
+                        <p className="text-sm text-gray-600 dark:text-gray-300">Escolha um serviço, data e horário disponíveis para atendimento.</p>
+                    </div>
 
-                            <div className="space-y-1 text-sm text-gray-600">
-                                {salon?.address && (
-                                    <div className="flex items-center justify-center gap-2">
-                                        <MapPin className="h-4 w-4" />
-                                        <span>{salon.address}</span>
-                                    </div>
-                                )}
-                                {salon?.phone && (
-                                    <div className="flex items-center justify-center gap-2">
-                                        <Phone className="h-4 w-4" />
-                                        <span>{salon.phone}</span>
-                                    </div>
-                                )}
-                            </div>
-                        </div>
-                    </CardContent>
-                </Card>
+                    <div className="w-full lg:w-96">
+                        <Card className="rounded-2xl bg-slate-900 text-white shadow-xl overflow-hidden">
+                            <CardHeader className="px-4 py-3">
+                                <CardTitle className="text-sm font-semibold text-white">{salon?.name}</CardTitle>
+                                {salon?.address && <div className="text-xs text-slate-400 mt-1 truncate">{salon.address}</div>}
+                            </CardHeader>
+                            <CardContent className="px-4 py-3 flex items-center justify-between gap-4">
+                                <div className="flex-1">
+                                    {salon?.phone && <div className="text-sm text-slate-300 flex items-center gap-2"><Phone className="h-4 w-4 text-slate-300" /> <span className="text-sm">{salon.phone}</span></div>}
+                                </div>
+
+                                <div className="flex items-center gap-2">
+                                    {/* Instagram (com tooltip) */}
+                                    {(salon as any)?.instagram ? (
+                                        <span className="relative group">
+                                            <a href={(salon as any).instagram} target="_blank" rel="noreferrer" aria-label="Instagram do salão" title="Abrir Instagram" className="p-2 rounded-md bg-slate-800 hover:bg-slate-700 inline-flex">
+                                                <Instagram className="h-5 w-5 text-pink-400" />
+                                            </a>
+                                            <span className="absolute -top-9 left-1/2 transform -translate-x-1/2 whitespace-nowrap bg-slate-800 text-white text-xs px-2 py-1 rounded opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none">
+                                                Abrir Instagram
+                                            </span>
+                                        </span>
+                                    ) : null}
+
+                                    {/* WhatsApp (com tooltip) */}
+                                    {salon?.phone ? (
+                                        <span className="relative group">
+                                            <a href={`https://wa.me/${(salon.phone || '').replace(/\D/g, '')}`} target="_blank" rel="noreferrer" aria-label="WhatsApp do salão" title="Abrir WhatsApp" className="p-2 rounded-md bg-slate-800 hover:bg-slate-700 inline-flex">
+                                                <MessageSquare className="h-5 w-5 text-green-400" />
+                                            </a>
+                                            <span className="absolute -top-9 left-1/2 transform -translate-x-1/2 whitespace-nowrap bg-slate-800 text-white text-xs px-2 py-1 rounded opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none">
+                                                Abrir WhatsApp
+                                            </span>
+                                        </span>
+                                    ) : null}
+
+                                    {/* Mapa (com tooltip) */}
+                                    {salon?.address ? (
+                                        <span className="relative group">
+                                            <a href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(salon.address)}`} target="_blank" rel="noreferrer" aria-label="Abrir endereço no mapa" title="Abrir no Maps" className="p-2 rounded-md bg-slate-800 hover:bg-slate-700 inline-flex">
+                                                <MapPin className="h-5 w-5 text-amber-400" />
+                                            </a>
+                                            <span className="absolute -top-9 left-1/2 transform -translate-x-1/2 whitespace-nowrap bg-slate-800 text-white text-xs px-2 py-1 rounded opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none">
+                                                Abrir no Maps
+                                            </span>
+                                        </span>
+                                    ) : null}
+                                </div>
+                            </CardContent>
+                        </Card>
+                    </div>
+                </div>
 
                 {/* Stepper visual */}
                 <div className="mb-6 px-2 sm:px-0">
