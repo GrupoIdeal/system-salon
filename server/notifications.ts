@@ -141,7 +141,8 @@ export const defaultTemplates: Record<string, NotificationTemplate> = {
 
 // Funções para agendar notificações
 export async function scheduleAppointmentNotifications(appointmentId: string) {
-  const db = getDb();
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
 
   const appointment = await db
     .select({
@@ -260,7 +261,8 @@ export async function sendNotification(
 
 // Buscar dados do agendamento para as notificações
 async function getAppointmentNotificationData(appointmentId: string) {
-  const db = getDb();
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
 
   const result = await db
     .select({

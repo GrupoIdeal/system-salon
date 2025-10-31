@@ -31,7 +31,7 @@ export interface TimeSlot {
 }
 
 // Mock do armazenamento (em produção usar tabela do banco)
-let specialistSchedules: Map<string, SpecialistSchedule> = new Map();
+const specialistSchedules: Map<string, SpecialistSchedule> = new Map();
 
 // Horário padrão para novos especialistas
 const defaultSchedule: Omit<SpecialistSchedule, "specialistId"> = {
@@ -93,7 +93,8 @@ export async function getSpecialistSchedule(
   specialistId: string
 ): Promise<SpecialistSchedule> {
   if (specialistSchedules.has(specialistId)) {
-    return specialistSchedules.get(specialistId)!;
+    const schedule = specialistSchedules.get(specialistId);
+    if (schedule) return schedule;
   }
 
   // Criar configuração padrão
@@ -181,10 +182,10 @@ export async function generateSpecialistTimeSlots(
     return slots;
   }
 
-  // Verificar se não é muito em cima da hora
-  const now = new Date();
+  // Verificar se não é muito em cima da hora - usar fuso horário brasileiro
+  const brazilNow = getBrazilianDateTime();
   const minimumBookingTime = new Date(
-    now.getTime() + schedule.minimumNoticeHours * 60 * 60 * 1000
+    brazilNow.getTime() + schedule.minimumNoticeHours * 60 * 60 * 1000
   );
 
   const slotDuration = schedule.timeSlotDuration;
@@ -218,12 +219,14 @@ export async function generateSpecialistTimeSlots(
         currentMinutes < breakEndMinutes && slotEndMinutes > breakStartMinutes;
     }
 
-    // Verificar se não é muito em cima da hora
+    // Verificar se não é muito em cima da hora - considerar fuso horário brasileiro
     const slotDateTime = new Date(date);
     const [hours, minutes] = slotTime.split(":").map(Number);
     slotDateTime.setHours(hours, minutes, 0, 0);
 
-    const isTooLate = slotDateTime < minimumBookingTime;
+    // Se é o dia de hoje, verificar se o horário já passou considerando o horário brasileiro
+    const isToday = date.toDateString() === brazilNow.toDateString();
+    const isTooLate = isToday && slotDateTime < minimumBookingTime;
 
     let available = true;
     let reason: string | undefined;
@@ -374,7 +377,26 @@ function minutesToTime(minutes: number): string {
   return `${hours.toString().padStart(2, "0")}:${mins.toString().padStart(2, "0")}`;
 }
 
-function getDayName(dayOfWeek: number): string {
+// Função para obter a data/hora atual no fuso horário brasileiro
+function getBrazilianDateTime(): Date {
+  const now = new Date();
+  const brazilTime = new Intl.DateTimeFormat("en-CA", {
+    timeZone: "America/Sao_Paulo",
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+    hour: "2-digit",
+    minute: "2-digit",
+    second: "2-digit",
+    hour12: false,
+  }).formatToParts(now);
+
+  return new Date(
+    `${brazilTime.find(p => p.type === "year")?.value}-${brazilTime.find(p => p.type === "month")?.value}-${brazilTime.find(p => p.type === "day")?.value}T${brazilTime.find(p => p.type === "hour")?.value}:${brazilTime.find(p => p.type === "minute")?.value}:${brazilTime.find(p => p.type === "second")?.value}`
+  );
+}
+
+export function getDayName(dayOfWeek: number): string {
   const days = [
     "Domingo",
     "Segunda",

@@ -31,7 +31,9 @@ export function TimeSlotPicker({
         specialistId,
         serviceId,
         date: date?.toISOString(),
-        enabled: !!(specialistId && serviceId && date)
+        dateString: date?.toDateString(),
+        enabled: !!(specialistId && serviceId && date),
+        currentTime: new Date().toLocaleString('pt-BR', { timeZone: 'America/Sao_Paulo' })
     });
 
     // Busca horários disponíveis
@@ -53,7 +55,9 @@ export function TimeSlotPicker({
         isError: availableSlotsQuery.isError,
         error: availableSlotsQuery.error?.message,
         data: availableSlotsQuery.data,
-        status: availableSlotsQuery.status
+        dataLength: availableSlotsQuery.data?.length,
+        status: availableSlotsQuery.status,
+        fetchStatus: availableSlotsQuery.fetchStatus
     });
 
     // Valida horário selecionado
@@ -93,7 +97,18 @@ export function TimeSlotPicker({
     );
 
     const formatTimeSlot = (time: string) => {
-        const [hours, minutes] = time.split(":");
+        if (!time || typeof time !== 'string') {
+            console.error('❌ formatTimeSlot: Invalid time parameter:', time);
+            return '00:00';
+        }
+
+        const parts = time.split(":");
+        if (parts.length !== 2) {
+            console.error('❌ formatTimeSlot: Invalid time format:', time);
+            return '00:00';
+        }
+
+        const [hours, minutes] = parts;
         return `${hours}:${minutes}`;
     };
 
@@ -103,7 +118,23 @@ export function TimeSlotPicker({
         const evening: string[] = [];
 
         slots.forEach((slot) => {
-            const hour = parseInt(slot.split(":")[0]);
+            if (!slot || typeof slot !== 'string') {
+                console.error('❌ groupSlotsByPeriod: Invalid slot:', slot);
+                return;
+            }
+
+            const parts = slot.split(":");
+            if (parts.length !== 2) {
+                console.error('❌ groupSlotsByPeriod: Invalid slot format:', slot);
+                return;
+            }
+
+            const hour = parseInt(parts[0]);
+            if (Number.isNaN(hour)) {
+                console.error('❌ groupSlotsByPeriod: Invalid hour in slot:', slot);
+                return;
+            }
+
             if (hour < 12) {
                 morning.push(slot);
             } else if (hour < 18) {
@@ -129,8 +160,8 @@ export function TimeSlotPicker({
         return (
             <div className="space-y-4">
                 <div className="grid grid-cols-4 gap-2">
-                    {Array.from({ length: 12 }).map((_, i) => (
-                        <Skeleton key={i} className="h-10 w-full" />
+                    {Array.from({ length: 12 }, (_, i) => (
+                        <Skeleton key={`skeleton-loading-${Date.now()}-${i}`} className="h-10 w-full" />
                     ))}
                 </div>
             </div>
@@ -148,7 +179,34 @@ export function TimeSlotPicker({
         );
     }
 
-    const slots = availableSlotsQuery.data || [];
+    // Filtra e valida os slots recebidos do backend
+    const rawSlots = availableSlotsQuery.data || [];
+    const slots = rawSlots.filter((slot) => {
+        if (!slot || typeof slot !== 'string') {
+            console.warn('❌ Filtering out invalid slot:', slot);
+            return false;
+        }
+
+        const parts = slot.split(':');
+        if (parts.length !== 2) {
+            console.warn('❌ Filtering out malformed slot:', slot);
+            return false;
+        }
+
+        const [hours, minutes] = parts.map(Number);
+        if (Number.isNaN(hours) || Number.isNaN(minutes)) {
+            console.warn('❌ Filtering out slot with invalid numbers:', slot);
+            return false;
+        }
+
+        return true;
+    });
+
+    console.log('📊 Slots validation:', {
+        rawCount: rawSlots.length,
+        validCount: slots.length,
+        filtered: rawSlots.length - slots.length
+    });
 
     if (slots.length === 0) {
         return (
@@ -156,7 +214,10 @@ export function TimeSlotPicker({
                 <Clock className="h-12 w-12 mx-auto mb-2 opacity-50" />
                 <p className="font-medium">Nenhum horário disponível</p>
                 <p className="text-sm">
-                    O especialista não tem horários livres nesta data
+                    O especialista não tem horários configurados ou não trabalha nesta data.
+                </p>
+                <p className="text-xs mt-2 text-blue-600">
+                    💡 Configure os horários do especialista na seção "Especialistas"
                 </p>
             </div>
         );

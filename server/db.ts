@@ -22,6 +22,7 @@ import {
   passwordResets,
   transactions,
   InsertUser,
+  InsertSalon,
   InsertSpecialist,
   InsertClient,
   InsertService,
@@ -220,6 +221,16 @@ export async function getSalonById(
     .limit(1);
 
   return result.length > 0 ? result[0] : undefined;
+}
+
+export async function createSalon(data: InsertSalon): Promise<Salon> {
+  const db = await getDb();
+  if (!db) {
+    throw new Error("Database connection failed");
+  }
+
+  const result = await db.insert(salons).values(data).returning();
+  return result[0];
 }
 
 export async function updateSalon(
@@ -883,6 +894,14 @@ export async function validateAppointmentSlot(
   time: string,
   excludeAppointmentId?: string
 ): Promise<{ valid: boolean; reason?: string }> {
+  console.log("🔍 validateAppointmentSlot DEBUG:", {
+    specialistId,
+    serviceId,
+    date: date.toISOString(),
+    time,
+    excludeAppointmentId,
+  });
+
   const specialist = await getSpecialistById(specialistId);
   const service = await getServiceById(serviceId);
 
@@ -890,7 +909,13 @@ export async function validateAppointmentSlot(
     return { valid: false, reason: "Especialista ou serviço não encontrado" };
   }
 
-  // Verifica horário de trabalho
+  // Busca dados do salão
+  const salon = await getSalonById(specialist.salonId);
+  if (!salon) {
+    return { valid: false, reason: "Salão não encontrado" };
+  }
+
+  // Determina dia da semana
   const dayOfWeek = date.getDay();
   const dayNames = [
     "sunday",
@@ -902,15 +927,103 @@ export async function validateAppointmentSlot(
     "saturday",
   ];
   const dayName = dayNames[dayOfWeek];
-  if (
-    !specialist.workingDays ||
-    !isWithinWorkingHours(
-      time,
-      service.duration,
-      specialist.workingDays,
-      dayName
-    )
-  ) {
+
+  console.log("📅 Day validation info:", {
+    dayOfWeek,
+    dayName,
+    specialistWorkingDays: specialist.workingDays?.[dayName],
+  });
+
+  // Agora usamos apenas os horários do especialista (sem verificação de salão)
+
+  // Verifica se especialista trabalha neste dia usando o sistema de schedule primeiro
+  let specialistPeriods: Array<{
+    start: string;
+    end: string;
+    lunch?: { start: string; end: string };
+  }> = [];
+
+  try {
+    // Importa o sistema de schedule
+    const { isSpecialistWorking, getSpecialistSchedule } = await import(
+      "./specialist-schedule"
+    );
+
+    // Verifica se precisa sincronizar os dados legacy
+    const { needsSyncronization, syncLegacyWorkingDaysToSchedule } =
+      await import("./sync-schedules");
+    const needsSync = await needsSyncronization(specialistId);
+    if (needsSync) {
+      console.log("🔄 Auto-syncing legacy workingDays to schedule system");
+      await syncLegacyWorkingDaysToSchedule(specialistId);
+    }
+
+    const isWorking = await isSpecialistWorking(specialistId, date);
+    if (!isWorking) {
+      return { valid: false, reason: "Especialista não trabalha neste dia" };
+    }
+
+    const schedule = await getSpecialistSchedule(specialistId);
+    const workingHours = schedule.workingHours.find(
+      wh => wh.dayOfWeek === dayOfWeek
+    );
+
+    if (
+      workingHours?.isWorking &&
+      workingHours.startTime &&
+      workingHours.endTime
+    ) {
+      specialistPeriods = [
+        {
+          start: workingHours.startTime,
+          end: workingHours.endTime,
+          lunch:
+            workingHours.breakStartTime && workingHours.breakEndTime
+              ? {
+                  start: workingHours.breakStartTime,
+                  end: workingHours.breakEndTime,
+                }
+              : undefined,
+        },
+      ];
+      console.log("✅ Using specialist schedule system for validation");
+    } else {
+      // Fallback para o sistema antigo
+      if (!specialist.workingDays?.[dayName]) {
+        return { valid: false, reason: "Especialista não trabalha neste dia" };
+      }
+      specialistPeriods = specialist.workingDays[dayName];
+      console.log("⚠️ Using legacy workingDays system for validation");
+    }
+  } catch (error) {
+    console.log(
+      "⚠️ Error with schedule system, falling back to legacy:",
+      error
+    );
+    // Fallback para o sistema antigo
+    if (!specialist.workingDays?.[dayName]) {
+      return { valid: false, reason: "Especialista não trabalha neste dia" };
+    }
+    specialistPeriods = specialist.workingDays[dayName];
+  }
+
+  // Verifica se o horário está dentro dos períodos do especialista
+  let isWithinSpecialistHours = false;
+  for (const period of specialistPeriods) {
+    if (
+      isWithinWorkingHours(
+        time,
+        service.duration,
+        { [dayName]: [period] },
+        dayName
+      )
+    ) {
+      isWithinSpecialistHours = true;
+      break;
+    }
+  }
+
+  if (!isWithinSpecialistHours) {
     return {
       valid: false,
       reason: "Horário fora do expediente do especialista",
@@ -930,6 +1043,30 @@ export async function validateAppointmentSlot(
     return { valid: false, reason: "Horário já está ocupado" };
   }
 
+  // Verifica se o horário não está no passado
+  const brazilNow = getBrazilianDateTime();
+  const selectedDateBrazil = new Date(
+    date.toLocaleString("en-US", { timeZone: "America/Sao_Paulo" })
+  );
+  const isToday =
+    selectedDateBrazil.toDateString() === brazilNow.toDateString();
+
+  if (isToday) {
+    const currentBrazilTime = `${brazilNow.getHours().toString().padStart(2, "0")}:${brazilNow.getMinutes().toString().padStart(2, "0")}`;
+    const slotMinutes = timeToMinutes(time);
+    const currentMinutes = timeToMinutes(currentBrazilTime);
+    const minimumAdvanceMinutes = 30;
+
+    if (slotMinutes < currentMinutes + minimumAdvanceMinutes) {
+      return {
+        valid: false,
+        reason:
+          "Horário muito próximo ao atual (mínimo 30 min de antecedência)",
+      };
+    }
+  }
+
+  console.log("✅ Slot validation passed");
   return { valid: true };
 }
 
@@ -1131,66 +1268,8 @@ export async function removeTemporaryBlock(blockId: string): Promise<void> {
   console.log(`Removendo bloqueio temporário: ${blockId}`);
 }
 
-/**
- * Combina horários do salão com horários do especialista
- * Retorna apenas os períodos onde AMBOS estão funcionando
- */
-function getCombinedWorkingPeriods(
-  specialistPeriods: Array<{
-    start: string;
-    end: string;
-    lunch?: { start: string; end: string };
-  }>,
-  salonPeriods: Array<{
-    start: string;
-    end: string;
-    lunch?: { start: string; end: string };
-  }>
-): Array<{
-  start: string;
-  end: string;
-  lunch?: { start: string; end: string };
-}> {
-  const combined: Array<{
-    start: string;
-    end: string;
-    lunch?: { start: string; end: string };
-  }> = [];
-
-  for (const salonPeriod of salonPeriods) {
-    for (const specialistPeriod of specialistPeriods) {
-      // Calcula intersecção dos períodos
-      const start = getLatestTime(salonPeriod.start, specialistPeriod.start);
-      const end = getEarliestTime(salonPeriod.end, specialistPeriod.end);
-
-      // Se há intersecção válida
-      if (timeToMinutes(start) < timeToMinutes(end)) {
-        combined.push({
-          start,
-          end,
-          // Usa o horário de almoço do especialista (mais específico)
-          lunch: specialistPeriod.lunch,
-        });
-      }
-    }
-  }
-
-  return combined;
-}
-
-/**
- * Retorna o horário mais tardio entre dois horários
- */
-function getLatestTime(time1: string, time2: string): string {
-  return timeToMinutes(time1) > timeToMinutes(time2) ? time1 : time2;
-}
-
-/**
- * Retorna o horário mais cedo entre dois horários
- */
-function getEarliestTime(time1: string, time2: string): string {
-  return timeToMinutes(time1) < timeToMinutes(time2) ? time1 : time2;
-}
+// Removed getCombinedWorkingPeriods, getLatestTime, getEarliestTime functions
+// since we now use only specialist schedules (not salon + specialist intersection)
 
 /**
  * Gera horários disponíveis para um especialista em uma data específica
@@ -1235,11 +1314,10 @@ export async function getAvailableTimeSlots(
   console.log("🏢 Salon data:", {
     found: !!salon,
     name: salon?.name,
-    workingHours: salon?.workingHours,
   });
 
-  if (!specialist || !service || !salon) {
-    console.log("❌ Specialist, service or salon not found");
+  if (!specialist || !service) {
+    console.log("❌ Specialist or service not found");
     return [];
   }
 
@@ -1260,47 +1338,94 @@ export async function getAvailableTimeSlots(
     dayOfWeek,
     dayName,
     specialistWorkingDays: specialist.workingDays?.[dayName],
-    salonWorkingHours: salon.workingHours?.[dayName],
   });
 
-  // Verifica se o salão funciona neste dia
-  if (
-    !salon.workingHours ||
-    !salon.workingHours[dayName] ||
-    salon.workingHours[dayName].length === 0
-  ) {
-    console.log("❌ Salon is closed on this day");
-    return [];
-  }
-
   // Verifica se especialista trabalha neste dia
-  if (!specialist.workingDays || !specialist.workingDays[dayName]) {
-    console.log("❌ Specialist does not work on this day");
-    return [];
+  // Primeiro tenta usar o sistema de schedule (mais novo)
+  let specialistPeriods: Array<{
+    start: string;
+    end: string;
+    lunch?: { start: string; end: string };
+  }> = [];
+
+  // Importa o sistema de schedule
+  const { isSpecialistWorking, getSpecialistSchedule } = await import(
+    "./specialist-schedule"
+  );
+
+  try {
+    // Verifica se precisa sincronizar os dados legacy
+    const { needsSyncronization, syncLegacyWorkingDaysToSchedule } =
+      await import("./sync-schedules");
+    const needsSync = await needsSyncronization(specialistId);
+    if (needsSync) {
+      console.log("🔄 Auto-syncing legacy workingDays to schedule system");
+      await syncLegacyWorkingDaysToSchedule(specialistId);
+    }
+
+    const isWorking = await isSpecialistWorking(specialistId, date);
+    if (!isWorking) {
+      console.log("❌ Specialist does not work on this day (schedule system)");
+      return [];
+    }
+
+    const schedule = await getSpecialistSchedule(specialistId);
+    const workingHours = schedule.workingHours.find(
+      wh => wh.dayOfWeek === dayOfWeek
+    );
+
+    if (
+      workingHours?.isWorking &&
+      workingHours.startTime &&
+      workingHours.endTime
+    ) {
+      specialistPeriods = [
+        {
+          start: workingHours.startTime,
+          end: workingHours.endTime,
+          lunch:
+            workingHours.breakStartTime && workingHours.breakEndTime
+              ? {
+                  start: workingHours.breakStartTime,
+                  end: workingHours.breakEndTime,
+                }
+              : undefined,
+        },
+      ];
+      console.log("✅ Using specialist schedule system");
+    } else {
+      // Fallback para o sistema antigo
+      if (!specialist.workingDays?.[dayName]) {
+        console.log("❌ Specialist does not work on this day");
+        return [];
+      }
+      specialistPeriods = specialist.workingDays[dayName];
+      console.log("⚠️ Using legacy workingDays system");
+    }
+  } catch (error) {
+    console.log(
+      "⚠️ Error with schedule system, falling back to legacy:",
+      error
+    );
+    // Fallback para o sistema antigo
+    if (!specialist.workingDays?.[dayName]) {
+      console.log("❌ Specialist does not work on this day");
+      return [];
+    }
+    specialistPeriods = specialist.workingDays[dayName];
   }
 
-  const specialistPeriods = specialist.workingDays[dayName];
-  const salonPeriods = salon.workingHours[dayName];
   const allSlots: string[] = [];
 
   console.log("⏰ Specialist working periods:", specialistPeriods);
-  console.log("🏢 Salon working hours:", salonPeriods);
 
-  // Combina horários: intersecção entre salão e especialista
-  const combinedPeriods = getCombinedWorkingPeriods(
-    specialistPeriods,
-    salonPeriods
-  );
-
-  console.log("🔄 Combined working periods:", combinedPeriods);
-
-  // Gera todos os slots possíveis para cada período combinado
-  for (const period of combinedPeriods) {
-    console.log("🔄 Generating slots for combined period:", period);
+  // Gera todos os slots possíveis para cada período do especialista
+  for (const period of specialistPeriods) {
+    console.log("🔄 Generating slots for period:", period);
     const periodSlots = generateTimeSlots(period.start, period.end, 30); // Slots de 30 em 30 minutos
     console.log("📋 Generated slots:", periodSlots.length, "slots");
 
-    // Remove slots que conflitam com horário de almoço do especialista
+    // Remove slots que conflitam com horário de almoço
     const filteredSlots = periodSlots.filter(slot => {
       if (!period.lunch) return true;
 
@@ -1329,28 +1454,106 @@ export async function getAvailableTimeSlots(
     date
   );
 
-  console.log("📋 Existing appointments:", existingAppointments.length);
+  console.log("📋 Existing appointments:", {
+    count: existingAppointments.length,
+    appointments: existingAppointments.map(apt => ({
+      id: apt.id,
+      time: apt.appointmentTime,
+      status: apt.status,
+    })),
+  });
 
   // Filtra slots que não conflitam com agendamentos existentes
   const availableSlots = allSlots.filter(slot => {
     const slotEndTime = calculateEndTime(slot, service.duration);
 
-    return !existingAppointments.some(apt => {
+    const hasConflict = existingAppointments.some(apt => {
       if (apt.status === "cancelled") return false;
+
+      // Validar se appointmentTime existe e é válido
+      if (!apt.appointmentTime || typeof apt.appointmentTime !== "string") {
+        console.warn("❌ Skipping appointment with invalid time:", {
+          id: apt.id,
+          appointmentTime: apt.appointmentTime,
+        });
+        return false;
+      }
 
       // Para calcular conflito, assumimos duração padrão de 60 min se não temos a duração
       const aptEndTime = calculateEndTime(apt.appointmentTime, 60);
-      return hasTimeOverlap(slot, slotEndTime, apt.appointmentTime, aptEndTime);
+      const conflict = hasTimeOverlap(
+        slot,
+        slotEndTime,
+        apt.appointmentTime,
+        aptEndTime
+      );
+
+      if (conflict) {
+        console.log(
+          `⚠️ Conflict detected: slot ${slot}-${slotEndTime} conflicts with appointment ${apt.appointmentTime}-${aptEndTime}`
+        );
+      }
+
+      return conflict;
     });
+
+    return !hasConflict;
   });
 
   console.log(
-    "✅ Final available slots:",
+    "✅ Available slots before time filter:",
     availableSlots.length,
     availableSlots
   );
 
-  return availableSlots.sort();
+  // Filtrar horários que já passaram no fuso horário brasileiro
+  const brazilNow = getBrazilianDateTime();
+  const currentBrazilTime = `${brazilNow.getHours().toString().padStart(2, "0")}:${brazilNow.getMinutes().toString().padStart(2, "0")}`;
+
+  // Comparar datas corretamente no timezone brasileiro
+  const selectedDateBrazil = new Date(
+    date.toLocaleString("en-US", { timeZone: "America/Sao_Paulo" })
+  );
+  const isToday =
+    selectedDateBrazil.toDateString() === brazilNow.toDateString();
+
+  console.log("🕐 Brazil time info:", {
+    brazilNow: brazilNow.toISOString(),
+    currentBrazilTime,
+    isToday,
+    selectedDate: date.toISOString(),
+    selectedDateBrazil: selectedDateBrazil.toISOString(),
+    selectedDateBrazilString: selectedDateBrazil.toDateString(),
+    brazilNowString: brazilNow.toDateString(),
+  });
+
+  const finalSlots = isToday
+    ? availableSlots.filter(slot => {
+        // Adicionar apenas 30 minutos de antecedência mínima para permitir mais flexibilidade
+        const slotMinutes = timeToMinutes(slot);
+        const currentMinutes = timeToMinutes(currentBrazilTime);
+        const minimumAdvanceMinutes = 30; // Reduzido de 2 horas para 30 minutos
+
+        const isAvailable =
+          slotMinutes >= currentMinutes + minimumAdvanceMinutes;
+
+        if (!isAvailable) {
+          console.log(
+            `⏰ Filtering out slot ${slot} - too close to current time ${currentBrazilTime} (needs ${minimumAdvanceMinutes} min advance)`
+          );
+        }
+
+        return isAvailable;
+      })
+    : availableSlots;
+
+  console.log(
+    "✅ Final available slots (after time filter):",
+    finalSlots.length,
+    finalSlots
+  );
+
+  return finalSlots.sort();
 }
 
 /**
@@ -1399,20 +1602,56 @@ function hasTimeOverlap(
 }
 
 /**
- * Converte horário HH:MM para minutos desde meia-noite
- */
-export function timeToMinutes(time: string): number {
-  const [hours, minutes] = time.split(":").map(Number);
-  return hours * 60 + minutes;
-}
-
-/**
  * Converte minutos desde meia-noite para horário HH:MM
  */
 function minutesToTime(minutes: number): string {
+  if (typeof minutes !== "number" || Number.isNaN(minutes) || minutes < 0) {
+    console.error("❌ minutesToTime: Invalid minutes parameter:", minutes);
+    return "00:00";
+  }
+
   const hours = Math.floor(minutes / 60);
   const mins = minutes % 60;
   return `${hours.toString().padStart(2, "0")}:${mins.toString().padStart(2, "0")}`;
+}
+
+/**
+ * Função para obter a data/hora atual no fuso horário brasileiro
+ */
+function getBrazilianDateTime(): Date {
+  // Criar uma nova data no fuso horário de São Paulo
+  return new Date(
+    new Date().toLocaleString("en-US", {
+      timeZone: "America/Sao_Paulo",
+    })
+  );
+}
+
+/**
+ * Converte horário HH:MM para minutos desde meia-noite
+ */
+export function timeToMinutes(time: string): number {
+  if (!time || typeof time !== "string") {
+    console.error("❌ timeToMinutes: Invalid time parameter:", time);
+    return 0;
+  }
+
+  const parts = time.split(":");
+  if (parts.length !== 2) {
+    console.error("❌ timeToMinutes: Invalid time format:", time);
+    return 0;
+  }
+
+  const [hours, minutes] = parts.map(Number);
+  if (Number.isNaN(hours) || Number.isNaN(minutes)) {
+    console.error("❌ timeToMinutes: Non-numeric time parts:", {
+      hours,
+      minutes,
+    });
+    return 0;
+  }
+
+  return hours * 60 + minutes;
 }
 
 /**

@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import { trpc } from "@/lib/trpc";
 import { Edit, Trash2, User2 } from "lucide-react";
+import { SpecialistScheduleManagement } from "@/components/SpecialistScheduleManagement";
 import {
     AlertDialog,
     AlertDialogAction,
@@ -17,13 +18,9 @@ import {
     AlertDialogHeader,
     AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import {
-    WorkingHoursManager,
-    defaultWorkingDays,
-    workingDaysToDatabase,
-    workingDaysFromDatabase,
-    type WorkingDays
-} from "@/components/WorkingHoursManager";
+// WorkingHoursManager removed - now using SpecialistScheduleManagement
+
+// SyncStatusIndicator removed - sync functionality no longer needed
 
 export default function Specialists() {
     const nameId = useId();
@@ -41,8 +38,10 @@ export default function Specialists() {
         specialty: "",
         bio: "",
     });
-    const [workingDays, setWorkingDays] = useState<WorkingDays>(defaultWorkingDays);
+    // workingDays removed - now handled by SpecialistScheduleManagement
     const [isEditing, setIsEditing] = useState(false);
+    const [editingSpecialistId, setEditingSpecialistId] = useState<string | null>(null);
+    const [showScheduleManagement, setShowScheduleManagement] = useState(false);
     const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
     const [specialistToDelete, setSpecialistToDelete] = useState<string | null>(null);
 
@@ -79,7 +78,10 @@ export default function Specialists() {
             specialty: "",
             bio: ""
         });
-        setWorkingDays(defaultWorkingDays);
+        setIsEditing(false);
+        setEditingSpecialistId(null);
+        setShowScheduleManagement(false);
+        // workingDays reset removed - handled by SpecialistScheduleManagement
     };
 
     // Função para lidar com upload de imagem (simples, base64)
@@ -102,7 +104,7 @@ export default function Specialists() {
         photo?: string | null;
         specialty?: string | null;
         bio?: string | null;
-        workingDays?: Record<string, Array<{ start: string; end: string; lunch?: { start: string; end: string } }>> | null;
+        // workingDays parameter removed - handled by SpecialistScheduleManagement
     }) => {
         setFormData({
             id: specialist.id,
@@ -113,8 +115,10 @@ export default function Specialists() {
             specialty: specialist.specialty || "",
             bio: specialist.bio || "",
         });
-        setWorkingDays(workingDaysFromDatabase(specialist.workingDays || null));
+        // workingDays loading removed - handled by SpecialistScheduleManagement
         setIsEditing(true);
+        setEditingSpecialistId(specialist.id);
+        setShowScheduleManagement(true);
     };
 
     // Função para confirmar exclusão
@@ -146,7 +150,7 @@ export default function Specialists() {
             photo: formData.photo,
             specialty: formData.specialty,
             bio: formData.bio,
-            workingDays: workingDaysToDatabase(workingDays),
+            // workingDays will be handled separately by SpecialistScheduleManagement
             status: "active" as const,
         };
 
@@ -159,6 +163,8 @@ export default function Specialists() {
             createMutation.mutate(specialistData);
         }
     };
+
+    // Sync functions removed - no longer needed
 
     return (
         <DashboardLayout>
@@ -219,10 +225,19 @@ export default function Specialists() {
 
                                 {/* Gerenciador de horários de trabalho */}
                                 <div className="col-span-2">
-                                    <WorkingHoursManager
-                                        workingDays={workingDays}
-                                        onChange={setWorkingDays}
-                                    />
+                                    {isEditing && editingSpecialistId ? (
+                                        <SpecialistScheduleManagement
+                                            isOpen={showScheduleManagement}
+                                            specialistId={editingSpecialistId}
+                                            onClose={() => setShowScheduleManagement(false)}
+                                        />
+                                    ) : (
+                                        <div className="p-4 border rounded-lg bg-gray-50">
+                                            <p className="text-sm text-gray-600">
+                                                Os horários serão configurados após salvar o especialista
+                                            </p>
+                                        </div>
+                                    )}
                                 </div>
                                 <div className="flex gap-2">
                                     <Button type="submit" className="flex-1 bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2 rounded-xl transition" disabled={createMutation.isPending || updateMutation.isPending}>
@@ -259,32 +274,34 @@ export default function Specialists() {
                                         <div className="text-muted-foreground text-sm mb-2">{spec.phone}</div>
                                         {spec.bio && <div className="text-xs text-muted-foreground italic mt-2">{spec.bio}</div>}
                                     </div>
-                                    <div className="flex flex-row gap-2 mt-4">
-                                        <Button
-                                            variant="outline"
-                                            className="flex items-center gap-2 px-4 py-2 text-blue-700 border-blue-300 hover:bg-blue-50 hover:text-blue-900 font-medium rounded-lg shadow-sm"
-                                            onClick={() => handleEditSpecialist({
-                                                id: spec.id,
-                                                name: spec.name,
-                                                email: spec.email,
-                                                phone: spec.phone,
-                                                photo: spec.photo,
-                                                specialty: spec.specialty,
-                                                bio: spec.bio,
-                                                workingDays: spec.workingDays,
-                                            })}
-                                        >
-                                            <Edit size={18} className="mr-1" />
-                                            Editar
-                                        </Button>
-                                        <Button
-                                            variant="outline"
-                                            className="flex items-center gap-2 px-4 py-2 text-red-700 border-red-300 hover:bg-red-50 hover:text-red-900 font-medium rounded-lg shadow-sm"
-                                            onClick={() => confirmDelete(spec.id)}
-                                        >
-                                            <Trash2 size={18} className="mr-1" />
-                                            Excluir
-                                        </Button>
+                                    <div className="flex flex-col gap-2 mt-4">
+                                        <div className="flex flex-row gap-2">
+                                            <Button
+                                                variant="outline"
+                                                className="flex items-center gap-2 px-3 py-2 text-blue-700 border-blue-300 hover:bg-blue-50 hover:text-blue-900 font-medium rounded-lg shadow-sm text-xs"
+                                                onClick={() => handleEditSpecialist({
+                                                    id: spec.id,
+                                                    name: spec.name,
+                                                    email: spec.email,
+                                                    phone: spec.phone,
+                                                    photo: spec.photo,
+                                                    specialty: spec.specialty,
+                                                    bio: spec.bio,
+                                                    // workingDays removed - handled separately
+                                                })}
+                                            >
+                                                <Edit size={16} />
+                                                Editar
+                                            </Button>
+                                            <Button
+                                                variant="outline"
+                                                className="flex items-center gap-2 px-3 py-2 text-red-700 border-red-300 hover:bg-red-50 hover:text-red-900 font-medium rounded-lg shadow-sm text-xs"
+                                                onClick={() => confirmDelete(spec.id)}
+                                            >
+                                                <Trash2 size={16} />
+                                                Excluir
+                                            </Button>
+                                        </div>
                                     </div>
                                 </Card>
                             ))}

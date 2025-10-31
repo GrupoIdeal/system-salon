@@ -48,16 +48,7 @@ export const salons = pgTable(
     phone: varchar("phone", { length: 20 }),
     email: varchar("email", { length: 320 }),
     logo: text("logo"),
-    workingHours: jsonb("workingHours").$type<
-      Record<
-        string,
-        Array<{
-          start: string;
-          end: string;
-          lunch?: { start: string; end: string };
-        }>
-      >
-    >(),
+    // Removed workingHours - now using only specialist schedules
     createdAt: timestamp("createdAt").defaultNow(),
     updatedAt: timestamp("updatedAt").defaultNow(),
   },
