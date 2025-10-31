@@ -17,6 +17,7 @@ import Specialists from "./pages/Specialists";
 import PublicBooking from "./pages/PublicBooking";
 import { useAuth } from "@/_core/hooks/useAuth";
 import { useEffect } from "react";
+import Footer from "@/components/Footer";
 
 function ProtectedRoute({ component: Component, adminOnly }: { component: React.ComponentType; adminOnly?: boolean }) {
   const { user, loading, isAuthenticated } = useAuth();
@@ -78,6 +79,7 @@ function App() {
         <TooltipProvider>
           <Toaster />
           <Router />
+          <Footer />
         </TooltipProvider>
       </ThemeProvider>
     </ErrorBoundary>
