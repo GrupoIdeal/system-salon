@@ -1322,6 +1322,7 @@ export async function getAvailableTimeSlots(
   }
 
   // Determina dia da semana (0 = domingo, 1 = segunda, etc.)
+  // Usamos o objeto Date recebido (o caller normalmente passa uma data com meio-dia UTC)
   const dayOfWeek = date.getDay();
   const dayNames = [
     "sunday",

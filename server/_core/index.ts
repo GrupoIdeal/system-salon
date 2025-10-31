@@ -4,7 +4,7 @@ import { createServer } from "http";
 import net from "net";
 import { createExpressMiddleware } from "@trpc/server/adapters/express";
 import { registerOAuthRoutes } from "./oauth";
-import { appRouter } from "../routers";
+import { appRouter, publicRouter } from "../routers";
 import { createContext } from "./context";
 import { serveStatic, setupVite } from "./vite";
 
@@ -41,6 +41,28 @@ async function startServer() {
     createExpressMiddleware({
       router: appRouter,
       createContext,
+    })
+  );
+
+  // tRPC API pública (sem autenticação)
+  app.use(
+    "/api/public",
+    (req, res, next) => {
+      res.header("Access-Control-Allow-Origin", "*");
+      res.header("Access-Control-Allow-Methods", "GET,POST,PUT,DELETE,OPTIONS");
+      res.header(
+        "Access-Control-Allow-Headers",
+        "Content-Type, Authorization, Content-Length, X-Requested-With"
+      );
+      if (req.method === "OPTIONS") {
+        res.sendStatus(200);
+      } else {
+        next();
+      }
+    },
+    createExpressMiddleware({
+      router: publicRouter,
+      createContext: () => ({}), // Context vazio para rotas públicas
     })
   );
   // development mode uses Vite, production mode uses static files

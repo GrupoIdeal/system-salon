@@ -90,6 +90,7 @@ import {
   appointmentPublicSchema,
   passwordResetRequestSchema,
   passwordResetSchema,
+  scheduleSchema,
 } from "@shared/validations";
 
 const generateId = () => crypto.randomBytes(16).toString("hex");
@@ -391,7 +392,12 @@ export const appRouter = router({
       }),
 
     create: protectedProcedure
-      .input(specialistSchema)
+      .input(
+        z.object({
+          specialist: specialistSchema,
+          schedule: scheduleSchema.optional(),
+        })
+      )
       .mutation(async ({ ctx: _ctx, input: _input }) => {
         const salon = await getSalonByUserId(_ctx.user.id);
         if (!salon) {
@@ -400,22 +406,79 @@ export const appRouter = router({
             message: "Salão não encontrado",
           });
         }
-        // Ajuste do tipo workingDays para o tipo do schema
-        const workingDays = _input.workingDays
+
+        const specialistPayload = _input.specialist;
+
+        // Ajuste do tipo workingDays para o tipo do schema (compatibilidade)
+        const workingDays = specialistPayload.workingDays
           ? Object.fromEntries(
-              Object.entries(_input.workingDays).map(([k, v]) => [
+              Object.entries(specialistPayload.workingDays).map(([k, v]) => [
                 k,
                 [{ ...v }],
               ])
             )
           : null;
-        const specialist = await createSpecialist({
+
+        const newSpecialist = await createSpecialist({
           id: generateId(),
           salonId: salon.id,
-          ..._input,
+          ...specialistPayload,
           workingDays,
         });
-        return specialist;
+
+        // Se veio schedule, aplicar de forma atômica: se falhar ao aplicar schedule, remover specialist criado e retornar erro
+        if (_input.schedule) {
+          try {
+            // Atualizar configurações gerais (não inclui workingHours)
+            await updateSpecialistSchedule(newSpecialist.id, {
+              timeSlotDuration: _input.schedule.timeSlotDuration,
+              bufferTime: _input.schedule.bufferTime,
+              allowBookingDaysInAdvance:
+                _input.schedule.allowBookingDaysInAdvance,
+              minimumNoticeHours: _input.schedule.minimumNoticeHours,
+              autoConfirmBookings: _input.schedule.autoConfirmBookings,
+              allowOnlineBooking: _input.schedule.allowOnlineBooking,
+            });
+
+            // Aplicar horários por dia, se fornecidos
+            if (_input.schedule.workingHours) {
+              for (const day of _input.schedule.workingHours) {
+                await updateWorkingHoursForDay(
+                  newSpecialist.id,
+                  day.dayOfWeek,
+                  {
+                    isWorking: !!day.isWorking,
+                    startTime: day.startTime || undefined,
+                    endTime: day.endTime || undefined,
+                    breakStartTime: day.breakStartTime || undefined,
+                    breakEndTime: day.breakEndTime || undefined,
+                  }
+                );
+              }
+            }
+          } catch (err) {
+            // Rollback: remover especialista criado para manter consistência
+            try {
+              await deleteSpecialist(newSpecialist.id);
+            } catch (rollbackErr) {
+              console.error(
+                "Rollback falhou ao remover especialista:",
+                rollbackErr
+              );
+            }
+
+            console.error(
+              "Erro ao aplicar schedule durante criação atômica:",
+              err
+            );
+            throw new TRPCError({
+              code: "INTERNAL_SERVER_ERROR",
+              message: "Falha ao aplicar agenda inicial. Operação revertida.",
+            });
+          }
+        }
+
+        return newSpecialist;
       }),
 
     update: protectedProcedure
@@ -1760,4 +1823,13 @@ export const appRouter = router({
   dashboard: dashboardRouter,
 });
 
+// Importar o roteador de agendamento público
+import { publicBookingRouter } from "./public-booking";
+
+// Roteador público (sem autenticação) para agendamentos
+export const publicRouter = router({
+  booking: publicBookingRouter,
+});
+
 export type AppRouter = typeof appRouter;
+export type PublicRouter = typeof publicRouter;

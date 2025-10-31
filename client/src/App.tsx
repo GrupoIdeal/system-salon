@@ -14,6 +14,7 @@ import RecuperarSenha from "./pages/RecuperarSenha";
 import RedefinirSenha from "./pages/RedefinirSenha";
 import Empresa from "./pages/Empresa";
 import Specialists from "./pages/Specialists";
+import PublicBooking from "./pages/PublicBooking";
 import { useAuth } from "@/_core/hooks/useAuth";
 import { useEffect } from "react";
 
@@ -56,6 +57,7 @@ function Router() {
       <Route path="/login" component={Login} />
       <Route path="/recuperar-senha" component={RecuperarSenha} />
       <Route path="/redefinir-senha" component={RedefinirSenha} />
+      <Route path="/agendar" component={PublicBooking} />
       <Route path="/dashboard" component={() => <ProtectedRoute component={Dashboard} />} />
       <Route path="/clientes" component={() => <ProtectedRoute component={Clients} />} />
       <Route path="/servicos" component={() => <ProtectedRoute component={Services} />} />

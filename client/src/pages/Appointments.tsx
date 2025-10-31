@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { startOfDay, endOfDay, startOfWeek, endOfWeek, startOfMonth, endOfMonth } from 'date-fns';
 import DashboardLayout from "@/components/DashboardLayout";
 import { Button } from "@/components/ui/button";
 import {
@@ -55,31 +56,38 @@ export default function Appointments() {
 
   // Calcular range de datas baseado no modo de visualização
   const getDateRange = () => {
-    const start = new Date(selectedDate);
-    let end = new Date(selectedDate);
+    // Normaliza a data para início do dia para evitar diferenças por hora
+    const base = startOfDay(selectedDate);
 
     switch (viewMode) {
-      case "day":
-        end = new Date(start.getTime() + 24 * 60 * 60 * 1000);
-        break;
-      case "week":
-        start.setDate(start.getDate() - start.getDay()); // Começo da semana
-        end = new Date(start.getTime() + 7 * 24 * 60 * 60 * 1000);
-        break;
-      case "month":
-        start.setDate(1); // Primeiro dia do mês
-        end = new Date(start.getFullYear(), start.getMonth() + 1, 0); // Último dia do mês
-        break;
+      case "day": {
+        return { start: startOfDay(base), end: endOfDay(base) };
+      }
+      case "week": {
+        // Semana começando no domingo (weekStartsOn: 0)
+        const weekStart = startOfWeek(base, { weekStartsOn: 0 });
+        const weekEnd = endOfWeek(base, { weekStartsOn: 0 });
+        return { start: startOfDay(weekStart), end: endOfDay(weekEnd) };
+      }
+      case "month": {
+        const monthStart = startOfMonth(base);
+        const monthEnd = endOfMonth(base);
+        return { start: startOfDay(monthStart), end: endOfDay(monthEnd) };
+      }
+      default:
+        return { start: startOfDay(base), end: endOfDay(base) };
     }
-
-    return { start, end };
   };
 
   const { start: startDate, end: endDate } = getDateRange();
 
+  // Converter range para UTC (início do dia UTC / fim do dia UTC) para evitar problemas de fuso
+  const startDateUTC = new Date(Date.UTC(startDate.getFullYear(), startDate.getMonth(), startDate.getDate(), 0, 0, 0, 0));
+  const endDateUTC = new Date(Date.UTC(endDate.getFullYear(), endDate.getMonth(), endDate.getDate(), 23, 59, 59, 999));
+
   const appointmentsQuery = trpc.appointments.list.useQuery({
-    startDate,
-    endDate,
+    startDate: startDateUTC,
+    endDate: endDateUTC,
   });
 
   // Mutations para ações rápidas

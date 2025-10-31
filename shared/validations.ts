@@ -75,6 +75,28 @@ export const specialistSchema = z.object({
   status: z.enum(["active", "inactive"]).default("active"),
 });
 
+// Schedule schema to allow creating specialist together with initial schedule
+export const scheduleSchema = z.object({
+  timeSlotDuration: z.number().int().min(1).default(30),
+  bufferTime: z.number().int().min(0).default(0),
+  allowBookingDaysInAdvance: z.number().int().min(0).default(30),
+  minimumNoticeHours: z.number().int().min(0).default(2),
+  autoConfirmBookings: z.boolean().default(true),
+  allowOnlineBooking: z.boolean().default(true),
+  workingHours: z
+    .array(
+      z.object({
+        dayOfWeek: z.number().int().min(0).max(6),
+        isWorking: z.boolean(),
+        startTime: z.string().optional(),
+        endTime: z.string().optional(),
+        breakStartTime: z.string().optional(),
+        breakEndTime: z.string().optional(),
+      })
+    )
+    .optional(),
+});
+
 // ============================================================================
 // CLIENT VALIDATIONS
 // ============================================================================
@@ -144,3 +166,4 @@ export type ClientInput = z.infer<typeof clientSchema>;
 export type ServiceInput = z.infer<typeof serviceSchema>;
 export type AppointmentInput = z.infer<typeof appointmentSchema>;
 export type AppointmentPublicInput = z.infer<typeof appointmentPublicSchema>;
+export type ScheduleInput = z.infer<typeof scheduleSchema>;
