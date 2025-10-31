@@ -248,10 +248,10 @@ function DashboardLayoutContent({
                 await logout();
                 setLocation("/login");
               }}
-              className="w-full flex items-center justify-center gap-2 text-slate-200 font-semibold bg-slate-800 hover:bg-slate-700"
+              className={`flex items-center justify-center gap-2 text-slate-200 font-semibold bg-slate-800 hover:bg-slate-700 ${isCollapsed ? 'w-12 h-12 p-0 rounded-md' : 'w-full'}`}
             >
               <LogOut className="h-5 w-5 text-slate-200" />
-              Sair
+              {!isCollapsed && <span>Sair</span>}
             </Button>
           </SidebarFooter>
         </Sidebar>
