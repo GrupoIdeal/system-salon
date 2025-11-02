@@ -1,5 +1,5 @@
 // Sincronização entre workingDays e specialist-schedule
-// biome-ignore assist/source/organizeImports: false positive 
+// biome-ignore assist/source/organizeImports: false positive
 import { getSpecialistsBySalonId, getSpecialistById } from "./db";
 import {
   getSpecialistSchedule,

@@ -22,7 +22,8 @@ function Textarea({
     onKeyDown: (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
       // Check if this is an Enter key that should be blocked
       const nativeEvent = e.nativeEvent as { isComposing?: boolean };
-      const isComposing = nativeEvent.isComposing || dialogComposition.justEndedComposing();
+      const isComposing =
+        nativeEvent.isComposing || dialogComposition.justEndedComposing();
 
       // If Enter key is pressed while composing or just after composition ended,
       // don't call the user's onKeyDown (this blocks the business logic)

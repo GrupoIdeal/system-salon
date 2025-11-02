@@ -34,7 +34,12 @@ export default function Clients() {
   const [isDialogOpen, setIsDialogOpen] = useState<boolean>(false);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [deleteId, setDeleteId] = useState<string | null>(null);
-  const [formData, setFormData] = useState<{ name: string; email: string; phone: string; notes: string; }>({
+  const [formData, setFormData] = useState<{
+    name: string;
+    email: string;
+    phone: string;
+    notes: string;
+  }>({
     name: "",
     email: "",
     phone: "",
@@ -87,7 +92,13 @@ export default function Clients() {
     }
   };
 
-  const handleEdit = (client: { id: string; name: string; email?: string; phone?: string; notes?: string; }) => {
+  const handleEdit = (client: {
+    id: string;
+    name: string;
+    email?: string | null;
+    phone?: string | null;
+    notes?: string | null;
+  }) => {
     setFormData({
       name: client.name,
       email: client.email || "",
@@ -108,9 +119,7 @@ export default function Clients() {
         <div className="flex items-center justify-between">
           <div>
             <h1 className="text-3xl font-bold tracking-tight">Clientes</h1>
-            <p className="text-muted-foreground mt-2">
-              Gerencie seus clientes
-            </p>
+            <p className="text-muted-foreground mt-2">Gerencie seus clientes</p>
           </div>
           <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
             <DialogTrigger asChild>
@@ -137,11 +146,13 @@ export default function Clients() {
               </DialogHeader>
               <form onSubmit={handleSubmit} className="space-y-4">
                 <div>
-                  <label htmlFor="name" className="text-sm font-medium">Nome</label>
+                  <label htmlFor="name" className="text-sm font-medium">
+                    Nome
+                  </label>
                   <Input
                     id="name"
                     value={formData.name}
-                    onChange={(e) =>
+                    onChange={e =>
                       setFormData({ ...formData, name: e.target.value })
                     }
                     placeholder="Nome completo"
@@ -149,34 +160,40 @@ export default function Clients() {
                   />
                 </div>
                 <div>
-                  <label htmlFor="email" className="text-sm font-medium">Email</label>
+                  <label htmlFor="email" className="text-sm font-medium">
+                    Email
+                  </label>
                   <Input
                     id="email"
                     type="email"
                     value={formData.email}
-                    onChange={(e) =>
+                    onChange={e =>
                       setFormData({ ...formData, email: e.target.value })
                     }
                     placeholder="email@example.com"
                   />
                 </div>
                 <div>
-                  <label htmlFor="phone" className="text-sm font-medium">Telefone</label>
+                  <label htmlFor="phone" className="text-sm font-medium">
+                    Telefone
+                  </label>
                   <Input
                     id="phone"
                     value={formData.phone}
-                    onChange={(e) =>
+                    onChange={e =>
                       setFormData({ ...formData, phone: e.target.value })
                     }
                     placeholder="(11) 99999-9999"
                   />
                 </div>
                 <div>
-                  <label htmlFor="notes" className="text-sm font-medium">Observações</label>
+                  <label htmlFor="notes" className="text-sm font-medium">
+                    Observações
+                  </label>
                   <textarea
                     id="notes"
                     value={formData.notes}
-                    onChange={(e) =>
+                    onChange={e =>
                       setFormData({ ...formData, notes: e.target.value })
                     }
                     placeholder="Informações adicionais sobre o cliente"
@@ -186,7 +203,9 @@ export default function Clients() {
                 <Button
                   type="submit"
                   className="w-full"
-                  disabled={createMutation.isPending || updateMutation.isPending}
+                  disabled={
+                    createMutation.isPending || updateMutation.isPending
+                  }
                 >
                   {(createMutation.isPending || updateMutation.isPending) && (
                     <Loader2 className="mr-2 h-4 w-4 animate-spin" />
@@ -203,7 +222,7 @@ export default function Clients() {
           <Input
             placeholder="Buscar clientes..."
             value={search}
-            onChange={(e) => setSearch(e.target.value)}
+            onChange={e => setSearch(e.target.value)}
             className="max-w-sm"
           />
         </div>
@@ -219,13 +238,16 @@ export default function Clients() {
           <CardContent>
             {clientsQuery.isLoading ? (
               <div className="space-y-2">
-                {[1, 2, 3].map((item) => (
-                  <Skeleton key={`skeleton-client-${item}`} className="h-12 w-full" />
+                {[1, 2, 3].map(item => (
+                  <Skeleton
+                    key={`skeleton-client-${item}`}
+                    className="h-12 w-full"
+                  />
                 ))}
               </div>
             ) : clientsQuery.data && clientsQuery.data.length > 0 ? (
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                {clientsQuery.data.map((client: { id: string; name: string; email?: string; phone?: string; notes?: string; }) => (
+                {clientsQuery.data.map(client => (
                   <div
                     key={client.id}
                     className="flex items-center justify-between p-3 border rounded-lg hover:bg-slate-50"
@@ -233,9 +255,10 @@ export default function Clients() {
                     <div className="flex-1">
                       <p className="font-medium">{client.name}</p>
                       <p className="text-sm text-muted-foreground">
-                        {client.email || "Sem email"} • {client.phone || "Sem telefone"}
+                        {client.email || "Sem email"} •{" "}
+                        {client.phone || "Sem telefone"}
                       </p>
-                      {(client.notes) && (
+                      {client.notes && (
                         <div className="mt-1 flex flex-wrap gap-2 text-xs text-muted-foreground">
                           {client.notes && (
                             <span className="bg-muted px-2 py-0.5 rounded-md truncate max-w-[200px]">
@@ -262,7 +285,8 @@ export default function Clients() {
                       </Button>
                     </div>
                   </div>
-                ))}
+                )
+                )}
               </div>
             ) : (
               <p className="text-center text-muted-foreground py-8">
@@ -273,11 +297,15 @@ export default function Clients() {
         </Card>
 
         {/* Delete Confirmation */}
-        <AlertDialog open={!!deleteId} onOpenChange={(open) => !open && setDeleteId(null)}>
+        <AlertDialog
+          open={!!deleteId}
+          onOpenChange={open => !open && setDeleteId(null)}
+        >
           <AlertDialogContent>
             <AlertDialogTitle>Deletar cliente?</AlertDialogTitle>
             <AlertDialogDescription>
-              Esta ação não pode ser desfeita. O cliente será removido do sistema.
+              Esta ação não pode ser desfeita. O cliente será removido do
+              sistema.
             </AlertDialogDescription>
             <div className="flex gap-2 justify-end">
               <AlertDialogCancel>Cancelar</AlertDialogCancel>
@@ -297,4 +325,3 @@ export default function Clients() {
     </DashboardLayout>
   );
 }
-

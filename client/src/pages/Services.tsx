@@ -188,11 +188,13 @@ export default function Services() {
               </DialogHeader>
               <form onSubmit={handleSubmit} className="space-y-4">
                 <div>
-                  <label htmlFor="name" className="text-sm font-medium">Nome</label>
+                  <label htmlFor="name" className="text-sm font-medium">
+                    Nome
+                  </label>
                   <Input
                     id="name"
                     value={formData.name}
-                    onChange={(e) =>
+                    onChange={e =>
                       setFormData({ ...formData, name: e.target.value })
                     }
                     placeholder="Ex: Corte de cabelo"
@@ -200,11 +202,13 @@ export default function Services() {
                   />
                 </div>
                 <div>
-                  <label htmlFor="description" className="text-sm font-medium">Descrição</label>
+                  <label htmlFor="description" className="text-sm font-medium">
+                    Descrição
+                  </label>
                   <Input
                     id="description"
                     value={formData.description}
-                    onChange={(e) =>
+                    onChange={e =>
                       setFormData({ ...formData, description: e.target.value })
                     }
                     placeholder="Descrição do serviço"
@@ -212,12 +216,14 @@ export default function Services() {
                 </div>
                 <div className="grid grid-cols-2 gap-4">
                   <div>
-                    <label htmlFor="duration" className="text-sm font-medium">Duração (min)</label>
+                    <label htmlFor="duration" className="text-sm font-medium">
+                      Duração (min)
+                    </label>
                     <Input
                       id="duration"
                       type="number"
                       value={formData.duration}
-                      onChange={(e) =>
+                      onChange={e =>
                         setFormData({ ...formData, duration: e.target.value })
                       }
                       placeholder="60"
@@ -225,13 +231,15 @@ export default function Services() {
                     />
                   </div>
                   <div>
-                    <label htmlFor="price" className="text-sm font-medium">Preço (R$)</label>
+                    <label htmlFor="price" className="text-sm font-medium">
+                      Preço (R$)
+                    </label>
                     <Input
                       id="price"
                       type="number"
                       step="0.01"
                       value={formData.price}
-                      onChange={(e) =>
+                      onChange={e =>
                         setFormData({ ...formData, price: e.target.value })
                       }
                       placeholder="0.00"
@@ -243,7 +251,7 @@ export default function Services() {
                   <legend className="text-sm font-medium mb-1">Status</legend>
                   <Select
                     value={formData.status}
-                    onValueChange={(value) =>
+                    onValueChange={value =>
                       setFormData({
                         ...formData,
                         status: value as "active" | "inactive",
@@ -261,10 +269,12 @@ export default function Services() {
                 </fieldset>
 
                 <fieldset className="mb-4">
-                  <legend className="text-sm font-medium mb-1">Especialista Responsável (opcional)</legend>
+                  <legend className="text-sm font-medium mb-1">
+                    Especialista Responsável (opcional)
+                  </legend>
                   <Select
                     value={formData.specialistId}
-                    onValueChange={(value) =>
+                    onValueChange={value =>
                       setFormData({
                         ...formData,
                         specialistId: value === "none" ? "" : value,
@@ -276,7 +286,7 @@ export default function Services() {
                     </SelectTrigger>
                     <SelectContent>
                       <SelectItem value="none">Nenhum especialista</SelectItem>
-                      {specialistsQuery.data?.map((specialist) => (
+                      {specialistsQuery.data?.map(specialist => (
                         <SelectItem key={specialist.id} value={specialist.id}>
                           {specialist.name}
                         </SelectItem>
@@ -287,7 +297,9 @@ export default function Services() {
                 <Button
                   type="submit"
                   className="w-full"
-                  disabled={createMutation.isPending || updateMutation.isPending}
+                  disabled={
+                    createMutation.isPending || updateMutation.isPending
+                  }
                 >
                   {(createMutation.isPending || updateMutation.isPending) && (
                     <Loader2 className="mr-2 h-4 w-4 animate-spin" />
@@ -302,11 +314,14 @@ export default function Services() {
         {/* Services Grid */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
           {servicesQuery.isLoading ? (
-            [1, 2, 3].map((item) => (
-              <Skeleton key={`skeleton-service-${item}`} className="h-48 w-full" />
+            [1, 2, 3].map(item => (
+              <Skeleton
+                key={`skeleton-service-${item}`}
+                className="h-48 w-full"
+              />
             ))
           ) : servicesQuery.data && servicesQuery.data.length > 0 ? (
-            servicesQuery.data.map((service) => (
+            servicesQuery.data.map(service => (
               <Card key={service.id}>
                 <CardHeader className="pb-3">
                   <div className="flex items-start justify-between">
@@ -317,10 +332,11 @@ export default function Services() {
                       </CardDescription>
                     </div>
                     <span
-                      className={`text-xs font-semibold px-2 py-1 rounded ${service.status === "active"
-                        ? "bg-green-100 text-green-800"
-                        : "bg-gray-100 text-gray-800"
-                        }`}
+                      className={`text-xs font-semibold px-2 py-1 rounded ${
+                        service.status === "active"
+                          ? "bg-green-100 text-green-800"
+                          : "bg-gray-100 text-gray-800"
+                      }`}
                     >
                       {service.status === "active" ? "Ativo" : "Inativo"}
                     </span>
@@ -335,7 +351,10 @@ export default function Services() {
                     <div>
                       <p className="text-muted-foreground">Preço</p>
                       <p className="font-semibold">
-                        {new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(parseFloat(service.price))}
+                        {new Intl.NumberFormat("pt-BR", {
+                          style: "currency",
+                          currency: "BRL",
+                        }).format(parseFloat(service.price))}
                       </p>
                     </div>
                   </div>
@@ -344,7 +363,9 @@ export default function Services() {
                     <div className="text-sm border-t pt-2 mt-2">
                       <p className="text-muted-foreground">Especialista</p>
                       <p className="font-semibold">
-                        {specialistsQuery.data?.find(s => s.id === service.specialistId)?.name || service.specialistId}
+                        {specialistsQuery.data?.find(
+                          s => s.id === service.specialistId
+                        )?.name || service.specialistId}
                       </p>
                     </div>
                   )}
@@ -378,11 +399,15 @@ export default function Services() {
         </div>
 
         {/* Delete Confirmation */}
-        <AlertDialog open={!!deleteId} onOpenChange={(open) => !open && setDeleteId(null)}>
+        <AlertDialog
+          open={!!deleteId}
+          onOpenChange={open => !open && setDeleteId(null)}
+        >
           <AlertDialogContent>
             <AlertDialogTitle>Deletar serviço?</AlertDialogTitle>
             <AlertDialogDescription>
-              Esta ação não pode ser desfeita. O serviço será removido do sistema.
+              Esta ação não pode ser desfeita. O serviço será removido do
+              sistema.
             </AlertDialogDescription>
             <div className="flex gap-2 justify-end">
               <AlertDialogCancel>Cancelar</AlertDialogCancel>
@@ -402,4 +427,3 @@ export default function Services() {
     </DashboardLayout>
   );
 }
-

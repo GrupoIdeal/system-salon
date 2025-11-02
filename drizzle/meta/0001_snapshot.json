@@ -100,37 +100,27 @@
       "indexes": {
         "salonIdIdx": {
           "name": "salonIdIdx",
-          "columns": [
-            "salonId"
-          ],
+          "columns": ["salonId"],
           "isUnique": false
         },
         "clientIdIdx": {
           "name": "clientIdIdx",
-          "columns": [
-            "clientId"
-          ],
+          "columns": ["clientId"],
           "isUnique": false
         },
         "serviceIdIdx": {
           "name": "serviceIdIdx",
-          "columns": [
-            "serviceId"
-          ],
+          "columns": ["serviceId"],
           "isUnique": false
         },
         "specialistIdIdx": {
           "name": "specialistIdIdx",
-          "columns": [
-            "specialistId"
-          ],
+          "columns": ["specialistId"],
           "isUnique": false
         },
         "appointmentDateIdx": {
           "name": "appointmentDateIdx",
-          "columns": [
-            "appointmentDate"
-          ],
+          "columns": ["appointmentDate"],
           "isUnique": false
         }
       },
@@ -139,12 +129,8 @@
           "name": "appointments_salonId_salons_id_fk",
           "tableFrom": "appointments",
           "tableTo": "salons",
-          "columnsFrom": [
-            "salonId"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["salonId"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         },
@@ -152,12 +138,8 @@
           "name": "appointments_clientId_clients_id_fk",
           "tableFrom": "appointments",
           "tableTo": "clients",
-          "columnsFrom": [
-            "clientId"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["clientId"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         },
@@ -165,12 +147,8 @@
           "name": "appointments_serviceId_services_id_fk",
           "tableFrom": "appointments",
           "tableTo": "services",
-          "columnsFrom": [
-            "serviceId"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["serviceId"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         },
@@ -178,12 +156,8 @@
           "name": "appointments_specialistId_specialists_id_fk",
           "tableFrom": "appointments",
           "tableTo": "specialists",
-          "columnsFrom": [
-            "specialistId"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["specialistId"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         }
@@ -191,9 +165,7 @@
       "compositePrimaryKeys": {
         "appointments_id": {
           "name": "appointments_id",
-          "columns": [
-            "id"
-          ]
+          "columns": ["id"]
         }
       },
       "uniqueConstraints": {},
@@ -272,16 +244,12 @@
       "indexes": {
         "salonIdIdx": {
           "name": "salonIdIdx",
-          "columns": [
-            "salonId"
-          ],
+          "columns": ["salonId"],
           "isUnique": false
         },
         "emailIdx": {
           "name": "emailIdx",
-          "columns": [
-            "email"
-          ],
+          "columns": ["email"],
           "isUnique": false
         }
       },
@@ -290,12 +258,8 @@
           "name": "clients_salonId_salons_id_fk",
           "tableFrom": "clients",
           "tableTo": "salons",
-          "columnsFrom": [
-            "salonId"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["salonId"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         }
@@ -303,9 +267,7 @@
       "compositePrimaryKeys": {
         "clients_id": {
           "name": "clients_id",
-          "columns": [
-            "id"
-          ]
+          "columns": ["id"]
         }
       },
       "uniqueConstraints": {},
@@ -362,16 +324,12 @@
       "indexes": {
         "userIdIdx": {
           "name": "userIdIdx",
-          "columns": [
-            "userId"
-          ],
+          "columns": ["userId"],
           "isUnique": false
         },
         "tokenIdx": {
           "name": "tokenIdx",
-          "columns": [
-            "token"
-          ],
+          "columns": ["token"],
           "isUnique": false
         }
       },
@@ -380,12 +338,8 @@
           "name": "passwordResets_userId_users_id_fk",
           "tableFrom": "passwordResets",
           "tableTo": "users",
-          "columnsFrom": [
-            "userId"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["userId"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         }
@@ -393,17 +347,13 @@
       "compositePrimaryKeys": {
         "passwordResets_id": {
           "name": "passwordResets_id",
-          "columns": [
-            "id"
-          ]
+          "columns": ["id"]
         }
       },
       "uniqueConstraints": {
         "passwordResets_token_unique": {
           "name": "passwordResets_token_unique",
-          "columns": [
-            "token"
-          ]
+          "columns": ["token"]
         }
       },
       "checkConstraint": {}
@@ -495,9 +445,7 @@
       "indexes": {
         "userIdIdx": {
           "name": "userIdIdx",
-          "columns": [
-            "userId"
-          ],
+          "columns": ["userId"],
           "isUnique": false
         }
       },
@@ -506,12 +454,8 @@
           "name": "salons_userId_users_id_fk",
           "tableFrom": "salons",
           "tableTo": "users",
-          "columnsFrom": [
-            "userId"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["userId"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         }
@@ -519,9 +463,7 @@
       "compositePrimaryKeys": {
         "salons_id": {
           "name": "salons_id",
-          "columns": [
-            "id"
-          ]
+          "columns": ["id"]
         }
       },
       "uniqueConstraints": {},
@@ -608,16 +550,12 @@
       "indexes": {
         "salonIdIdx": {
           "name": "salonIdIdx",
-          "columns": [
-            "salonId"
-          ],
+          "columns": ["salonId"],
           "isUnique": false
         },
         "specialistIdIdx": {
           "name": "specialistIdIdx",
-          "columns": [
-            "specialistId"
-          ],
+          "columns": ["specialistId"],
           "isUnique": false
         }
       },
@@ -626,12 +564,8 @@
           "name": "services_salonId_salons_id_fk",
           "tableFrom": "services",
           "tableTo": "salons",
-          "columnsFrom": [
-            "salonId"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["salonId"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         },
@@ -639,12 +573,8 @@
           "name": "services_specialistId_specialists_id_fk",
           "tableFrom": "services",
           "tableTo": "specialists",
-          "columnsFrom": [
-            "specialistId"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["specialistId"],
+          "columnsTo": ["id"],
           "onDelete": "set null",
           "onUpdate": "no action"
         }
@@ -652,9 +582,7 @@
       "compositePrimaryKeys": {
         "services_id": {
           "name": "services_id",
-          "columns": [
-            "id"
-          ]
+          "columns": ["id"]
         }
       },
       "uniqueConstraints": {},
@@ -748,9 +676,7 @@
       "indexes": {
         "salonIdIdx": {
           "name": "salonIdIdx",
-          "columns": [
-            "salonId"
-          ],
+          "columns": ["salonId"],
           "isUnique": false
         }
       },
@@ -759,12 +685,8 @@
           "name": "specialists_salonId_salons_id_fk",
           "tableFrom": "specialists",
           "tableTo": "salons",
-          "columnsFrom": [
-            "salonId"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["salonId"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         }
@@ -772,9 +694,7 @@
       "compositePrimaryKeys": {
         "specialists_id": {
           "name": "specialists_id",
-          "columns": [
-            "id"
-          ]
+          "columns": ["id"]
         }
       },
       "uniqueConstraints": {},
@@ -849,17 +769,13 @@
       "compositePrimaryKeys": {
         "users_id": {
           "name": "users_id",
-          "columns": [
-            "id"
-          ]
+          "columns": ["id"]
         }
       },
       "uniqueConstraints": {
         "users_email_unique": {
           "name": "users_email_unique",
-          "columns": [
-            "email"
-          ]
+          "columns": ["email"]
         }
       },
       "checkConstraint": {}

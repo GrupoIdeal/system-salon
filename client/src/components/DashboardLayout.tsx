@@ -15,10 +15,18 @@ import {
 } from "@/components/ui/sidebar";
 import { APP_LOGO, APP_TITLE, getLoginUrl } from "@/const";
 import { useIsMobile } from "@/hooks/useMobile";
-import { Calendar, LayoutDashboard, LogOut, PanelLeft, Scissors, User, Users } from "lucide-react";
+import {
+  Calendar,
+  LayoutDashboard,
+  LogOut,
+  PanelLeft,
+  Scissors,
+  User,
+  Users,
+} from "lucide-react";
 import { type CSSProperties, useEffect, useRef, useState } from "react";
 import { useLocation } from "wouter";
-import { DashboardLayoutSkeleton } from './DashboardLayoutSkeleton';
+import { DashboardLayoutSkeleton } from "./DashboardLayoutSkeleton";
 import { Button } from "./ui/button";
 
 const menuItems = [
@@ -50,7 +58,7 @@ export default function DashboardLayout({
   }, [sidebarWidth]);
 
   if (loading) {
-    return <DashboardLayoutSkeleton />
+    return <DashboardLayoutSkeleton />;
   }
 
   if (!user) {
@@ -213,10 +221,10 @@ function DashboardLayoutContent({
                       isActive={isActive}
                       onClick={() => setLocation(item.path)}
                       tooltip={item.label}
-                      className={`h-12 transition-all font-normal ${isActive ? 'bg-slate-800 text-white' : 'text-slate-300 hover:bg-slate-800 hover:text-white'}`}
+                      className={`h-12 transition-all font-normal ${isActive ? "bg-slate-800 text-white" : "text-slate-300 hover:bg-slate-800 hover:text-white"}`}
                     >
                       <item.icon
-                        className={`h-6 w-6 mr-2 ${isActive ? 'text-blue-400' : 'text-slate-300'}`}
+                        className={`h-6 w-6 mr-2 ${isActive ? "text-blue-400" : "text-slate-300"}`}
                       />
                       <span className="truncate">{item.label}</span>
                     </SidebarMenuButton>
@@ -231,9 +239,11 @@ function DashboardLayoutContent({
                       isActive={location === "/empresa"}
                       onClick={() => setLocation("/empresa")}
                       tooltip="Empresa"
-                      className={`h-12 transition-all font-normal ${location === "/empresa" ? 'bg-slate-800 text-white' : 'text-slate-300 hover:bg-slate-800 hover:text-white'}`}
+                      className={`h-12 transition-all font-normal ${location === "/empresa" ? "bg-slate-800 text-white" : "text-slate-300 hover:bg-slate-800 hover:text-white"}`}
                     >
-                      <User className={`h-6 w-6 mr-2 ${location === "/empresa" ? 'text-blue-400' : 'text-slate-300'}`} />
+                      <User
+                        className={`h-6 w-6 mr-2 ${location === "/empresa" ? "text-blue-400" : "text-slate-300"}`}
+                      />
                       <span className="truncate">Empresa</span>
                     </SidebarMenuButton>
                   </SidebarMenuItem>
@@ -248,7 +258,7 @@ function DashboardLayoutContent({
                 await logout();
                 setLocation("/login");
               }}
-              className={`flex items-center justify-center gap-2 text-slate-200 font-semibold bg-slate-800 hover:bg-slate-700 ${isCollapsed ? 'w-12 h-12 p-0 rounded-md' : 'w-full'}`}
+              className={`flex items-center justify-center gap-2 text-slate-200 font-semibold bg-slate-800 hover:bg-slate-700 ${isCollapsed ? "w-12 h-12 p-0 rounded-md" : "w-full"}`}
             >
               <LogOut className="h-5 w-5 text-slate-200" />
               {!isCollapsed && <span>Sair</span>}
@@ -282,7 +292,9 @@ function DashboardLayoutContent({
             </div>
           </div>
         )}
-        <main className="flex-1 p-4 bg-slate-50 dark:bg-slate-800">{children}</main>
+        <main className="flex-1 p-4 bg-slate-50 dark:bg-slate-800">
+          {children}
+        </main>
       </SidebarInset>
     </>
   );

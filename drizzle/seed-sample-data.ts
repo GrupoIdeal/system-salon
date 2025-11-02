@@ -1,7 +1,7 @@
 /** biome-ignore-all assist/source/organizeImports: false positive */
 import { config } from "dotenv";
 import { drizzle } from "drizzle-orm/postgres-js";
-import { eq } from "drizzle-orm";
+// 'eq' não é usado neste arquivo
 import postgres from "postgres";
 import { salons, specialists, services, clients } from "../drizzle/schema";
 import { nanoid } from "nanoid";
@@ -21,12 +21,19 @@ async function main() {
   const salon = await db.select().from(salons).limit(1);
 
   if (salon.length === 0) {
-    console.log("❌ Nenhum salão encontrado. Execute primeiro o seed-admin.ts");
+    if (process.env.NODE_ENV !== "production") {
+      console.log(
+        "❌ Nenhum salão encontrado. Execute primeiro o seed-admin.ts"
+      );
+    }
     process.exit(1);
   }
 
+  if (process.env.NODE_ENV !== "production") {
+    console.log(`🏢 Usando salão: ${salon[0].name}`);
+  }
+
   const salonId = salon[0].id;
-  console.log(`🏢 Usando salão: ${salon[0].name}`);
 
   // Criar especialistas
   const specialists_data = [
@@ -100,7 +107,9 @@ async function main() {
   ];
 
   await db.insert(specialists).values(specialists_data);
-  console.log(`✅ ${specialists_data.length} especialistas criados!`);
+  if (process.env.NODE_ENV !== "production") {
+    console.log(`✅ ${specialists_data.length} especialistas criados!`);
+  }
 
   // Criar serviços
   const services_data = [
@@ -167,7 +176,9 @@ async function main() {
   ];
 
   await db.insert(services).values(services_data);
-  console.log(`✅ ${services_data.length} serviços criados!`);
+  if (process.env.NODE_ENV !== "production") {
+    console.log(`✅ ${services_data.length} serviços criados!`);
+  }
 
   // Criar alguns clientes de exemplo
   const clients_data = [
@@ -198,13 +209,17 @@ async function main() {
   ];
 
   await db.insert(clients).values(clients_data);
-  console.log(`✅ ${clients_data.length} clientes criados!`);
+  if (process.env.NODE_ENV !== "production") {
+    console.log(`✅ ${clients_data.length} clientes criados!`);
+  }
 
-  console.log("\n🎉 Dados de exemplo criados com sucesso!");
-  console.log("📋 Resumo:");
-  console.log(`   • ${specialists_data.length} especialistas`);
-  console.log(`   • ${services_data.length} serviços`);
-  console.log(`   • ${clients_data.length} clientes`);
+  if (process.env.NODE_ENV !== "production") {
+    console.log("\n🎉 Dados de exemplo criados com sucesso!");
+    console.log("📋 Resumo:");
+    console.log(`   • ${specialists_data.length} especialistas`);
+    console.log(`   • ${services_data.length} serviços`);
+    console.log(`   • ${clients_data.length} clientes`);
+  }
 
   process.exit(0);
 }

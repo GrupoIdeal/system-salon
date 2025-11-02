@@ -203,12 +203,14 @@ async function scheduleNotification(
   job: Omit<NotificationJob, "id" | "status" | "createdAt">
 ) {
   // Em produção, usar uma fila como Redis/Bull ou database
-  console.log("📅 Notificação agendada:", {
-    appointmentId: job.appointmentId,
-    type: job.type,
-    scheduledFor: job.scheduledFor,
-    channel: job.channel,
-  });
+  if (process.env.NODE_ENV !== "production") {
+    console.log("📅 Notificação agendada:", {
+      appointmentId: job.appointmentId,
+      type: job.type,
+      scheduledFor: job.scheduledFor,
+      channel: job.channel,
+    });
+  }
 
   // Simular agendamento imediato para confirmação
   if (job.type === "confirmation") {
@@ -240,22 +242,18 @@ export async function sendNotification(
 
     const message = renderTemplate(template, appointmentData, channel);
 
-    // Simular envio
-    console.log(
-      `📱 Enviando ${channel.toUpperCase()} para ${appointmentData.client_name}:`,
-      message
-    );
-
-    // Em produção, integrar com:
-    // - WhatsApp Business API
-    // - Twilio para SMS
-    // - SendGrid/AWS SES para email
-    // - Firebase/OneSignal para push
+    if (process.env.NODE_ENV !== "production") {
+      console.log(
+        `📱 Enviando ${channel.toUpperCase()} para ${appointmentData.client_name}:`,
+        message
+      );
+    }
 
     return { success: true, message: "Notificação enviada com sucesso" };
-  } catch (error) {
-    console.error("❌ Erro ao enviar notificação:", error);
-    return { success: false, error: error.message };
+  } catch (err) {
+    console.error("❌ Erro ao enviar notificação:", err);
+    const message = err instanceof Error ? err.message : String(err);
+    return { success: false, error: message };
   }
 }
 
@@ -299,22 +297,22 @@ async function getAppointmentNotificationData(appointmentId: string) {
     client_email: data.client_email,
     client_phone: data.client_phone,
     service: data.service_name,
-    duration: data.service_duration.toString(),
-    price: data.service_price.toFixed(2),
+    duration: data.service_duration?.toString(),
+    price: Number(data.service_price).toFixed(2),
     specialist: data.specialist_name,
     specialist_phone: data.specialist_phone,
     date: data.appointment_date.toLocaleDateString("pt-BR"),
     time: data.appointment_time,
-    salon_name: "Salão de Beleza", // Em produção, buscar do banco
+    salon_name: "Salão de Beleza",
     salon_phone: "(11) 99999-9999",
     salon_address: "Rua das Flores, 123 - Centro",
   };
 }
 
 // Renderizar template com dados
-function renderTemplate(
+export function renderTemplate(
   template: NotificationTemplate,
-  data: any,
+  data: Record<string, unknown>,
   channel: "email" | "sms" | "whatsapp" | "push"
 ): string {
   let message: string;
@@ -338,13 +336,16 @@ function renderTemplate(
 
   // Substituir placeholders
   return message.replace(/\{([^}]+)\}/g, (match, key) => {
-    return data[key] || match;
+    const val = (data as Record<string, unknown>)[key];
+    return val !== undefined && val !== null ? String(val) : match;
   });
 }
 
 // Função para processar fila de notificações (executar periodicamente)
 export async function processNotificationQueue() {
-  console.log("🔄 Processando fila de notificações...");
+  if (process.env.NODE_ENV !== "production") {
+    console.log("🔄 Processando fila de notificações...");
+  }
 
   // Em produção:
   // 1. Buscar jobs pendentes do banco/fila

@@ -1,5 +1,5 @@
 // Sistema de Relatórios Avançados
-import { eq, and, gte, lte } from "drizzle-orm";
+import { eq, and, gte, lte, desc } from "drizzle-orm";
 import { getDb } from "./db";
 import {
   appointments,
@@ -109,23 +109,71 @@ export interface MonthlyReport {
   growthRate: number; // Comparado com mês anterior
 }
 
+// Tipos locais para resultados das queries (não mudam a lógica, apenas ajudam o TS)
+type AppointmentRow = {
+  id: string;
+  status: string;
+  servicePrice: number | string | null;
+  appointmentDate?: Date;
+  appointmentTime?: string;
+};
+
+type SpecialistRow = {
+  specialistId: string;
+  specialistName: string;
+  appointmentId: string;
+  status: string;
+  serviceId: string;
+  serviceName: string;
+  servicePrice: number | string | null;
+};
+
+type ServiceRow = {
+  serviceId: string;
+  serviceName: string;
+  serviceDuration?: number;
+  servicePrice: number | string | null;
+  appointmentTime?: string;
+  status?: string;
+};
+
+type ClientRow = {
+  clientId: string;
+  clientName: string;
+  appointmentDate: Date;
+  appointmentTime?: string;
+  status?: string;
+  serviceId?: string;
+  serviceName?: string;
+  servicePrice?: number | string | null;
+  specialistId?: string;
+  specialistName?: string;
+};
+
+type DailyRow = {
+  id: string;
+  status: string;
+  appointmentTime?: string;
+  servicePrice?: number | string | null;
+};
+
 // Relatório de estatísticas gerais
 export async function generateAppointmentStats(
   salonId: string,
   filter: ReportFilter = {}
 ): Promise<AppointmentStats> {
-  const db = getDb();
-
-  let query = db
-    .select({
-      id: appointments.id,
-      status: appointments.status,
-      servicePrice: services.price,
-    })
-    .from(appointments)
-    .innerJoin(services, eq(appointments.serviceId, services.id))
-    .innerJoin(specialists, eq(appointments.specialistId, specialists.id))
-    .where(eq(specialists.salonId, salonId));
+  const db = await getDb();
+  if (!db) {
+    return {
+      total: 0,
+      completed: 0,
+      cancelled: 0,
+      pending: 0,
+      confirmed: 0,
+      revenue: 0,
+      averageTicket: 0,
+    };
+  }
 
   // Aplicar filtros
   const conditions = [eq(specialists.salonId, salonId)];
@@ -150,7 +198,17 @@ export async function generateAppointmentStats(
     conditions.push(eq(appointments.status, filter.status));
   }
 
-  const results = await query.where(and(...conditions));
+  const results = (await db
+    .select({
+      id: appointments.id,
+      status: appointments.status,
+      servicePrice: services.price,
+      appointmentDate: appointments.appointmentDate,
+    })
+    .from(appointments)
+    .innerJoin(services, eq(appointments.serviceId, services.id))
+    .innerJoin(specialists, eq(appointments.specialistId, specialists.id))
+    .where(and(...conditions))) as AppointmentRow[];
 
   const stats: AppointmentStats = {
     total: results.length,
@@ -165,7 +223,7 @@ export async function generateAppointmentStats(
   // Calcular receita apenas dos agendamentos completados
   const completedRevenue = results
     .filter(r => r.status === "completed")
-    .reduce((sum, r) => sum + Number(r.servicePrice), 0);
+    .reduce((sum, r) => sum + Number(r.servicePrice ?? 0), 0);
 
   stats.revenue = completedRevenue;
   stats.averageTicket =
@@ -177,11 +235,12 @@ export async function generateAppointmentStats(
 // Relatório de performance por especialista
 export async function generateSpecialistPerformance(
   salonId: string,
-  filter: ReportFilter = {}
+  _filter: ReportFilter = {}
 ): Promise<SpecialistPerformance[]> {
-  const db = getDb();
+  const db = await getDb();
+  if (!db) return [];
 
-  const results = await db
+  const results = (await db
     .select({
       specialistId: specialists.id,
       specialistName: specialists.name,
@@ -194,7 +253,7 @@ export async function generateSpecialistPerformance(
     .from(appointments)
     .innerJoin(services, eq(appointments.serviceId, services.id))
     .innerJoin(specialists, eq(appointments.specialistId, specialists.id))
-    .where(eq(specialists.salonId, salonId));
+    .where(eq(specialists.salonId, salonId))) as SpecialistRow[];
 
   // Agrupar por especialista
   const specialistMap = new Map<
@@ -212,7 +271,8 @@ export async function generateSpecialistPerformance(
         appointments: [],
       });
     }
-    specialistMap.get(result.specialistId)!.appointments.push(result);
+    const entry = specialistMap.get(result.specialistId);
+    if (entry) entry.appointments.push(result);
   }
 
   const performance: SpecialistPerformance[] = [];
@@ -223,7 +283,7 @@ export async function generateSpecialistPerformance(
     const cancelled = appointments.filter(a => a.status === "cancelled");
 
     const revenue = completed.reduce(
-      (sum, a) => sum + Number(a.servicePrice),
+      (sum, a) => sum + Number(a.servicePrice ?? 0),
       0
     );
 
@@ -233,16 +293,17 @@ export async function generateSpecialistPerformance(
       { name: string; count: number; revenue: number }
     >();
     for (const appt of completed) {
-      if (!serviceMap.has(appt.serviceId)) {
-        serviceMap.set(appt.serviceId, {
-          name: appt.serviceName,
-          count: 0,
-          revenue: 0,
-        });
+      const sid = appt.serviceId;
+      if (!sid) continue;
+      const sname = appt.serviceName ?? "";
+      if (!serviceMap.has(sid)) {
+        serviceMap.set(sid, { name: sname, count: 0, revenue: 0 });
       }
-      const service = serviceMap.get(appt.serviceId)!;
-      service.count++;
-      service.revenue += Number(appt.servicePrice);
+      const svc = serviceMap.get(sid);
+      if (svc) {
+        svc.count++;
+        svc.revenue += Number(appt.servicePrice ?? 0);
+      }
     }
 
     const topServices = Array.from(serviceMap.entries())
@@ -281,11 +342,12 @@ export async function generateSpecialistPerformance(
 // Relatório de popularidade dos serviços
 export async function generateServicePopularity(
   salonId: string,
-  filter: ReportFilter = {}
+  _filter: ReportFilter = {}
 ): Promise<ServicePopularity[]> {
-  const db = getDb();
+  const db = await getDb();
+  if (!db) return [];
 
-  const results = await db
+  const results = (await db
     .select({
       serviceId: services.id,
       serviceName: services.name,
@@ -297,7 +359,7 @@ export async function generateServicePopularity(
     .from(appointments)
     .innerJoin(services, eq(appointments.serviceId, services.id))
     .innerJoin(specialists, eq(appointments.specialistId, specialists.id))
-    .where(eq(specialists.salonId, salonId));
+    .where(eq(specialists.salonId, salonId))) as ServiceRow[];
 
   // Agrupar por serviço
   const serviceMap = new Map<
@@ -313,11 +375,12 @@ export async function generateServicePopularity(
     if (!serviceMap.has(result.serviceId)) {
       serviceMap.set(result.serviceId, {
         name: result.serviceName,
-        duration: result.serviceDuration,
+        duration: result.serviceDuration ?? 0,
         appointments: [],
       });
     }
-    serviceMap.get(result.serviceId)!.appointments.push(result);
+    const entry = serviceMap.get(result.serviceId);
+    if (entry) entry.appointments.push(result);
   }
 
   const popularity: ServicePopularity[] = [];
@@ -327,14 +390,14 @@ export async function generateServicePopularity(
     const completed = appointments.filter(a => a.status === "completed");
 
     const revenue = completed.reduce(
-      (sum, a) => sum + Number(a.servicePrice),
+      (sum, a) => sum + Number(a.servicePrice ?? 0),
       0
     );
 
     // Calcular horários populares
     const timeSlotMap = new Map<string, number>();
     for (const appt of completed) {
-      const hour = appt.appointmentTime.split(":")[0] + ":00";
+      const hour = (appt.appointmentTime ?? "00:00").split(":")[0] + ":00";
       timeSlotMap.set(hour, (timeSlotMap.get(hour) || 0) + 1);
     }
 
@@ -361,11 +424,12 @@ export async function generateServicePopularity(
 // Análise de clientes
 export async function generateClientAnalytics(
   salonId: string,
-  filter: ReportFilter = {}
+  _filter: ReportFilter = {}
 ): Promise<ClientAnalytics[]> {
-  const db = getDb();
+  const db = await getDb();
+  if (!db) return [];
 
-  const results = await db
+  const results = (await db
     .select({
       clientId: clients.id,
       clientName: clients.name,
@@ -383,7 +447,7 @@ export async function generateClientAnalytics(
     .innerJoin(services, eq(appointments.serviceId, services.id))
     .innerJoin(specialists, eq(appointments.specialistId, specialists.id))
     .where(eq(specialists.salonId, salonId))
-    .orderBy(desc(appointments.appointmentDate));
+    .orderBy(desc(appointments.appointmentDate))) as ClientRow[];
 
   // Agrupar por cliente
   const clientMap = new Map<
@@ -401,7 +465,8 @@ export async function generateClientAnalytics(
         appointments: [],
       });
     }
-    clientMap.get(result.clientId)!.appointments.push(result);
+    const entry = clientMap.get(result.clientId);
+    if (entry) entry.appointments.push(result);
   }
 
   const analytics: ClientAnalytics[] = [];
@@ -411,7 +476,7 @@ export async function generateClientAnalytics(
     const completed = appointments.filter(a => a.status === "completed");
 
     const totalSpent = completed.reduce(
-      (sum, a) => sum + Number(a.servicePrice),
+      (sum, a) => sum + Number(a.servicePrice ?? 0),
       0
     );
 
@@ -434,10 +499,14 @@ export async function generateClientAnalytics(
     // Serviços favoritos
     const serviceMap = new Map<string, { name: string; count: number }>();
     for (const appt of completed) {
-      if (!serviceMap.has(appt.serviceId)) {
-        serviceMap.set(appt.serviceId, { name: appt.serviceName, count: 0 });
+      const sid = appt.serviceId;
+      if (!sid) continue;
+      const sname = appt.serviceName ?? "";
+      if (!serviceMap.has(sid)) {
+        serviceMap.set(sid, { name: sname, count: 0 });
       }
-      serviceMap.get(appt.serviceId)!.count++;
+      const svc = serviceMap.get(sid);
+      if (svc) svc.count++;
     }
 
     const favoriteServices = Array.from(serviceMap.entries())
@@ -452,13 +521,14 @@ export async function generateClientAnalytics(
     // Especialistas favoritos
     const specialistMap = new Map<string, { name: string; count: number }>();
     for (const appt of completed) {
-      if (!specialistMap.has(appt.specialistId)) {
-        specialistMap.set(appt.specialistId, {
-          name: appt.specialistName,
-          count: 0,
-        });
+      const sid = appt.specialistId;
+      if (!sid) continue;
+      const sname = appt.specialistName ?? "";
+      if (!specialistMap.has(sid)) {
+        specialistMap.set(sid, { name: sname, count: 0 });
       }
-      specialistMap.get(appt.specialistId)!.count++;
+      const spec = specialistMap.get(sid);
+      if (spec) spec.count++;
     }
 
     const favoriteSpecialists = Array.from(specialistMap.entries())
@@ -477,7 +547,7 @@ export async function generateClientAnalytics(
 
     if (lastVisit) {
       const daysSinceLastVisit = Math.floor(
-        (new Date().getTime() - lastVisit.getTime()) / (1000 * 60 * 60 * 24)
+        (Date.now() - lastVisit.getTime()) / (1000 * 60 * 60 * 24)
       );
 
       // Risco baseado em tempo desde última visita e frequência
@@ -515,7 +585,16 @@ export async function generateDailyReport(
   salonId: string,
   date: Date
 ): Promise<DailyReport> {
-  const db = getDb();
+  const db = await getDb();
+  if (!db)
+    return {
+      date: date.toISOString().split("T")[0],
+      totalAppointments: 0,
+      completedAppointments: 0,
+      cancelledAppointments: 0,
+      revenue: 0,
+      busyHours: [],
+    };
 
   const startOfDay = new Date(date);
   startOfDay.setHours(0, 0, 0, 0);
@@ -523,7 +602,7 @@ export async function generateDailyReport(
   const endOfDay = new Date(date);
   endOfDay.setHours(23, 59, 59, 999);
 
-  const results = await db
+  const results = (await db
     .select({
       id: appointments.id,
       status: appointments.status,
@@ -539,16 +618,20 @@ export async function generateDailyReport(
         gte(appointments.appointmentDate, startOfDay),
         lte(appointments.appointmentDate, endOfDay)
       )
-    );
+    )) as DailyRow[];
 
   const completed = results.filter(r => r.status === "completed");
   const cancelled = results.filter(r => r.status === "cancelled");
-  const revenue = completed.reduce((sum, r) => sum + Number(r.servicePrice), 0);
+  const revenue = completed.reduce(
+    (sum, r) => sum + Number(r.servicePrice ?? 0),
+    0
+  );
 
   // Calcular horários mais movimentados
   const hourMap = new Map<string, number>();
   for (const appt of results) {
-    const hour = appt.appointmentTime.split(":")[0];
+    const time = appt.appointmentTime ?? "00:00";
+    const hour = time.split(":")[0];
     hourMap.set(hour, (hourMap.get(hour) || 0) + 1);
   }
 
@@ -570,16 +653,18 @@ export async function generateDailyReport(
 }
 
 // Exportar relatório para CSV
-export function exportToCSV(data: any[], filename: string): string {
+export function exportToCSV(data: unknown[]): string {
   if (data.length === 0) return "";
 
-  const headers = Object.keys(data[0]);
+  const first = data[0] as Record<string, unknown>;
+  const headers = Object.keys(first);
   const csvContent = [
     headers.join(","),
     ...data.map(row =>
       headers
         .map(header => {
-          let value = row[header];
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          let value: any = (row as any)[header];
           if (value === null || value === undefined) {
             value = "";
           } else if (typeof value === "string" && value.includes(",")) {

@@ -30,9 +30,8 @@ export function registerOAuthRoutes(app: Express) {
 
       await db.upsertUser({
         id: userInfo.openId,
-        name: userInfo.name || null,
-        email: userInfo.email ?? null,
-        loginMethod: userInfo.loginMethod ?? userInfo.platform ?? null,
+        name: userInfo.name ?? undefined,
+        email: userInfo.email ?? undefined,
         lastSignedIn: new Date(),
       });
 
@@ -42,7 +41,10 @@ export function registerOAuthRoutes(app: Express) {
       });
 
       const cookieOptions = getSessionCookieOptions(req);
-      res.cookie(COOKIE_NAME, sessionToken, { ...cookieOptions, maxAge: ONE_YEAR_MS });
+      res.cookie(COOKIE_NAME, sessionToken, {
+        ...cookieOptions,
+        maxAge: ONE_YEAR_MS,
+      });
 
       res.redirect(302, "/");
     } catch (error) {

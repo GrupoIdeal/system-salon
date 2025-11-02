@@ -54,10 +54,24 @@ function toFormData(
   contentType: string,
   fileName: string
 ): FormData {
-  const blob =
-    typeof data === "string"
-      ? new Blob([data], { type: contentType })
-      : new Blob([data as Uint8Array], { type: contentType });
+  const blob = (() => {
+    if (typeof data === "string")
+      return new Blob([data], { type: contentType });
+    // Ensure we pass an ArrayBuffer or ArrayBufferView that Blob accepts
+    if (data instanceof Uint8Array) {
+      // Copy into a new Uint8Array to guarantee an ArrayBuffer (not SharedArrayBuffer)
+      const copy = Uint8Array.from(data);
+      return new Blob([copy.buffer], { type: contentType });
+    }
+    // Fallback: try to convert to ArrayBuffer
+    try {
+      return new Blob([new Uint8Array(data as Uint8Array).buffer], {
+        type: contentType,
+      });
+    } catch {
+      return new Blob([String(data)], { type: contentType });
+    }
+  })();
   const form = new FormData();
   form.append("file", blob, fileName || "file");
   return form;

@@ -28,7 +28,9 @@ async function main() {
 
   let userId: string;
   if (existingUser.length > 0) {
-    console.log("👤 Usuário admin já existe, usando o existente...");
+    if (process.env.NODE_ENV !== "production") {
+      console.log("👤 Usuário admin já existe, usando o existente...");
+    }
     userId = existingUser[0].id;
   } else {
     userId = nanoid();
@@ -40,7 +42,9 @@ async function main() {
       name: "Administrador",
       role: "admin",
     });
-    console.log("✅ Usuário admin criado com sucesso!");
+    if (process.env.NODE_ENV !== "production") {
+      console.log("✅ Usuário admin criado com sucesso!");
+    }
   }
 
   // Verificar se o salão já existe para este usuário
@@ -50,7 +54,9 @@ async function main() {
     .where(eq(salons.userId, userId));
 
   if (existingSalon.length > 0) {
-    console.log("🏢 Dados da empresa já existem!");
+    if (process.env.NODE_ENV !== "production") {
+      console.log("🏢 Dados da empresa já existem!");
+    }
   } else {
     const salonId = nanoid();
 
@@ -126,12 +132,16 @@ async function main() {
         sunday: [],
       },
     });
-    console.log("✅ Dados da empresa criados com sucesso!");
+    if (process.env.NODE_ENV !== "production") {
+      console.log("✅ Dados da empresa criados com sucesso!");
+    }
   }
 
-  console.log("✅ Horários de funcionamento configurados!");
-  console.log("\n📧 Email: adm@admin.com");
-  console.log("🔑 Senha: 123123");
+  if (process.env.NODE_ENV !== "production") {
+    console.log("✅ Horários de funcionamento configurados!");
+    console.log("\n📧 Email: adm@admin.com");
+    console.log("🔑 Senha: 123123");
+  }
 
   process.exit(0);
 }

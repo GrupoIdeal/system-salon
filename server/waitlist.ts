@@ -1,11 +1,4 @@
 // Sistema de Lista de Espera
-import { eq, and, gte, lte, desc, asc } from "drizzle-orm";
-import { getDb } from "./db";
-import {
-  sendNotification,
-  defaultTemplates,
-  renderTemplate,
-} from "./notifications";
 
 export interface WaitlistEntry {
   id: string;
@@ -45,12 +38,14 @@ export async function addToWaitlist(
 
   waitlistStorage.push(newEntry);
 
-  console.log(`📝 Cliente adicionado à lista de espera:`, {
-    id: newEntry.id,
-    clientId: newEntry.clientId,
-    serviceId: newEntry.serviceId,
-    priority: newEntry.priority,
-  });
+  if (process.env.NODE_ENV !== "production") {
+    console.log(`📝 Cliente adicionado à lista de espera:`, {
+      id: newEntry.id,
+      clientId: newEntry.clientId,
+      serviceId: newEntry.serviceId,
+      priority: newEntry.priority,
+    });
+  }
 
   return newEntry;
 }
@@ -62,7 +57,9 @@ export async function removeFromWaitlist(waitlistId: string): Promise<boolean> {
 
   const removed = waitlistStorage.length < initialLength;
   if (removed) {
-    console.log(`🗑️ Removido da lista de espera: ${waitlistId}`);
+    if (process.env.NODE_ENV !== "production") {
+      console.log(`🗑️ Removido da lista de espera: ${waitlistId}`);
+    }
   }
 
   return removed;
@@ -143,7 +140,7 @@ export async function notifyWaitlistClient(
   waitlistEntry: WaitlistEntry,
   availableDate: Date,
   availableTime: string,
-  specialistId: string
+  _specialistId: string
 ): Promise<boolean> {
   try {
     // Marcar como notificado e definir prazo de confirmação (30 minutos)
@@ -154,13 +151,16 @@ export async function notifyWaitlistClient(
     // Simular envio de notificação
     const message = `🎉 Horário disponível!\n\n📅 ${availableDate.toLocaleDateString("pt-BR")} às ${availableTime}\n⏰ Confirme até ${waitlistEntry.expiresAt?.toLocaleTimeString("pt-BR")}\n\nClique aqui para confirmar: https://salon.app/confirm/${waitlistEntry.id}`;
 
-    console.log(`📱 Notificando cliente da lista de espera:`, {
-      waitlistId: waitlistEntry.id,
-      clientId: waitlistEntry.clientId,
-      date: availableDate.toLocaleDateString("pt-BR"),
-      time: availableTime,
-      expiresAt: waitlistEntry.expiresAt?.toLocaleTimeString("pt-BR"),
-    });
+    if (process.env.NODE_ENV !== "production") {
+      console.log(`📱 Notificando cliente da lista de espera:`, {
+        waitlistId: waitlistEntry.id,
+        clientId: waitlistEntry.clientId,
+        date: availableDate.toLocaleDateString("pt-BR"),
+        time: availableTime,
+        expiresAt: waitlistEntry.expiresAt?.toLocaleTimeString("pt-BR"),
+        message,
+      });
+    }
 
     // Em produção, usar o sistema de notificações real
     // await sendNotification(appointmentId, 'waitlist_available', waitlistEntry.notificationPreference);
@@ -200,11 +200,13 @@ export async function confirmWaitlistSlot(
   // Em produção, criar o agendamento real aqui
   const appointmentId = `appt_${Date.now()}`;
 
-  console.log(`✅ Horário da lista de espera confirmado:`, {
-    waitlistId,
-    appointmentId,
-    clientId: entry.clientId,
-  });
+  if (process.env.NODE_ENV !== "production") {
+    console.log(`✅ Horário da lista de espera confirmado:`, {
+      waitlistId,
+      appointmentId,
+      clientId: entry.clientId,
+    });
+  }
 
   return { success: true, appointmentId };
 }
@@ -241,9 +243,11 @@ export async function processExpiredWaitlist(): Promise<{
     }
   }
 
-  console.log(
-    `🔄 Processamento da lista de espera: ${expiredCount} expiradas, ${notifiedCount} notificadas`
-  );
+  if (process.env.NODE_ENV !== "production") {
+    console.log(
+      `🔄 Processamento da lista de espera: ${expiredCount} expiradas, ${notifiedCount} notificadas`
+    );
+  }
 
   return { expired: expiredCount, notified: notifiedCount };
 }

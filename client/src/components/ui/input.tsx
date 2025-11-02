@@ -18,7 +18,8 @@ function Input({
   const compositionHandlers = useComposition<HTMLInputElement>({
     onKeyDown: (e: React.KeyboardEvent<HTMLInputElement>) => {
       const nativeEvent = e.nativeEvent as { isComposing?: boolean };
-      const isComposing = nativeEvent.isComposing || dialogComposition.justEndedComposing();
+      const isComposing =
+        nativeEvent.isComposing || dialogComposition.justEndedComposing();
       if (e.key === "Enter" && isComposing) {
         return;
       }

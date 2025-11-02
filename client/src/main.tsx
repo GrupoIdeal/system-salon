@@ -1,5 +1,5 @@
 import { trpc } from "@/lib/trpc";
-import { UNAUTHED_ERR_MSG } from '@shared/const';
+import { UNAUTHED_ERR_MSG } from "@shared/const";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { httpBatchLink, TRPCClientError } from "@trpc/client";
 import { createRoot } from "react-dom/client";
@@ -30,7 +30,9 @@ if (typeof document !== "undefined" && APP_TITLE) {
 // Log de estado inicial da autenticação
 console.log("[Auth] Estado inicial:", {
   tokenPresente: Boolean(getAuthToken()),
-  tokenValue: getAuthToken() ? getAuthToken()?.substring(0, 10) + "..." : "nenhum"
+  tokenValue: getAuthToken()
+    ? getAuthToken()?.substring(0, 10) + "..."
+    : "nenhum",
 });
 
 queryClient.getQueryCache().subscribe(event => {
@@ -61,10 +63,15 @@ const trpcClient = trpc.createClient({
 
         // Obter token de autenticação do localStorage
         const authToken = getAuthToken();
-        console.log("[TRPC] Token de autenticação disponível:", authToken ? "Sim" : "Não");
+        console.log(
+          "[TRPC] Token de autenticação disponível:",
+          authToken ? "Sim" : "Não"
+        );
 
         // Adicionar o token ao header de autorização se disponível
-        const headers = new Headers((init?.headers as Record<string, string>) || {});
+        const headers = new Headers(
+          (init?.headers as Record<string, string>) || {}
+        );
         if (authToken) {
           headers.set("Authorization", `Bearer ${authToken}`);
         }

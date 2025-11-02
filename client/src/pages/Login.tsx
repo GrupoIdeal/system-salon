@@ -21,7 +21,7 @@ export default function Login() {
   };
 
   const loginMutation = trpc.auth.login.useMutation({
-    onSuccess: async (data) => {
+    onSuccess: async data => {
       checkCookies();
       if (data.sessionToken) {
         storeAuthToken(data.sessionToken);
@@ -34,7 +34,7 @@ export default function Login() {
         setError("Erro de autenticação. Tente novamente.");
       }
     },
-    onError: (err) => {
+    onError: err => {
       setError(err.message || "Erro ao fazer login");
     },
   });
@@ -53,17 +53,33 @@ export default function Login() {
     <div className="min-h-screen flex items-center justify-center relative">
       {/* Overlay no fundo azul com efeito manchado/borrado */}
       <div className="absolute inset-0 pointer-events-none z-0">
-        <div className="w-full h-full bg-black/10 backdrop-blur-2xl" style={{ WebkitMaskImage: 'radial-gradient(circle at 30% 40%, rgba(0,0,0,0.5) 40%, transparent 100%)', maskImage: 'radial-gradient(circle at 30% 40%, rgba(0,0,0,0.5) 40%, transparent 100%)' }}></div>
+        <div
+          className="w-full h-full bg-black/10 backdrop-blur-2xl"
+          style={{
+            WebkitMaskImage:
+              "radial-gradient(circle at 30% 40%, rgba(0,0,0,0.5) 40%, transparent 100%)",
+            maskImage:
+              "radial-gradient(circle at 30% 40%, rgba(0,0,0,0.5) 40%, transparent 100%)",
+          }}
+        ></div>
       </div>
       <div className="flex w-full max-w-4xl shadow-2xl rounded-2xl overflow-hidden bg-white/90 backdrop-blur-lg z-10">
         {/* Lado esquerdo: Login */}
         <div className="flex-1 flex flex-col justify-center px-10 py-16">
           <div className="mb-8 text-center">
             {APP_LOGO && (
-              <img src={APP_LOGO} alt="Logo" className="mx-auto mb-6 w-132 h-32 object-contain" />
+              <img
+                src={APP_LOGO}
+                alt="Logo"
+                className="mx-auto mb-6 w-132 h-32 object-contain"
+              />
             )}
-            <h1 className="text-4xl font-extrabold tracking-tight text-gray-600 drop-shadow">Bem-vindo</h1>
-            <p className="text-gray-600 mt-2 text-lg">Acesse o sistema com seu usuário e senha</p>
+            <h1 className="text-4xl font-extrabold tracking-tight text-gray-600 drop-shadow">
+              Bem-vindo
+            </h1>
+            <p className="text-gray-600 mt-2 text-lg">
+              Acesse o sistema com seu usuário e senha
+            </p>
           </div>
           <Card className="bg-white/90 border-none shadow-none">
             <CardContent>
@@ -75,25 +91,35 @@ export default function Login() {
                   </Alert>
                 )}
                 <div className="space-y-2">
-                  <label htmlFor="email" className="text-sm font-medium text-blue-900">Email</label>
+                  <label
+                    htmlFor="email"
+                    className="text-sm font-medium text-blue-900"
+                  >
+                    Email
+                  </label>
                   <Input
                     id="email"
                     type="email"
                     placeholder="seu@email.com"
                     value={email}
-                    onChange={(e) => setEmail(e.target.value)}
+                    onChange={e => setEmail(e.target.value)}
                     disabled={loginMutation.isPending}
                     className="bg-white/80 border-blue-300"
                   />
                 </div>
                 <div className="space-y-2">
-                  <label htmlFor="password" className="text-sm font-medium text-blue-900">Senha</label>
+                  <label
+                    htmlFor="password"
+                    className="text-sm font-medium text-blue-900"
+                  >
+                    Senha
+                  </label>
                   <Input
                     id="password"
                     type="password"
                     placeholder="••••••••"
                     value={password}
-                    onChange={(e) => setPassword(e.target.value)}
+                    onChange={e => setPassword(e.target.value)}
                     disabled={loginMutation.isPending}
                     className="bg-white/80 border-blue-300"
                   />
@@ -114,10 +140,14 @@ export default function Login() {
         </div>
         {/* Lado direito: Imagem ilustrativa customizada */}
         <div className="hidden md:flex flex-1 h-auto min-h-[600px] items-stretch justify-stretch bg-gradient-to-tr from-blue-100 to-blue-300 p-0">
-          <img src="/image/img-login.png" alt="Login Ilustração" className="w-full h-full min-h-[600px] object-cover" style={{ height: '100%' }} />
+          <img
+            src="/image/img-login.png"
+            alt="Login Ilustração"
+            className="w-full h-full min-h-[600px] object-cover"
+            style={{ height: "100%" }}
+          />
         </div>
       </div>
     </div>
   );
 }
-

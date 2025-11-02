@@ -34,7 +34,7 @@ import {
   updateAppointment,
   deleteAppointment,
   recordAppointmentRevenue,
-  getTransactionsBySalonId,
+  // getTransactionsBySalonId removed from imports (unused in routers)
   createPasswordReset,
   getPasswordResetByToken,
   markPasswordResetAsUsed,
@@ -152,11 +152,9 @@ const dashboardRouter = router({
     }
 
     const now = new Date();
-    return await getAppointmentsBySalonId(salon.id, {
-      startDate: now,
-      status: ["confirmed", "pending"],
-      limit: 10,
-    });
+    const in30Days = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000);
+    // Use appointments with details to include client/service/specialist info
+    return await getAppointmentsWithDetailsBySalonId(salon.id, now, in30Days);
   }),
 });
 
@@ -411,12 +409,30 @@ export const appRouter = router({
 
         // Ajuste do tipo workingDays para o tipo do schema (compatibilidade)
         const workingDays = specialistPayload.workingDays
-          ? Object.fromEntries(
+          ? (Object.fromEntries(
               Object.entries(specialistPayload.workingDays).map(([k, v]) => [
                 k,
-                [{ ...v }],
+                // Ensure each entry is an array of period objects: [{ start, end, lunch? }]
+                Array.isArray(v)
+                  ? (v as Array<{
+                      start: string;
+                      end: string;
+                      lunch?: { start: string; end: string };
+                    }>)
+                  : ([v] as Array<{
+                      start: string;
+                      end: string;
+                      lunch?: { start: string; end: string };
+                    }>),
               ])
-            )
+            ) as Record<
+              string,
+              Array<{
+                start: string;
+                end: string;
+                lunch?: { start: string; end: string };
+              }>
+            >)
           : null;
 
         const newSpecialist = await createSpecialist({
@@ -501,12 +517,29 @@ export const appRouter = router({
         }
         // Ajuste do tipo workingDays para o tipo do schema
         const workingDays = _input.data.workingDays
-          ? Object.fromEntries(
+          ? (Object.fromEntries(
               Object.entries(_input.data.workingDays).map(([k, v]) => [
                 k,
-                [{ ...v }],
+                Array.isArray(v)
+                  ? (v as Array<{
+                      start: string;
+                      end: string;
+                      lunch?: { start: string; end: string };
+                    }>)
+                  : ([v] as Array<{
+                      start: string;
+                      end: string;
+                      lunch?: { start: string; end: string };
+                    }>),
               ])
-            )
+            ) as Record<
+              string,
+              Array<{
+                start: string;
+                end: string;
+                lunch?: { start: string; end: string };
+              }>
+            >)
           : null;
         await updateSpecialist(_input.id, { ..._input.data, workingDays });
         return { success: true };
@@ -1627,9 +1660,9 @@ export const appRouter = router({
           data: z.any(),
         })
       )
-      .query(async ({ input }) => {
+      .mutation(async ({ input }) => {
         const filename = `${input.reportType}_${new Date().toISOString().split("T")[0]}.csv`;
-        const csvContent = exportToCSV(input.data, filename);
+        const csvContent = exportToCSV(input.data);
 
         return {
           filename,

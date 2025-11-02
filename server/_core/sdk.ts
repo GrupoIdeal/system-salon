@@ -24,6 +24,10 @@ export type SessionPayload = {
   name: string;
 };
 
+// External API may return either `platforms: string[]` or legacy `platform: string`.
+type ExternalUserInfo = Partial<{ platforms: unknown; platform: unknown }> &
+  Record<string, unknown>;
+
 const EXCHANGE_TOKEN_PATH = `/webdev.v1.WebDevAuthPublicService/ExchangeToken`;
 const GET_USER_INFO_PATH = `/webdev.v1.WebDevAuthPublicService/GetUserInfo`;
 const GET_USER_INFO_WITH_JWT_PATH = `/webdev.v1.WebDevAuthPublicService/GetUserInfoWithJwt`;
@@ -129,9 +133,17 @@ class SDKServer {
     const data = await this.oauthService.getUserInfoByToken({
       accessToken,
     } as ExchangeTokenResponse);
+    const external = data as unknown as ExternalUserInfo;
+    const platformsArr = Array.isArray(external.platforms)
+      ? external.platforms
+      : external.platforms
+        ? [external.platforms]
+        : external.platform
+          ? [external.platform]
+          : [];
     const loginMethod = this.deriveLoginMethod(
-      Array.isArray(data.platforms) ? data.platforms : [],
-      typeof data.platform === "string" ? data.platform : null
+      Array.isArray(platformsArr) ? (platformsArr as unknown[]) : [],
+      typeof external.platform === "string" ? external.platform : null
     );
     return {
       ...data,
@@ -239,9 +251,17 @@ class SDKServer {
       payload
     );
 
+    const external2 = data as unknown as ExternalUserInfo;
+    const platformsArr2 = Array.isArray(external2.platforms)
+      ? external2.platforms
+      : external2.platforms
+        ? [external2.platforms]
+        : external2.platform
+          ? [external2.platform]
+          : [];
     const loginMethod = this.deriveLoginMethod(
-      Array.isArray(data.platforms) ? data.platforms : [],
-      typeof data.platform === "string" ? data.platform : null
+      Array.isArray(platformsArr2) ? (platformsArr2 as unknown[]) : [],
+      typeof external2.platform === "string" ? external2.platform : null
     );
     return {
       ...data,

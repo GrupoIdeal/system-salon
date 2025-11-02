@@ -104,7 +104,8 @@ function DialogContent({
     (e: KeyboardEvent) => {
       // Check both the native isComposing property and our context state
       // This handles Safari's timing issues with composition events
-      const isCurrentlyComposing = (e as unknown).isComposing || isComposing();
+      const evt = e as KeyboardEvent & { isComposing?: boolean };
+      const isCurrentlyComposing = evt.isComposing || isComposing();
 
       // If IME is composing, prevent dialog from closing
       if (isCurrentlyComposing) {
@@ -204,6 +205,5 @@ export {
   DialogOverlay,
   DialogPortal,
   DialogTitle,
-  DialogTrigger
+  DialogTrigger,
 };
-

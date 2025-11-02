@@ -1,5 +1,11 @@
 import DashboardLayout from "@/components/DashboardLayout";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 import { trpc } from "@/lib/trpc";
 import {
   DollarSign,
@@ -9,7 +15,7 @@ import {
   Clock,
   Star,
   Target,
-  BarChart3
+  BarChart3,
 } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Badge } from "@/components/ui/badge";
@@ -20,7 +26,7 @@ import {
   XAxis,
   YAxis,
   CartesianGrid,
-  Tooltip
+  Tooltip,
 } from "recharts";
 import { format, parseISO } from "date-fns";
 import { ptBR } from "date-fns/locale";
@@ -29,21 +35,23 @@ export default function Dashboard() {
   // Buscar métricas do dashboard
   const metricsQuery = trpc.dashboard.metrics.useQuery();
   const revenueChartQuery = trpc.dashboard.revenueChart.useQuery({ days: 30 });
-  const upcomingAppointmentsQuery = trpc.dashboard.upcomingAppointments.useQuery();
+  const upcomingAppointmentsQuery =
+    trpc.dashboard.upcomingAppointments.useQuery();
 
   const formatCurrency = (value: number) => {
-    return new Intl.NumberFormat('pt-BR', {
-      style: 'currency',
-      currency: 'BRL'
+    return new Intl.NumberFormat("pt-BR", {
+      style: "currency",
+      currency: "BRL",
     }).format(value);
   };
 
   // Preparar dados do gráfico de receita
-  const revenueChartData = revenueChartQuery.data?.map(item => ({
-    date: format(parseISO(item.date), 'dd/MM', { locale: ptBR }),
-    receita: item.revenue,
-    transacoes: item.transactions
-  })) || [];
+  const revenueChartData =
+    revenueChartQuery.data?.map(item => ({
+      date: format(parseISO(item.date), "dd/MM", { locale: ptBR }),
+      receita: item.revenue,
+      transacoes: item.transactions,
+    })) || [];
 
   return (
     <DashboardLayout>
@@ -60,7 +68,9 @@ export default function Dashboard() {
           {/* Receita do Mês */}
           <Card>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Receita do Mês</CardTitle>
+              <CardTitle className="text-sm font-medium">
+                Receita do Mês
+              </CardTitle>
               <DollarSign className="h-4 w-4 text-green-600" />
             </CardHeader>
             <CardContent>
@@ -72,7 +82,8 @@ export default function Dashboard() {
                     {formatCurrency(metricsQuery.data?.revenue.monthly || 0)}
                   </div>
                   <p className="text-xs text-muted-foreground">
-                    {metricsQuery.data?.revenue.monthlyTransactions || 0} transações
+                    {metricsQuery.data?.revenue.monthlyTransactions || 0}{" "}
+                    transações
                   </p>
                 </>
               )}
@@ -82,7 +93,9 @@ export default function Dashboard() {
           {/* Receita da Semana */}
           <Card>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Receita Semanal</CardTitle>
+              <CardTitle className="text-sm font-medium">
+                Receita Semanal
+              </CardTitle>
               <TrendingUp className="h-4 w-4 text-blue-600" />
             </CardHeader>
             <CardContent>
@@ -116,7 +129,8 @@ export default function Dashboard() {
                     {metricsQuery.data?.appointments.today.total || 0}
                   </div>
                   <p className="text-xs text-muted-foreground">
-                    {metricsQuery.data?.appointments.today.completed || 0} concluídos
+                    {metricsQuery.data?.appointments.today.completed || 0}{" "}
+                    concluídos
                   </p>
                 </>
               )}
@@ -126,7 +140,9 @@ export default function Dashboard() {
           {/* Taxa de Ocupação */}
           <Card>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Taxa de Ocupação</CardTitle>
+              <CardTitle className="text-sm font-medium">
+                Taxa de Ocupação
+              </CardTitle>
               <BarChart3 className="h-4 w-4 text-purple-600" />
             </CardHeader>
             <CardContent>
@@ -137,9 +153,7 @@ export default function Dashboard() {
                   <div className="text-2xl font-bold text-purple-600">
                     {metricsQuery.data?.appointments.occupationRate || 0}%
                   </div>
-                  <p className="text-xs text-muted-foreground">
-                    Ocupação hoje
-                  </p>
+                  <p className="text-xs text-muted-foreground">Ocupação hoje</p>
                 </>
               )}
             </CardContent>
@@ -162,10 +176,13 @@ export default function Dashboard() {
                 <AreaChart data={revenueChartData}>
                   <CartesianGrid strokeDasharray="3 3" />
                   <XAxis dataKey="date" />
-                  <YAxis tickFormatter={(value) => formatCurrency(value)} />
+                  <YAxis tickFormatter={value => formatCurrency(value)} />
                   <Tooltip
-                    formatter={(value: number) => [formatCurrency(value), 'Receita']}
-                    labelFormatter={(label) => `Data: ${label}`}
+                    formatter={(value: number) => [
+                      formatCurrency(value),
+                      "Receita",
+                    ]}
+                    labelFormatter={label => `Data: ${label}`}
                   />
                   <Area
                     type="monotone"
@@ -195,14 +212,18 @@ export default function Dashboard() {
             <CardContent>
               {metricsQuery.isLoading ? (
                 <div className="space-y-3">
-                  {[1, 2, 3, 4, 5].map((i) => (
+                  {[1, 2, 3, 4, 5].map(i => (
                     <Skeleton key={i} className="h-12 w-full" />
                   ))}
                 </div>
-              ) : metricsQuery.data?.topServices && metricsQuery.data.topServices.length > 0 ? (
+              ) : metricsQuery.data?.topServices &&
+                metricsQuery.data.topServices.length > 0 ? (
                 <div className="space-y-3">
                   {metricsQuery.data.topServices.map((service, index) => (
-                    <div key={service.serviceId} className="flex items-center justify-between p-3 border rounded-lg">
+                    <div
+                      key={service.serviceId}
+                      className="flex items-center justify-between p-3 border rounded-lg"
+                    >
                       <div className="flex items-center gap-3">
                         <div className="flex items-center justify-center w-8 h-8 rounded-full bg-blue-100 text-blue-600 font-semibold text-sm">
                           {index + 1}
@@ -237,25 +258,33 @@ export default function Dashboard() {
                 <Users className="h-5 w-5 text-blue-500" />
                 Top 5 Especialistas do Mês
               </CardTitle>
-              <CardDescription>Especialistas que mais geram receita</CardDescription>
+              <CardDescription>
+                Especialistas que mais geram receita
+              </CardDescription>
             </CardHeader>
             <CardContent>
               {metricsQuery.isLoading ? (
                 <div className="space-y-3">
-                  {[1, 2, 3, 4, 5].map((i) => (
+                  {[1, 2, 3, 4, 5].map(i => (
                     <Skeleton key={i} className="h-12 w-full" />
                   ))}
                 </div>
-              ) : metricsQuery.data?.topSpecialists && metricsQuery.data.topSpecialists.length > 0 ? (
+              ) : metricsQuery.data?.topSpecialists &&
+                metricsQuery.data.topSpecialists.length > 0 ? (
                 <div className="space-y-3">
                   {metricsQuery.data.topSpecialists.map((specialist, index) => (
-                    <div key={specialist.specialistId} className="flex items-center justify-between p-3 border rounded-lg">
+                    <div
+                      key={specialist.specialistId}
+                      className="flex items-center justify-between p-3 border rounded-lg"
+                    >
                       <div className="flex items-center gap-3">
                         <div className="flex items-center justify-center w-8 h-8 rounded-full bg-green-100 text-green-600 font-semibold text-sm">
                           {index + 1}
                         </div>
                         <div>
-                          <p className="font-medium">{specialist.specialistName}</p>
+                          <p className="font-medium">
+                            {specialist.specialistName}
+                          </p>
                           <p className="text-sm text-muted-foreground">
                             {Number(specialist.totalAppointments)} atendimentos
                           </p>
@@ -287,40 +316,51 @@ export default function Dashboard() {
                 <Target className="h-5 w-5 text-purple-500" />
                 Clientes Mais Valiosos
               </CardTitle>
-              <CardDescription>Clientes que mais contribuem para a receita</CardDescription>
+              <CardDescription>
+                Clientes que mais contribuem para a receita
+              </CardDescription>
             </CardHeader>
             <CardContent>
               {metricsQuery.isLoading ? (
                 <div className="space-y-3">
-                  {[1, 2, 3, 4, 5].map((i) => (
+                  {[1, 2, 3, 4, 5].map(i => (
                     <Skeleton key={i} className="h-16 w-full" />
                   ))}
                 </div>
-              ) : metricsQuery.data?.topClients && metricsQuery.data.topClients.length > 0 ? (
+              ) : metricsQuery.data?.topClients &&
+                metricsQuery.data.topClients.length > 0 ? (
                 <div className="space-y-3 max-h-80 overflow-y-auto">
-                  {metricsQuery.data.topClients.slice(0, 5).map((client, index) => (
-                    <div key={client.clientId} className="flex items-center justify-between p-3 border rounded-lg">
-                      <div className="flex items-center gap-3">
-                        <div className="flex items-center justify-center w-8 h-8 rounded-full bg-purple-100 text-purple-600 font-semibold text-sm">
-                          {index + 1}
+                  {metricsQuery.data.topClients
+                    .slice(0, 5)
+                    .map((client, index) => (
+                      <div
+                        key={client.clientId}
+                        className="flex items-center justify-between p-3 border rounded-lg"
+                      >
+                        <div className="flex items-center gap-3">
+                          <div className="flex items-center justify-center w-8 h-8 rounded-full bg-purple-100 text-purple-600 font-semibold text-sm">
+                            {index + 1}
+                          </div>
+                          <div>
+                            <p className="font-medium">{client.clientName}</p>
+                            <p className="text-sm text-muted-foreground">
+                              {Number(client.totalVisits)} visitas
+                            </p>
+                            <p className="text-xs text-muted-foreground">
+                              Última:{" "}
+                              {new Date(client.lastVisit).toLocaleDateString(
+                                "pt-BR"
+                              )}
+                            </p>
+                          </div>
                         </div>
-                        <div>
-                          <p className="font-medium">{client.clientName}</p>
-                          <p className="text-sm text-muted-foreground">
-                            {Number(client.totalVisits)} visitas
-                          </p>
-                          <p className="text-xs text-muted-foreground">
-                            Última: {new Date(client.lastVisit).toLocaleDateString('pt-BR')}
+                        <div className="text-right">
+                          <p className="font-semibold text-green-600">
+                            {formatCurrency(Number(client.totalSpent))}
                           </p>
                         </div>
                       </div>
-                      <div className="text-right">
-                        <p className="font-semibold text-green-600">
-                          {formatCurrency(Number(client.totalSpent))}
-                        </p>
-                      </div>
-                    </div>
-                  ))}
+                    ))}
                 </div>
               ) : (
                 <p className="text-center text-muted-foreground py-8">
@@ -337,25 +377,34 @@ export default function Dashboard() {
                 <Clock className="h-5 w-5 text-orange-500" />
                 Próximos Agendamentos
               </CardTitle>
-              <CardDescription>Agendamentos confirmados e pendentes</CardDescription>
+              <CardDescription>
+                Agendamentos confirmados e pendentes
+              </CardDescription>
             </CardHeader>
             <CardContent>
               {upcomingAppointmentsQuery.isLoading ? (
                 <div className="space-y-3">
-                  {[1, 2, 3, 4, 5].map((i) => (
+                  {[1, 2, 3, 4, 5].map(i => (
                     <Skeleton key={i} className="h-16 w-full" />
                   ))}
                 </div>
-              ) : upcomingAppointmentsQuery.data && upcomingAppointmentsQuery.data.length > 0 ? (
+              ) : upcomingAppointmentsQuery.data &&
+                upcomingAppointmentsQuery.data.length > 0 ? (
                 <div className="space-y-3 max-h-80 overflow-y-auto">
-                  {upcomingAppointmentsQuery.data.map((apt: any) => (
-                    <div key={apt.id} className="flex items-center justify-between p-3 border rounded-lg hover:bg-slate-50">
+                  {upcomingAppointmentsQuery.data.map((apt) => (
+                    <div
+                      key={apt.id}
+                      className="flex items-center justify-between p-3 border rounded-lg hover:bg-slate-50"
+                    >
                       <div className="flex-1">
                         <p className="font-medium text-sm">
                           {apt.client?.name} - {apt.service?.name}
                         </p>
                         <p className="text-xs text-muted-foreground">
-                          {new Date(apt.appointmentDate).toLocaleDateString("pt-BR")} às {apt.appointmentTime}
+                          {new Date(apt.appointmentDate).toLocaleDateString(
+                            "pt-BR"
+                          )} {" "}
+                          às {apt.appointmentTime}
                         </p>
                         <p className="text-xs text-muted-foreground">
                           Com {apt.specialist?.name}
@@ -364,16 +413,25 @@ export default function Dashboard() {
                       <div className="text-right">
                         <Badge
                           variant={
-                            apt.status === "confirmed" ? "default" :
-                              apt.status === "pending" ? "secondary" : "destructive"
+                            apt.status === "confirmed"
+                              ? "default"
+                              : apt.status === "pending"
+                                ? "secondary"
+                                : "destructive"
                           }
                           className={
-                            apt.status === "confirmed" ? "bg-green-100 text-green-800" :
-                              apt.status === "pending" ? "bg-yellow-100 text-yellow-800" : ""
+                            apt.status === "confirmed"
+                              ? "bg-green-100 text-green-800"
+                              : apt.status === "pending"
+                                ? "bg-yellow-100 text-yellow-800"
+                                : ""
                           }
                         >
-                          {apt.status === "confirmed" ? "Confirmado" :
-                            apt.status === "pending" ? "Pendente" : apt.status}
+                          {apt.status === "confirmed"
+                            ? "Confirmado"
+                            : apt.status === "pending"
+                              ? "Pendente"
+                              : apt.status ?? "—"}
                         </Badge>
                       </div>
                     </div>
@@ -391,4 +449,3 @@ export default function Dashboard() {
     </DashboardLayout>
   );
 }
-

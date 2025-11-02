@@ -62,7 +62,7 @@ async function startServer() {
     },
     createExpressMiddleware({
       router: publicRouter,
-      createContext: () => ({}), // Context vazio para rotas públicas
+      createContext: createContext,
     })
   );
   // development mode uses Vite, production mode uses static files
