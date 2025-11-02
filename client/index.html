@@ -1,23 +1,30 @@
 <!doctype html>
 <html lang="en">
-  <head>
-    <meta charset="UTF-8" />
-    <meta
-      name="viewport"
-      content="width=device-width, initial-scale=1.0, maximum-scale=1"
-    />
-    <link rel="icon" type="image/png" href="%VITE_APP_FAVICON%" />
-    <link rel="apple-touch-icon" href="%VITE_APP_LOGO%" />
-    <title>Carregando...</title>
-  </head>
 
-  <body>
-    <div id="root"></div>
-    <script type="module" src="/src/main.tsx"></script>
-    <script
-      defer
-      src="%VITE_ANALYTICS_ENDPOINT%/umami"
-      data-website-id="%VITE_ANALYTICS_WEBSITE_ID%"
-    ></script>
-  </body>
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1" />
+  <link id="favicon" rel="icon" type="image/png" href="/image/favicon.png" />
+  <link rel="apple-touch-icon" href="%VITE_APP_LOGO%" />
+  <script type="module">
+    // Em runtime usamos import.meta.env (substituído pelo Vite durante build) se disponível,
+    // caso contrário o href já tem fallback para /image/favicon.png
+    try {
+      const href = (import.meta.env?.VITE_APP_FAVICON) || '/image/favicon.png';
+      const linkEl = document.getElementById('favicon');
+      if (linkEl) linkEl.href = href;
+    } catch (e) {
+      // não fatal — manter fallback estático
+      console.debug('favicon runtime fallback', e);
+    }
+  </script>
+  <title>Carregando...</title>
+</head>
+
+<body>
+  <div id="root"></div>
+  <script type="module" src="/src/main.tsx"></script>
+  <script defer src="%VITE_ANALYTICS_ENDPOINT%/umami" data-website-id="%VITE_ANALYTICS_WEBSITE_ID%"></script>
+</body>
+
 </html>
