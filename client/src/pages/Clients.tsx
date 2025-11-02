@@ -250,7 +250,7 @@ export default function Clients() {
                 {clientsQuery.data.map(client => (
                   <div
                     key={client.id}
-                    className="flex items-center justify-between p-3 border rounded-lg hover:bg-slate-50"
+                    className="flex items-center justify-between p-3 border rounded-lg hover:bg-[#fff6f8]"
                   >
                     <div className="flex-1">
                       <p className="font-medium">{client.name}</p>

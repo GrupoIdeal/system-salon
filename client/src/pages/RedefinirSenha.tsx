@@ -88,7 +88,7 @@ export default function RedefinirSenha() {
           {success ? (
             <div className="space-y-4">
               <div className="flex flex-col items-center justify-center space-y-2">
-                <CheckCircle className="h-12 w-12 text-green-500" />
+                <CheckCircle className="h-12 w-12 text-[var(--primary)]" />
                 <h2 className="text-xl font-semibold">Senha redefinida!</h2>
                 <p className="text-center text-muted-foreground">
                   Sua senha foi alterada com sucesso. Agora você pode fazer

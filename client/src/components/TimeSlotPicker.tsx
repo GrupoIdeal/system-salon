@@ -224,7 +224,7 @@ export function TimeSlotPicker({
           O especialista não tem horários configurados ou não trabalha nesta
           data.
         </p>
-        <p className="text-xs mt-2 text-blue-600">
+        <p className="text-xs mt-2 text-[var(--primary)]">
           💡 Configure os horários do especialista na seção "Especialistas"
         </p>
       </div>
@@ -270,7 +270,7 @@ export function TimeSlotPicker({
                   formatTimeSlot(slot)
                 )}
                 {isSelected && validateSlotQuery.data?.valid && (
-                  <CheckCircle2 className="absolute -top-1 -right-1 h-4 w-4 text-green-500 bg-white rounded-full" />
+                  <CheckCircle2 className="absolute -top-1 -right-1 h-4 w-4 text-[var(--primary)] bg-white rounded-full" />
                 )}
               </Button>
             );
@@ -299,11 +299,11 @@ export function TimeSlotPicker({
       {selectedTime &&
         suggestionsQuery.data &&
         suggestionsQuery.data.length > 0 && (
-          <Card className="bg-blue-50 border-blue-200">
+          <Card className="bg-[var(--chart-1)] border-[var(--border)]">
             <CardContent className="pt-4">
               <div className="flex items-center gap-2 mb-3">
-                <Clock className="h-4 w-4 text-blue-600" />
-                <span className="text-sm font-medium text-blue-900">
+                <Clock className="h-4 w-4 text-[var(--primary)]" />
+                <span className="text-sm font-medium text-[var(--foreground)]">
                   Horários disponíveis próximos
                 </span>
               </div>
@@ -312,7 +312,7 @@ export function TimeSlotPicker({
                   <Badge
                     key={suggestion}
                     variant="secondary"
-                    className="cursor-pointer hover:bg-blue-200 bg-blue-100 text-blue-800 border-blue-300"
+                    className="cursor-pointer hover:bg-[var(--chart-2)] bg-[var(--chart-1)] text-[var(--primary)] border-[var(--border)]"
                     onClick={() => onTimeSelect(suggestion)}
                   >
                     {formatTimeSlot(suggestion)}
@@ -328,27 +328,27 @@ export function TimeSlotPicker({
         {renderSlotSection(
           "Manhã",
           morning,
-          <span className="text-yellow-500">☀️</span>
+          <span className="text-[var(--chart-2)]">☀️</span>
         )}
 
         {renderSlotSection(
           "Tarde",
           afternoon,
-          <span className="text-orange-500">☀️</span>
+          <span className="text-[var(--primary)]">☀️</span>
         )}
 
         {renderSlotSection(
           "Noite",
           evening,
-          <span className="text-blue-500">🌙</span>
+          <span className="text-[var(--primary)]">🌙</span>
         )}
       </div>
 
       {/* Status do horário selecionado */}
       {selectedTime && validateSlotQuery.data?.valid && (
-        <div className="flex items-center gap-2 p-3 bg-green-50 border border-green-200 rounded-lg">
-          <CheckCircle2 className="h-5 w-5 text-green-600" />
-          <span className="text-sm font-medium text-green-800">
+        <div className="flex items-center gap-2 p-3 bg-[var(--chart-1)] border border-[var(--border)] rounded-lg">
+          <CheckCircle2 className="h-5 w-5 text-[var(--primary)]" />
+          <span className="text-sm font-medium text-[var(--foreground)]">
             Horário {formatTimeSlot(selectedTime)} confirmado e disponível
           </span>
         </div>

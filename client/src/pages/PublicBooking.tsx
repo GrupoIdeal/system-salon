@@ -129,11 +129,11 @@ function PublicBookingPage() {
 
   if (salonQuery.isLoading || specialistsQuery.isLoading) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 flex items-center justify-center p-4">
+      <div className="min-h-screen bg-[var(--background)] flex items-center justify-center p-4">
         <Card className="w-full max-w-md">
           <CardContent className="text-center py-8">
-            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
-            <p className="text-gray-600">Carregando informações...</p>
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[var(--primary)] mx-auto mb-4"></div>
+            <p className="text-sm text-gray-600">Carregando informações...</p>
           </CardContent>
         </Card>
       </div>
@@ -147,10 +147,10 @@ function PublicBookingPage() {
     !specialistsQuery.data
   ) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 flex items-center justify-center p-4">
+      <div className="min-h-screen bg-[var(--background)] flex items-center justify-center p-4">
         <Card className="w-full max-w-md">
           <CardContent className="text-center py-8">
-            <h2 className="text-xl font-semibold text-red-600 mb-2">
+            <h2 className="text-xl font-semibold text-[var(--destructive)] mb-2">
               Serviço Indisponível
             </h2>
             <p className="text-gray-600">
@@ -235,7 +235,7 @@ function PublicBookingPage() {
   );
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 py-8 px-4 sm:px-6 lg:px-8">
+    <div className="min-h-screen bg-[var(--background)] py-8 px-4 sm:px-6 lg:px-8">
       <div className="max-w-4xl mx-auto w-full">
         {/* Header com título à esquerda e card escuro do salão à direita */}
         <div className="mb-6 w-full flex flex-col lg:flex-row items-start lg:items-center gap-4">
@@ -249,13 +249,13 @@ function PublicBookingPage() {
           </div>
 
           <div className="w-full lg:w-96">
-            <Card className="rounded-2xl bg-slate-900 text-white shadow-xl overflow-hidden">
+            <Card className="rounded-2xl bg-[var(--primary)] text-[var(--primary-foreground)] shadow-xl overflow-hidden">
               <CardHeader className="px-4 py-3">
                 <CardTitle className="text-sm font-semibold text-white">
                   {salon?.name}
                 </CardTitle>
                 {salon?.address && (
-                  <div className="text-xs text-slate-400 mt-1 truncate">
+                  <div className="text-xs text-[var(--primary-foreground)] mt-1 truncate">
                     {salon.address}
                   </div>
                 )}
@@ -263,8 +263,8 @@ function PublicBookingPage() {
               <CardContent className="px-4 py-3 flex items-center justify-between gap-4">
                 <div className="flex-1">
                   {salon?.phone && (
-                    <div className="text-sm text-slate-300 flex items-center gap-2">
-                      <Phone className="h-4 w-4 text-slate-300" />{" "}
+                    <div className="text-sm text-white flex items-center gap-2">
+                      <Phone className="h-4 w-4 text-white" />{" "}
                       <span className="text-sm">{salon.phone}</span>
                     </div>
                   )}
@@ -280,11 +280,11 @@ function PublicBookingPage() {
                         rel="noreferrer"
                         aria-label="Instagram do salão"
                         title="Abrir Instagram"
-                        className="p-2 rounded-md bg-slate-800 hover:bg-slate-700 inline-flex"
+                        className="p-2 rounded-md bg-[var(--sidebar-primary)] hover:bg-[var(--primary)] inline-flex"
                       >
-                        <Instagram className="h-5 w-5 text-pink-400" />
+                        <Instagram className="h-5 w-5 text-white" />
                       </a>
-                      <span className="absolute -top-9 left-1/2 transform -translate-x-1/2 whitespace-nowrap bg-slate-800 text-white text-xs px-2 py-1 rounded opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none">
+                      <span className="absolute -top-9 left-1/2 transform -translate-x-1/2 whitespace-nowrap bg-[var(--sidebar-primary)] text-[var(--sidebar-primary-foreground)] text-xs px-2 py-1 rounded opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none">
                         Abrir Instagram
                       </span>
                     </span>
@@ -299,11 +299,11 @@ function PublicBookingPage() {
                         rel="noreferrer"
                         aria-label="WhatsApp do salão"
                         title="Abrir WhatsApp"
-                        className="p-2 rounded-md bg-slate-800 hover:bg-slate-700 inline-flex"
+                        className="p-2 rounded-md bg-[var(--sidebar-primary)] hover:bg-[var(--primary)] inline-flex"
                       >
-                        <MessageSquare className="h-5 w-5 text-green-400" />
+                        <MessageSquare className="h-5 w-5 text-white" />
                       </a>
-                      <span className="absolute -top-9 left-1/2 transform -translate-x-1/2 whitespace-nowrap bg-slate-800 text-white text-xs px-2 py-1 rounded opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none">
+                      <span className="absolute -top-9 left-1/2 transform -translate-x-1/2 whitespace-nowrap bg-[var(--sidebar-primary)] text-[var(--sidebar-primary-foreground)] text-xs px-2 py-1 rounded opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none">
                         Abrir WhatsApp
                       </span>
                     </span>
@@ -318,11 +318,11 @@ function PublicBookingPage() {
                         rel="noreferrer"
                         aria-label="Abrir endereço no mapa"
                         title="Abrir no Maps"
-                        className="p-2 rounded-md bg-slate-800 hover:bg-slate-700 inline-flex"
+                        className="p-2 rounded-md bg-[var(--sidebar-primary)] hover:bg-[var(--primary)] inline-flex"
                       >
-                        <MapPin className="h-5 w-5 text-amber-400" />
+                        <MapPin className="h-5 w-5 text-white" />
                       </a>
-                      <span className="absolute -top-9 left-1/2 transform -translate-x-1/2 whitespace-nowrap bg-slate-800 text-white text-xs px-2 py-1 rounded opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none">
+                      <span className="absolute -top-9 left-1/2 transform -translate-x-1/2 whitespace-nowrap bg-[var(--sidebar-primary)] text-[var(--sidebar-primary-foreground)] text-xs px-2 py-1 rounded opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none">
                         Abrir no Maps
                       </span>
                     </span>
@@ -358,10 +358,10 @@ function PublicBookingPage() {
                 <div key={stepName} className="flex items-center">
                   <div
                     className={`w-8 h-8 rounded-full flex items-center justify-center text-xs font-medium ${isCompleted
-                        ? "bg-green-500 text-white"
-                        : isActive
-                          ? "bg-blue-500 text-white"
-                          : "bg-gray-200 text-gray-500"
+                      ? "bg-[var(--primary)]"
+                      : isActive
+                        ? "bg-[var(--primary)] text-[var(--primary-foreground)]"
+                        : "bg-gray-200 text-gray-500"
                       }`}
                   >
                     {isCompleted ? (
@@ -371,15 +371,15 @@ function PublicBookingPage() {
                     )}
                   </div>
                   <span
-                    className={`ml-2 ${isActive ? "text-blue-600 font-medium" : "text-gray-500"}`}
+                    className={`ml-2 ${isActive ? "text-[var(--primary)] font-medium" : "text-gray-500"}`}
                   >
                     {stepName}
                   </span>
                   {index < 3 && (
                     <div
                       className={`w-12 h-px mx-4 ${index < currentStepIndex
-                          ? "bg-green-500"
-                          : "bg-gray-200"
+                        ? "bg-[var(--primary)]"
+                        : "bg-gray-200"
                         }`}
                     />
                   )}
@@ -402,7 +402,7 @@ function PublicBookingPage() {
               <div className="grid gap-4">
                 {specialistsQuery.isLoading && (
                   <div className="text-center py-8">
-                    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto mb-4"></div>
+                    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[var(--primary)] mx-auto mb-4"></div>
                     <p className="text-gray-600">Carregando especialistas...</p>
                   </div>
                 )}
@@ -418,7 +418,7 @@ function PublicBookingPage() {
                 {specialists.map((specialist: SpecialistData) => (
                   <button
                     key={specialist.id}
-                    className="p-4 border rounded-lg cursor-pointer hover:border-blue-500 hover:bg-blue-50 transition-colors text-left w-full"
+                    className="p-4 border rounded-lg cursor-pointer hover:border-[var(--primary)] hover:bg-[var(--background)] transition-colors text-left w-full"
                     onClick={() => handleSpecialistSelect(specialist.id)}
                   >
                     <div className="flex flex-col md:flex-row items-center md:items-start gap-4">
@@ -437,7 +437,7 @@ function PublicBookingPage() {
                           {specialist.name}
                         </h3>
                         {specialist.specialty && (
-                          <p className="text-blue-600 font-medium">
+                          <p className="text-[var(--primary)] font-medium">
                             {specialist.specialty}
                           </p>
                         )}
@@ -468,7 +468,7 @@ function PublicBookingPage() {
                 {services.map((service: ServiceData) => (
                   <div
                     key={service.id}
-                    className="p-4 border rounded-lg cursor-pointer hover:border-blue-500 hover:bg-blue-50 transition-colors"
+                    className="p-4 border rounded-lg cursor-pointer hover:border-[var(--primary)] hover:bg-[var(--background)] transition-colors"
                     onClick={() => handleServiceSelect(service.id)}
                   >
                     <div className="flex justify-between items-start">
@@ -483,7 +483,7 @@ function PublicBookingPage() {
                         )}
                       </div>
                       <div className="text-right">
-                        <div className="text-lg font-bold text-green-600">
+                        <div className="text-lg font-bold text-[var(--primary)]">
                           R$ {Number(service.price).toFixed(2)}
                         </div>
                         <div className="text-sm text-gray-500">
@@ -537,8 +537,8 @@ function PublicBookingPage() {
                         <button
                           key={date.toISOString()}
                           className={`p-2 text-sm rounded-lg border transition-colors ${isSelected
-                              ? "bg-blue-500 text-white border-blue-500"
-                              : "bg-white hover:bg-blue-50 border-gray-200"
+                            ? "bg-[var(--primary)] text-[var(--primary-foreground)]"
+                            : "bg-white hover:bg-[var(--background)] border-gray-200"
                             }`}
                           onClick={() => handleDateSelect(date)}
                         >
@@ -562,7 +562,7 @@ function PublicBookingPage() {
 
                     {timeSlotsQuery.isLoading && (
                       <div className="text-center py-4">
-                        <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-blue-600 mx-auto mb-2"></div>
+                        <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-[var(--primary)] mx-auto mb-2"></div>
                         <p className="text-sm text-gray-600">
                           Carregando horários...
                         </p>
@@ -580,8 +580,8 @@ function PublicBookingPage() {
                         <button
                           key={time}
                           className={`p-3 text-sm rounded-lg border transition-colors ${selectedTime === time
-                              ? "bg-blue-500 text-white border-blue-500"
-                              : "bg-white hover:bg-blue-50 border-gray-200"
+                            ? "bg-[var(--primary)] text-[var(--primary-foreground)] border-[var(--primary)]"
+                            : "bg-white hover:bg-[var(--background)] border-gray-200"
                             }`}
                           onClick={() => handleTimeSelect(time)}
                         >
@@ -687,7 +687,7 @@ function PublicBookingPage() {
                       setClientData({ ...clientData, notes: e.target.value })
                     }
                     placeholder="Alguma observação especial sobre o atendimento..."
-                    className="w-full min-h-[80px] rounded-md border px-3 py-2 text-sm resize-none focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    className="w-full min-h-[80px] rounded-md border px-3 py-2 text-sm resize-none focus:outline-none focus:ring-2 focus:ring-[var(--primary)]"
                   />
                 </div>
 
@@ -706,7 +706,7 @@ function PublicBookingPage() {
                     disabled={
                       isSubmitting || !clientData.name || !clientData.phone
                     }
-                    className="flex-1 bg-blue-600 hover:bg-blue-700"
+                    className="flex-1 bg-[var(--primary)] hover:bg-[var(--chart-4)]"
                   >
                     {isSubmitting ? (
                       <>
@@ -728,8 +728,8 @@ function PublicBookingPage() {
             <CardContent className="text-center py-8">
               {bookingResult.success ? (
                 <>
-                  <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                    <CheckCircle className="h-8 w-8 text-green-600" />
+                  <div className="w-16 h-16 bg-[var(--chart-1)] rounded-full flex items-center justify-center mx-auto mb-4">
+                    <CheckCircle className="h-8 w-8 text-[var(--primary)]" />
                   </div>
                   <h2 className="text-2xl font-bold text-gray-900 mb-2">
                     Agendamento Criado!
@@ -767,8 +767,8 @@ function PublicBookingPage() {
                     </div>
                   </div>
 
-                  <div className="bg-blue-50 rounded-lg p-4 mb-6">
-                    <p className="text-sm text-blue-800">
+                  <div className="bg-[var(--background)] rounded-lg p-4 mb-6">
+                    <p className="text-sm text-[#c04560]">
                       <strong>Atenção:</strong> Embora o seu agendamento esteja
                       confirmado, ocasionalmente o atendimento pode atrasar
                       devido a atendimentos anteriores ou imprevistos. Por
@@ -780,8 +780,8 @@ function PublicBookingPage() {
                 </>
               ) : (
                 <>
-                  <div className="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                    <User className="h-8 w-8 text-red-600" />
+                  <div className="w-16 h-16 bg-[var(--destructive)]/10 rounded-full flex items-center justify-center mx-auto mb-4">
+                    <User className="h-8 w-8 text-[var(--destructive)]" />
                   </div>
                   <h2 className="text-2xl font-bold text-gray-900 mb-2">
                     Erro no Agendamento
@@ -795,7 +795,7 @@ function PublicBookingPage() {
                   // Redirecionar para a página pública de agendamento
                   window.location.href = "/agendar";
                 }}
-                className="bg-blue-600 hover:bg-blue-700"
+                className="bg-[var(--primary)] hover:bg-[var(--chart-4)]"
               >
                 Fechar
               </Button>

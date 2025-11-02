@@ -67,16 +67,16 @@ export function AppointmentStats({
       <Card>
         <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
           <CardTitle className="text-sm font-medium">Confirmados</CardTitle>
-          <Clock className="h-4 w-4 text-green-600" />
+          <Clock className="h-4 w-4 text-[var(--primary)]" />
         </CardHeader>
         <CardContent>
-          <div className="text-2xl font-bold text-green-600">
+          <div className="text-2xl font-bold text-[var(--primary)]">
             {confirmedAppointments}
           </div>
           <div className="flex items-center gap-2">
             <Badge
               variant="outline"
-              className="bg-green-50 text-green-700 text-xs"
+              className="bg-[var(--chart-1)] text-[var(--primary)] text-xs"
             >
               {pendingAppointments} pendentes
             </Badge>
@@ -88,10 +88,10 @@ export function AppointmentStats({
       <Card>
         <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
           <CardTitle className="text-sm font-medium">Concluídos</CardTitle>
-          <TrendingUp className="h-4 w-4 text-blue-600" />
+          <TrendingUp className="h-4 w-4 text-[var(--primary)]" />
         </CardHeader>
         <CardContent>
-          <div className="text-2xl font-bold text-blue-600">
+          <div className="text-2xl font-bold text-[var(--primary)]">
             {completedAppointments}
           </div>
           <p className="text-xs text-muted-foreground">
@@ -104,10 +104,10 @@ export function AppointmentStats({
       <Card>
         <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
           <CardTitle className="text-sm font-medium">Cancelados</CardTitle>
-          <Users className="h-4 w-4 text-red-600" />
+          <Users className="h-4 w-4 text-[var(--destructive)]" />
         </CardHeader>
         <CardContent>
-          <div className="text-2xl font-bold text-red-600">
+          <div className="text-2xl font-bold text-[var(--destructive)]">
             {cancelledAppointments}
           </div>
           <p className="text-xs text-muted-foreground">

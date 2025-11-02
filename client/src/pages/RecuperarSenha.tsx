@@ -62,7 +62,7 @@ export default function RecuperarSenha() {
           {success ? (
             <div className="space-y-4">
               <div className="flex flex-col items-center justify-center space-y-2">
-                <CheckCircle className="h-12 w-12 text-green-500" />
+                <CheckCircle className="h-12 w-12 text-[var(--primary)]" />
                 <h2 className="text-xl font-semibold">Email enviado!</h2>
                 <p className="text-center text-muted-foreground">
                   Enviamos um link de recuperação para seu email. Por favor

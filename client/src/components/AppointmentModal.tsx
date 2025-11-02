@@ -499,7 +499,7 @@ export function AppointmentModal({
                     <SelectItem value="pending">
                       <Badge
                         variant="outline"
-                        className="bg-yellow-50 text-yellow-700"
+                        className="bg-[var(--chart-1)] text-[var(--primary)]"
                       >
                         Pendente
                       </Badge>
@@ -507,7 +507,7 @@ export function AppointmentModal({
                     <SelectItem value="confirmed">
                       <Badge
                         variant="outline"
-                        className="bg-green-50 text-green-700"
+                        className="bg-[var(--chart-1)] text-[var(--primary)]"
                       >
                         Confirmado
                       </Badge>
@@ -515,7 +515,7 @@ export function AppointmentModal({
                     <SelectItem value="completed">
                       <Badge
                         variant="outline"
-                        className="bg-blue-50 text-blue-700"
+                        className="bg-[var(--chart-2)] text-[var(--primary)]"
                       >
                         Concluído
                       </Badge>
@@ -523,7 +523,7 @@ export function AppointmentModal({
                     <SelectItem value="cancelled">
                       <Badge
                         variant="outline"
-                        className="bg-red-50 text-red-700"
+                        className="bg-[var(--destructive)] text-[var(--destructive-foreground)]"
                       >
                         Cancelado
                       </Badge>
@@ -584,19 +584,17 @@ export function AppointmentModal({
             {[1, 2, 3, 4].map(stepNumber => (
               <div key={stepNumber} className="flex items-center gap-2">
                 <div
-                  className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-medium ${
-                    stepNumber <= step
-                      ? "bg-primary text-primary-foreground"
-                      : "bg-muted text-muted-foreground"
-                  }`}
+                  className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-medium ${stepNumber <= step
+                    ? "bg-primary text-primary-foreground"
+                    : "bg-muted text-muted-foreground"
+                    }`}
                 >
                   {stepNumber}
                 </div>
                 {stepNumber < 4 && (
                   <div
-                    className={`w-8 h-0.5 ${
-                      stepNumber < step ? "bg-primary" : "bg-muted"
-                    }`}
+                    className={`w-8 h-0.5 ${stepNumber < step ? "bg-primary" : "bg-muted"
+                      }`}
                   />
                 )}
               </div>

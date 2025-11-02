@@ -74,10 +74,10 @@ export default function Login() {
                 className="mx-auto mb-6 w-132 h-32 object-contain"
               />
             )}
-            <h1 className="text-4xl font-extrabold tracking-tight text-gray-600 drop-shadow">
+            <h1 className="text-4xl font-extrabold tracking-tight text-[var(--primary)] drop-shadow">
               Bem-vindo
             </h1>
-            <p className="text-gray-600 mt-2 text-lg">
+            <p className="text-[var(--primary)] mt-2 text-lg">
               Acesse o sistema com seu usuário e senha
             </p>
           </div>
@@ -93,7 +93,7 @@ export default function Login() {
                 <div className="space-y-2">
                   <label
                     htmlFor="email"
-                    className="text-sm font-medium text-blue-900"
+                    className="text-sm font-medium text-[var(--primary)]"
                   >
                     Email
                   </label>
@@ -104,13 +104,13 @@ export default function Login() {
                     value={email}
                     onChange={e => setEmail(e.target.value)}
                     disabled={loginMutation.isPending}
-                    className="bg-white/80 border-blue-300"
+                    className="bg-white/80 border-[var(--border)]"
                   />
                 </div>
                 <div className="space-y-2">
                   <label
                     htmlFor="password"
-                    className="text-sm font-medium text-blue-900"
+                    className="text-sm font-medium text-[var(--primary)]"
                   >
                     Senha
                   </label>
@@ -121,12 +121,12 @@ export default function Login() {
                     value={password}
                     onChange={e => setPassword(e.target.value)}
                     disabled={loginMutation.isPending}
-                    className="bg-white/80 border-blue-300"
+                    className="bg-white/80 border-[var(--border)]"
                   />
                 </div>
                 <Button
                   type="submit"
-                  className="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 rounded-xl shadow-lg"
+                  className="w-full bg-[var(--primary)] hover:bg-[var(--chart-4)] text-[var(--primary-foreground)] font-bold py-2 rounded-xl shadow-lg"
                   disabled={loginMutation.isPending}
                 >
                   {loginMutation.isPending && (
@@ -139,7 +139,7 @@ export default function Login() {
           </Card>
         </div>
         {/* Lado direito: Imagem ilustrativa customizada */}
-        <div className="hidden md:flex flex-1 h-auto min-h-[600px] items-stretch justify-stretch bg-gradient-to-tr from-blue-100 to-blue-300 p-0">
+        <div className="hidden md:flex flex-1 h-auto min-h-[600px] items-stretch justify-stretch bg-gradient-to-tr from-[var(--chart-1)] to-[var(--chart-3)] p-0">
           <img
             src="/image/img-login.png"
             alt="Login Ilustração"

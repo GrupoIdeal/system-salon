@@ -332,11 +332,10 @@ export default function Services() {
                       </CardDescription>
                     </div>
                     <span
-                      className={`text-xs font-semibold px-2 py-1 rounded ${
-                        service.status === "active"
-                          ? "bg-green-100 text-green-800"
+                      className={`text-xs font-semibold px-2 py-1 rounded ${service.status === "active"
+                          ? "bg-[var(--chart-1)] text-[var(--chart-4)]"
                           : "bg-gray-100 text-gray-800"
-                      }`}
+                        }`}
                     >
                       {service.status === "active" ? "Ativo" : "Inativo"}
                     </span>

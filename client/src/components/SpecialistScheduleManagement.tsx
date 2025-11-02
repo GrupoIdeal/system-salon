@@ -239,7 +239,7 @@ export function SpecialistScheduleManagement({
       <DialogContent className="w-full max-w-4xl md:max-w-5xl lg:max-w-6xl max-h-[90vh] overflow-y-auto mx-auto my-6">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
-            <Settings className="h-5 w-5 text-blue-600" />
+            <Settings className="h-5 w-5 text-[var(--primary)]" />
             Configurações de Horário
           </DialogTitle>
           <DialogDescription className="text-sm text-muted-foreground">
@@ -278,8 +278,8 @@ export function SpecialistScheduleManagement({
                 {/* Configurações Gerais */}
                 <Card>
                   <CardHeader>
-                    <CardTitle className="flex items-center gap-2 text-gray-800">
-                      <Settings className="h-5 w-5 text-gray-700" />
+                    <CardTitle className="flex items-center gap-2 text-[var(--primary)]">
+                      <Settings className="h-5 w-5 text-[var(--primary)]" />
                       Configurações Gerais - {selectedSpecialistName}
                     </CardTitle>
                   </CardHeader>
@@ -558,7 +558,7 @@ export function SpecialistScheduleManagement({
                                 className="flex items-center justify-between p-2 border rounded"
                               >
                                 <div className="flex items-center gap-2">
-                                  <Calendar className="h-4 w-4 text-red-500" />
+                                  <Calendar className="h-4 w-4 text-[var(--destructive)]" />
                                   <span className="text-sm">
                                     {dateInfo.dateFormatted}
                                   </span>
@@ -592,9 +592,9 @@ export function SpecialistScheduleManagement({
                 </Card>
 
                 {/* Resumo */}
-                <Card className="bg-blue-50 border-blue-200">
+                <Card className="bg-[var(--chart-1)] border-[var(--border)]">
                   <CardHeader>
-                    <CardTitle className="flex items-center gap-2 text-blue-800">
+                    <CardTitle className="flex items-center gap-2 text-[var(--primary)]">
                       <AlertCircle className="h-5 w-5" />
                       Resumo
                     </CardTitle>
@@ -612,7 +612,7 @@ export function SpecialistScheduleManagement({
                       <strong>Agendamento até:</strong>{" "}
                       {scheduleQuery.data.allowBookingDaysInAdvance} dias
                     </p>
-                    <div className="pt-2 border-t border-blue-200">
+                    <div className="pt-2 border-t border-[var(--sidebar-border)]">
                       <p className="text-xs text-muted-foreground">
                         Dias de trabalho:
                       </p>
@@ -647,7 +647,7 @@ export function SpecialistScheduleManagement({
                 scheduleQuery.refetch();
                 toast.success("Alterações salvas");
               }}
-              className="bg-blue-600 hover:bg-blue-700 text-white"
+              className="bg-[var(--primary)] hover:bg-[var(--chart-4)] text-[var(--primary-foreground)]"
             >
               <Save className="h-4 w-4 mr-2" /> Salvar
             </Button>

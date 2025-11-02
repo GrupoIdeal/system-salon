@@ -171,8 +171,8 @@ export function CalendarPicker({
                     "w-full h-10 p-1 flex flex-col items-center justify-center relative",
                     !currentMonthClass && "text-muted-foreground opacity-50",
                     todayClass &&
-                      !selected &&
-                      "bg-blue-50 text-blue-700 border border-blue-200",
+                    !selected &&
+                    "bg-[var(--chart-1)] text-[var(--primary)] border border-[var(--border)]",
                     selected && "bg-primary text-primary-foreground",
                     disabled && "opacity-50 cursor-not-allowed"
                   )}
@@ -204,7 +204,7 @@ export function CalendarPicker({
           <div className="flex items-center justify-between text-xs text-muted-foreground">
             <div className="flex items-center gap-4">
               <div className="flex items-center gap-1">
-                <div className="w-3 h-3 bg-blue-50 border border-blue-200 rounded"></div>
+                <div className="w-3 h-3 bg-[var(--chart-1)] border border-[var(--border)] rounded"></div>
                 <span>Hoje</span>
               </div>
               <div className="flex items-center gap-1">

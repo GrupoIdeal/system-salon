@@ -71,14 +71,14 @@ export default function Dashboard() {
               <CardTitle className="text-sm font-medium">
                 Receita do Mês
               </CardTitle>
-              <DollarSign className="h-4 w-4 text-green-600" />
+              <DollarSign className="h-4 w-4 text-[var(--primary)]" />
             </CardHeader>
             <CardContent>
               {metricsQuery.isLoading ? (
                 <Skeleton className="h-8 w-20" />
               ) : (
                 <>
-                  <div className="text-2xl font-bold text-green-600">
+                  <div className="text-2xl font-bold text-[var(--primary)]">
                     {formatCurrency(metricsQuery.data?.revenue.monthly || 0)}
                   </div>
                   <p className="text-xs text-muted-foreground">
@@ -96,14 +96,14 @@ export default function Dashboard() {
               <CardTitle className="text-sm font-medium">
                 Receita Semanal
               </CardTitle>
-              <TrendingUp className="h-4 w-4 text-blue-600" />
+              <TrendingUp className="h-4 w-4 text-[var(--primary)]" />
             </CardHeader>
             <CardContent>
               {metricsQuery.isLoading ? (
                 <Skeleton className="h-8 w-20" />
               ) : (
                 <>
-                  <div className="text-2xl font-bold text-blue-600">
+                  <div className="text-2xl font-bold text-[var(--primary)]">
                     {formatCurrency(metricsQuery.data?.revenue.weekly || 0)}
                   </div>
                   <p className="text-xs text-muted-foreground">
@@ -118,7 +118,7 @@ export default function Dashboard() {
           <Card>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
               <CardTitle className="text-sm font-medium">Hoje</CardTitle>
-              <Calendar className="h-4 w-4 text-orange-600" />
+              <Calendar className="h-4 w-4 text-[var(--primary)]" />
             </CardHeader>
             <CardContent>
               {metricsQuery.isLoading ? (
@@ -143,14 +143,14 @@ export default function Dashboard() {
               <CardTitle className="text-sm font-medium">
                 Taxa de Ocupação
               </CardTitle>
-              <BarChart3 className="h-4 w-4 text-purple-600" />
+              <BarChart3 className="h-4 w-4 text-[var(--primary)]" />
             </CardHeader>
             <CardContent>
               {metricsQuery.isLoading ? (
                 <Skeleton className="h-8 w-12" />
               ) : (
                 <>
-                  <div className="text-2xl font-bold text-purple-600">
+                  <div className="text-2xl font-bold text-[var(--primary)]">
                     {metricsQuery.data?.appointments.occupationRate || 0}%
                   </div>
                   <p className="text-xs text-muted-foreground">Ocupação hoje</p>
@@ -187,8 +187,8 @@ export default function Dashboard() {
                   <Area
                     type="monotone"
                     dataKey="receita"
-                    stroke="#4F46E5"
-                    fill="#4F46E5"
+                    stroke="var(--chart-3)"
+                    fill="var(--chart-3)"
                     fillOpacity={0.1}
                     strokeWidth={2}
                   />
@@ -204,7 +204,7 @@ export default function Dashboard() {
           <Card>
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
-                <Star className="h-5 w-5 text-yellow-500" />
+                <Star className="h-5 w-5 text-[var(--primary)]" />
                 Top 5 Serviços do Mês
               </CardTitle>
               <CardDescription>Serviços que mais geram receita</CardDescription>
@@ -225,7 +225,7 @@ export default function Dashboard() {
                       className="flex items-center justify-between p-3 border rounded-lg"
                     >
                       <div className="flex items-center gap-3">
-                        <div className="flex items-center justify-center w-8 h-8 rounded-full bg-blue-100 text-blue-600 font-semibold text-sm">
+                        <div className="flex items-center justify-center w-8 h-8 rounded-full bg-[var(--chart-1)] text-[var(--primary)] font-semibold text-sm">
                           {index + 1}
                         </div>
                         <div>
@@ -236,7 +236,7 @@ export default function Dashboard() {
                         </div>
                       </div>
                       <div className="text-right">
-                        <p className="font-semibold text-green-600">
+                        <p className="font-semibold text-[var(--primary)]">
                           {formatCurrency(Number(service.totalRevenue))}
                         </p>
                       </div>
@@ -255,7 +255,7 @@ export default function Dashboard() {
           <Card>
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
-                <Users className="h-5 w-5 text-blue-500" />
+                <Users className="h-5 w-5 text-[var(--primary)]" />
                 Top 5 Especialistas do Mês
               </CardTitle>
               <CardDescription>
@@ -278,7 +278,7 @@ export default function Dashboard() {
                       className="flex items-center justify-between p-3 border rounded-lg"
                     >
                       <div className="flex items-center gap-3">
-                        <div className="flex items-center justify-center w-8 h-8 rounded-full bg-green-100 text-green-600 font-semibold text-sm">
+                        <div className="flex items-center justify-center w-8 h-8 rounded-full bg-[var(--secondary)] text-[var(--primary)] font-semibold text-sm">
                           {index + 1}
                         </div>
                         <div>
@@ -291,7 +291,7 @@ export default function Dashboard() {
                         </div>
                       </div>
                       <div className="text-right">
-                        <p className="font-semibold text-green-600">
+                        <p className="font-semibold text-[var(--primary)]">
                           {formatCurrency(Number(specialist.totalRevenue))}
                         </p>
                       </div>
@@ -313,7 +313,7 @@ export default function Dashboard() {
           <Card>
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
-                <Target className="h-5 w-5 text-purple-500" />
+                <Target className="h-5 w-5 text-[var(--primary)]" />
                 Clientes Mais Valiosos
               </CardTitle>
               <CardDescription>
@@ -335,10 +335,10 @@ export default function Dashboard() {
                     .map((client, index) => (
                       <div
                         key={client.clientId}
-                        className="flex items-center justify-between p-3 border rounded-lg"
+                        className="flex items-center justify-between p-3 border rounded-lg hover:bg-[var(--background)]"
                       >
                         <div className="flex items-center gap-3">
-                          <div className="flex items-center justify-center w-8 h-8 rounded-full bg-purple-100 text-purple-600 font-semibold text-sm">
+                          <div className="flex items-center justify-center w-8 h-8 rounded-full bg-[var(--secondary)] text-[var(--primary)] font-semibold text-sm">
                             {index + 1}
                           </div>
                           <div>
@@ -355,7 +355,7 @@ export default function Dashboard() {
                           </div>
                         </div>
                         <div className="text-right">
-                          <p className="font-semibold text-green-600">
+                          <p className="font-semibold text-[var(--primary)]">
                             {formatCurrency(Number(client.totalSpent))}
                           </p>
                         </div>
@@ -374,7 +374,7 @@ export default function Dashboard() {
           <Card>
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
-                <Clock className="h-5 w-5 text-orange-500" />
+                <Clock className="h-5 w-5 text-[var(--primary)]" />
                 Próximos Agendamentos
               </CardTitle>
               <CardDescription>
@@ -394,7 +394,7 @@ export default function Dashboard() {
                   {upcomingAppointmentsQuery.data.map((apt) => (
                     <div
                       key={apt.id}
-                      className="flex items-center justify-between p-3 border rounded-lg hover:bg-slate-50"
+                      className="flex items-center justify-between p-3 border rounded-lg hover:bg-[var(--background)]"
                     >
                       <div className="flex-1">
                         <p className="font-medium text-sm">
@@ -421,9 +421,9 @@ export default function Dashboard() {
                           }
                           className={
                             apt.status === "confirmed"
-                              ? "bg-green-100 text-green-800"
+                              ? "bg-[var(--secondary)] text-[var(--primary)]"
                               : apt.status === "pending"
-                                ? "bg-yellow-100 text-yellow-800"
+                                ? "bg-[var(--secondary)] text-[var(--primary)]"
                                 : ""
                           }
                         >

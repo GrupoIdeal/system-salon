@@ -319,7 +319,7 @@ export default function Specialists() {
               <Button
                 onClick={handleCopyPublicLink}
                 variant="outline"
-                className="flex items-center gap-2 px-4 py-2 text-green-700 border-green-300 hover:bg-green-50 hover:text-green-900 font-medium rounded-full shadow-sm"
+                className="flex items-center gap-2 px-4 py-2 text-[var(--primary)] border-[var(--border)] hover:bg-[var(--chart-1)] hover:text-[var(--primary)] font-medium rounded-full shadow-sm"
                 aria-label="Copiar link de agendamento público"
               >
                 {copiedLinks.has("public") ? (
@@ -383,7 +383,7 @@ export default function Specialists() {
                       ) : (
                         <User2 className="h-16 w-16 text-slate-400" />
                       )}
-                      <span className="absolute bottom-2 right-2 bg-blue-500 text-white text-xs px-2 py-1 rounded shadow opacity-0 group-hover:opacity-100 transition">
+                      <span className="absolute bottom-2 right-2 bg-[var(--primary)] text-[var(--primary-foreground)] text-xs px-2 py-1 rounded shadow opacity-0 group-hover:opacity-100 transition">
                         Alterar foto
                       </span>
                     </div>
@@ -900,7 +900,7 @@ export default function Specialists() {
                     <div className="flex flex-row gap-2">
                       <Button
                         variant="outline"
-                        className="flex items-center gap-2 px-3 py-2 text-blue-700 border-blue-300 hover:bg-blue-50 hover:text-blue-900 font-medium rounded-lg shadow-sm text-xs"
+                        className="flex items-center gap-2 px-3 py-2 text-[var(--primary)] border-[var(--border)] hover:bg-[var(--chart-1)] hover:text-[var(--primary)] font-medium rounded-lg shadow-sm text-xs"
                         onClick={() =>
                           handleEditSpecialist({
                             id: spec.id,
@@ -919,7 +919,7 @@ export default function Specialists() {
                       </Button>
                       <Button
                         variant="outline"
-                        className="flex items-center gap-2 px-3 py-2 text-red-700 border-red-300 hover:bg-red-50 hover:text-red-900 font-medium rounded-lg shadow-sm text-xs"
+                        className="flex items-center gap-2 px-3 py-2 text-[var(--primary)] border-[var(--border)] hover:bg-[var(--chart-1)] hover:text-[var(--primary)] font-medium rounded-lg shadow-sm text-xs"
                         onClick={() => confirmDelete(spec.id)}
                       >
                         <Trash2 size={16} />
@@ -951,7 +951,7 @@ export default function Specialists() {
             <AlertDialogCancel>Cancelar</AlertDialogCancel>
             <AlertDialogAction
               onClick={handleDeleteSpecialist}
-              className="bg-red-600 text-white hover:bg-red-700"
+              className="bg-[var(--destructive)] text-[var(--destructive-foreground)] hover:bg-[var(--destructive)]/90"
             >
               Excluir
             </AlertDialogAction>

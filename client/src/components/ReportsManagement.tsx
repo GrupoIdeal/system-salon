@@ -119,8 +119,12 @@ export function ReportsManagement({ isOpen, onClose }: ReportsManagementProps) {
     } catch (error: unknown) {
       let message = "Erro ao exportar";
       if (error && typeof error === "object" && "message" in error) {
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        message = String((error as any).message);
+        const maybeMessage = (error as { message?: unknown }).message;
+        if (typeof maybeMessage === "string") {
+          message = maybeMessage;
+        } else if (maybeMessage !== undefined) {
+          message = String(maybeMessage);
+        }
       }
       toast.error(message);
     } finally {
@@ -227,7 +231,7 @@ export function ReportsManagement({ isOpen, onClose }: ReportsManagementProps) {
 
             {statsQuery.isLoading ? (
               <div className="flex items-center justify-center py-8">
-                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-900"></div>
+                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[var(--primary)]"></div>
               </div>
             ) : statsQuery.data ? (
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
@@ -253,10 +257,10 @@ export function ReportsManagement({ isOpen, onClose }: ReportsManagementProps) {
                     <CardTitle className="text-sm font-medium">
                       Agendamentos Completados
                     </CardTitle>
-                    <Activity className="h-4 w-4 text-green-600" />
+                    <Activity className="h-4 w-4 text-[var(--primary)]" />
                   </CardHeader>
                   <CardContent>
-                    <div className="text-2xl font-bold text-green-600">
+                    <div className="text-2xl font-bold text-[var(--primary)]">
                       {statsQuery.data.completed}
                     </div>
                     <p className="text-xs text-muted-foreground">
@@ -274,10 +278,10 @@ export function ReportsManagement({ isOpen, onClose }: ReportsManagementProps) {
                     <CardTitle className="text-sm font-medium">
                       Receita Total
                     </CardTitle>
-                    <DollarSign className="h-4 w-4 text-green-600" />
+                    <DollarSign className="h-4 w-4 text-[var(--primary)]" />
                   </CardHeader>
                   <CardContent>
-                    <div className="text-2xl font-bold text-green-600">
+                    <div className="text-2xl font-bold text-[var(--primary)]">
                       {formatCurrency(statsQuery.data.revenue)}
                     </div>
                     <p className="text-xs text-muted-foreground">
@@ -291,10 +295,10 @@ export function ReportsManagement({ isOpen, onClose }: ReportsManagementProps) {
                     <CardTitle className="text-sm font-medium">
                       Ticket Médio
                     </CardTitle>
-                    <TrendingUp className="h-4 w-4 text-blue-600" />
+                    <TrendingUp className="h-4 w-4 text-[var(--primary)]" />
                   </CardHeader>
                   <CardContent>
-                    <div className="text-2xl font-bold text-blue-600">
+                    <div className="text-2xl font-bold text-[var(--primary)]">
                       {formatCurrency(statsQuery.data.averageTicket)}
                     </div>
                     <p className="text-xs text-muted-foreground">
@@ -315,7 +319,7 @@ export function ReportsManagement({ isOpen, onClose }: ReportsManagementProps) {
                         <span className="text-sm">Completados:</span>
                         <Badge
                           variant="default"
-                          className="bg-green-100 text-green-800"
+                          className="bg-[var(--chart-1)] text-[var(--primary)]"
                         >
                           {statsQuery.data.completed}
                         </Badge>
@@ -330,7 +334,7 @@ export function ReportsManagement({ isOpen, onClose }: ReportsManagementProps) {
                         <span className="text-sm">Confirmados:</span>
                         <Badge
                           variant="default"
-                          className="bg-blue-100 text-blue-800"
+                          className="bg-[var(--chart-1)] text-[var(--primary)]"
                         >
                           {statsQuery.data.confirmed}
                         </Badge>
@@ -339,7 +343,7 @@ export function ReportsManagement({ isOpen, onClose }: ReportsManagementProps) {
                         <span className="text-sm">Pendentes:</span>
                         <Badge
                           variant="default"
-                          className="bg-yellow-100 text-yellow-800"
+                          className="bg-[var(--chart-2)] text-[var(--chart-4)]"
                         >
                           {statsQuery.data.pending}
                         </Badge>
@@ -380,7 +384,7 @@ export function ReportsManagement({ isOpen, onClose }: ReportsManagementProps) {
 
             {specialistPerformanceQuery.isLoading ? (
               <div className="flex items-center justify-center py-8">
-                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-900"></div>
+                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[var(--primary)]"></div>
               </div>
             ) : specialistPerformanceQuery.data &&
               specialistPerformanceQuery.data.length > 0 ? (
@@ -407,23 +411,21 @@ export function ReportsManagement({ isOpen, onClose }: ReportsManagementProps) {
                         {specialist.specialistName}
                       </TableCell>
                       <TableCell>{specialist.totalAppointments}</TableCell>
-                      <TableCell className="text-green-600">
+                      <TableCell className="text-[var(--primary)]">
                         {specialist.completedAppointments}
                       </TableCell>
                       <TableCell>
                         <div className="flex items-center gap-2">
-                          <div
-                            className={`w-2 h-2 rounded-full ${specialist.completionRate >= 80
-                              ? "bg-green-500"
-                              : specialist.completionRate >= 60
-                                ? "bg-yellow-500"
-                                : "bg-red-500"
-                              }`}
-                          />
+                          <div className={`w-2 h-2 rounded-full ${specialist.completionRate >= 80
+                            ? "bg-[var(--primary)]"
+                            : specialist.completionRate >= 60
+                              ? "bg-[var(--secondary)]"
+                              : "bg-[var(--destructive)]"
+                            }`} />
                           {formatPercentage(specialist.completionRate)}
                         </div>
                       </TableCell>
-                      <TableCell className="text-green-600 font-medium">
+                      <TableCell className="text-[var(--primary)] font-medium">
                         {formatCurrency(specialist.revenue)}
                       </TableCell>
                       <TableCell>
@@ -476,7 +478,7 @@ export function ReportsManagement({ isOpen, onClose }: ReportsManagementProps) {
 
             {servicePopularityQuery.isLoading ? (
               <div className="flex items-center justify-center py-8">
-                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-900"></div>
+                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[var(--primary)]"></div>
               </div>
             ) : servicePopularityQuery.data &&
               servicePopularityQuery.data.length > 0 ? (
@@ -502,10 +504,10 @@ export function ReportsManagement({ isOpen, onClose }: ReportsManagementProps) {
                         {service.serviceName}
                       </TableCell>
                       <TableCell>{service.totalBookings}</TableCell>
-                      <TableCell className="text-green-600">
+                      <TableCell className="text-[var(--primary)]">
                         {service.completedBookings}
                       </TableCell>
-                      <TableCell className="text-green-600 font-medium">
+                      <TableCell className="text-[var(--primary)] font-medium">
                         {formatCurrency(service.revenue)}
                       </TableCell>
                       <TableCell>
@@ -562,15 +564,15 @@ export function ReportsManagement({ isOpen, onClose }: ReportsManagementProps) {
 
             {clientAnalyticsQuery.isLoading ? (
               <div className="flex items-center justify-center py-8">
-                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-900"></div>
+                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[var(--primary)]"></div>
               </div>
             ) : clientAnalyticsQuery.data ? (
               <>
                 {/* Clientes de Alto Risco */}
                 {clientAnalyticsQuery.data.highRisk.length > 0 && (
-                  <Card className="border-red-200 bg-red-50">
+                  <Card className="border-[var(--destructive)]/20 bg-[var(--destructive)]/10">
                     <CardHeader>
-                      <CardTitle className="text-red-800 flex items-center gap-2">
+                      <CardTitle className="text-[var(--destructive)] flex items-center gap-2">
                         <AlertTriangle className="h-5 w-5" />
                         Clientes com Risco de Abandono
                       </CardTitle>
@@ -637,10 +639,10 @@ export function ReportsManagement({ isOpen, onClose }: ReportsManagementProps) {
                             {client.clientName}
                           </TableCell>
                           <TableCell>{client.totalAppointments}</TableCell>
-                          <TableCell className="text-green-600">
+                          <TableCell className="text-[var(--primary)]">
                             {client.completedAppointments}
                           </TableCell>
-                          <TableCell className="text-green-600 font-medium">
+                          <TableCell className="text-[var(--primary)] font-medium">
                             {formatCurrency(client.totalSpent)}
                           </TableCell>
                           <TableCell>
@@ -707,7 +709,7 @@ export function ReportsManagement({ isOpen, onClose }: ReportsManagementProps) {
 
             {dailyReportQuery.isLoading ? (
               <div className="flex items-center justify-center py-8">
-                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-900"></div>
+                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[var(--primary)]"></div>
               </div>
             ) : dailyReportQuery.data ? (
               <div className="space-y-6">
@@ -735,10 +737,10 @@ export function ReportsManagement({ isOpen, onClose }: ReportsManagementProps) {
                       <CardTitle className="text-sm font-medium">
                         Receita do Dia
                       </CardTitle>
-                      <DollarSign className="h-4 w-4 text-green-600" />
+                      <DollarSign className="h-4 w-4 text-[var(--primary)]" />
                     </CardHeader>
                     <CardContent>
-                      <div className="text-2xl font-bold text-green-600">
+                      <div className="text-2xl font-bold text-[var(--primary)]">
                         {formatCurrency(dailyReportQuery.data.revenue)}
                       </div>
                       <p className="text-xs text-muted-foreground">
@@ -753,7 +755,7 @@ export function ReportsManagement({ isOpen, onClose }: ReportsManagementProps) {
                       <CardTitle className="text-sm font-medium">
                         Horários Mais Movimentados
                       </CardTitle>
-                      <Clock className="h-4 w-4 text-blue-600" />
+                      <Clock className="h-4 w-4 text-[var(--primary)]" />
                     </CardHeader>
                     <CardContent>
                       <div className="space-y-1">
@@ -803,7 +805,7 @@ export function ReportsManagement({ isOpen, onClose }: ReportsManagementProps) {
                             </div>
                             <div className="flex-1 bg-gray-200 rounded-full h-4 relative">
                               <div
-                                className="bg-blue-600 h-4 rounded-full transition-all duration-300"
+                                className="bg-[var(--primary)] h-4 rounded-full transition-all duration-300"
                                 style={{ width: `${percentage}%` }}
                               />
                             </div>

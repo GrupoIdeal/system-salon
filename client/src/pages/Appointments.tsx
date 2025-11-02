@@ -229,13 +229,13 @@ export default function Appointments() {
   const getStatusColor = (status: string) => {
     switch (status) {
       case "confirmed":
-        return "bg-green-100 text-green-800";
+        return "bg-[var(--chart-1)] text-[var(--chart-4)]";
       case "pending":
-        return "bg-yellow-100 text-yellow-800";
+        return "bg-[var(--chart-2)] text-[var(--chart-4)]";
       case "completed":
-        return "bg-blue-100 text-blue-800";
+        return "bg-[var(--chart-3)] text-[var(--chart-4)]";
       case "cancelled":
-        return "bg-red-100 text-red-800";
+        return "bg-[var(--destructive)]/10 text-[var(--destructive)]";
       default:
         return "bg-gray-100 text-gray-800";
     }
@@ -474,35 +474,35 @@ export default function Appointments() {
                                 {/* Botões de ação rápida */}
                                 {(appointment.status === "pending" ||
                                   appointment.status === "confirmed") && (
-                                  <>
-                                    <Button
-                                      size="sm"
-                                      variant="outline"
-                                      onClick={() =>
-                                        handleQuickComplete(appointment.id)
-                                      }
-                                      className="text-green-600 border-green-600 hover:bg-green-50"
-                                      disabled={
-                                        completeAppointmentMutation.isPending
-                                      }
-                                    >
-                                      <CheckCircle className="h-4 w-4" />
-                                    </Button>
-                                    <Button
-                                      size="sm"
-                                      variant="outline"
-                                      onClick={() =>
-                                        handleQuickCancel(appointment.id)
-                                      }
-                                      className="text-red-600 border-red-600 hover:bg-red-50"
-                                      disabled={
-                                        cancelAppointmentMutation.isPending
-                                      }
-                                    >
-                                      <X className="h-4 w-4" />
-                                    </Button>
-                                  </>
-                                )}
+                                    <>
+                                      <Button
+                                        size="sm"
+                                        variant="outline"
+                                        onClick={() =>
+                                          handleQuickComplete(appointment.id)
+                                        }
+                                        className="text-[var(--primary)] border-[var(--primary)] hover:bg-[var(--primary)]/10"
+                                        disabled={
+                                          completeAppointmentMutation.isPending
+                                        }
+                                      >
+                                        <CheckCircle className="h-4 w-4" />
+                                      </Button>
+                                      <Button
+                                        size="sm"
+                                        variant="outline"
+                                        onClick={() =>
+                                          handleQuickCancel(appointment.id)
+                                        }
+                                        className="text-[var(--destructive)] border-[var(--destructive)] hover:bg-[var(--destructive)]/10"
+                                        disabled={
+                                          cancelAppointmentMutation.isPending
+                                        }
+                                      >
+                                        <X className="h-4 w-4" />
+                                      </Button>
+                                    </>
+                                  )}
 
                                 <DropdownMenu>
                                   <DropdownMenuTrigger asChild>
@@ -628,10 +628,10 @@ export default function Appointments() {
           appointment={
             editingAppointment
               ? {
-                  ...editingAppointment,
-                  status: editingAppointment.status || "pending",
-                  notes: editingAppointment.notes || undefined,
-                }
+                ...editingAppointment,
+                status: editingAppointment.status || "pending",
+                notes: editingAppointment.notes || undefined,
+              }
               : undefined
           }
           initialDate={selectedDate}

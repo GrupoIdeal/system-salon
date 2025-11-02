@@ -98,19 +98,19 @@ export function WaitlistManagement({
     switch (status) {
       case "active":
         return (
-          <Badge variant="default" className="bg-blue-100 text-blue-800">
+          <Badge variant="default" className="bg-[var(--chart-1)] text-[var(--primary)]">
             Ativo
           </Badge>
         );
       case "notified":
         return (
-          <Badge variant="default" className="bg-yellow-100 text-yellow-800">
+          <Badge variant="default" className="bg-[var(--secondary)] text-[var(--primary)]">
             Notificado
           </Badge>
         );
       case "confirmed":
         return (
-          <Badge variant="default" className="bg-green-100 text-green-800">
+          <Badge variant="default" className="bg-[var(--chart-1)] text-[var(--primary)]">
             Confirmado
           </Badge>
         );
@@ -129,7 +129,7 @@ export function WaitlistManagement({
         return <Badge variant="destructive">Alta</Badge>;
       case 2:
         return (
-          <Badge variant="default" className="bg-yellow-100 text-yellow-800">
+          <Badge variant="default" className="bg-[var(--secondary)] text-[var(--primary)]">
             Média
           </Badge>
         );
@@ -143,9 +143,9 @@ export function WaitlistManagement({
   const getNotificationIcon = (preference: string) => {
     switch (preference) {
       case "whatsapp":
-        return <MessageSquare className="h-4 w-4 text-green-600" />;
+        return <MessageSquare className="h-4 w-4 text-[var(--primary)]" />;
       case "sms":
-        return <Phone className="h-4 w-4 text-blue-600" />;
+        return <Phone className="h-4 w-4 text-[var(--primary)]" />;
       case "email":
         return <Mail className="h-4 w-4 text-gray-600" />;
       default:
@@ -344,10 +344,10 @@ export function WaitlistManagement({
                     <CardTitle className="text-sm font-medium">
                       Ativos
                     </CardTitle>
-                    <AlertCircle className="h-4 w-4 text-blue-600" />
+                    <AlertCircle className="h-4 w-4 text-[var(--primary)]" />
                   </CardHeader>
                   <CardContent>
-                    <div className="text-2xl font-bold text-blue-600">
+                    <div className="text-2xl font-bold text-[var(--primary)]">
                       {statsQuery.data.active}
                     </div>
                     <p className="text-xs text-muted-foreground">
@@ -361,10 +361,10 @@ export function WaitlistManagement({
                     <CardTitle className="text-sm font-medium">
                       Notificados
                     </CardTitle>
-                    <MessageSquare className="h-4 w-4 text-yellow-600" />
+                    <MessageSquare className="h-4 w-4 text-[var(--primary)]" />
                   </CardHeader>
                   <CardContent>
-                    <div className="text-2xl font-bold text-yellow-600">
+                    <div className="text-2xl font-bold text-[var(--primary)]">
                       {statsQuery.data.notified}
                     </div>
                     <p className="text-xs text-muted-foreground">
@@ -378,10 +378,10 @@ export function WaitlistManagement({
                     <CardTitle className="text-sm font-medium">
                       Confirmados
                     </CardTitle>
-                    <CheckCircle className="h-4 w-4 text-green-600" />
+                    <CheckCircle className="h-4 w-4 text-[var(--primary)]" />
                   </CardHeader>
                   <CardContent>
-                    <div className="text-2xl font-bold text-green-600">
+                    <div className="text-2xl font-bold text-[var(--primary)]">
                       {statsQuery.data.confirmed}
                     </div>
                     <p className="text-xs text-muted-foreground">

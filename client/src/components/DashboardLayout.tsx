@@ -170,10 +170,10 @@ function DashboardLayoutContent({
       <div className="relative" ref={sidebarRef}>
         <Sidebar
           collapsible="icon"
-          className="border-r-0 bg-slate-900 text-slate-100 min-h-screen h-screen flex flex-col"
+          className="border-r-0 bg-[var(--sidebar)] text-[var(--sidebar-foreground)] min-h-screen h-screen flex flex-col"
           disableTransition={isResizing}
         >
-          <SidebarHeader className="h-16 justify-center bg-slate-900 border-b border-slate-800">
+          <SidebarHeader className="h-16 justify-center bg-[var(--sidebar)] border-b border-[var(--sidebar-border)]">
             <div className="flex items-center gap-3 pl-2 group-data-[collapsible=icon]:px-0 transition-all w-full bg-transparent">
               {isCollapsed ? (
                 <div className="relative h-8 w-8 shrink-0 group">
@@ -181,30 +181,25 @@ function DashboardLayoutContent({
                   <button
                     onClick={toggleSidebar}
                     type="button"
-                    className="absolute inset-0 flex items-center justify-center bg-slate-800 rounded-md ring-1 ring-slate-700 transition-opacity hover:bg-slate-700 focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 h-8 w-8"
+                    className="absolute inset-0 flex items-center justify-center bg-[var(--sidebar-primary)] rounded-md ring-1 ring-[var(--sidebar-ring)] transition-opacity hover:bg-[var(--primary)] focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--ring)] h-8 w-8"
                   >
-                    <PanelLeft className="h-4 w-4 text-slate-100" />
+                    <PanelLeft className="h-4 w-4 text-black" />
                   </button>
                 </div>
               ) : (
                 <>
                   {/* Logo e título */}
                   <div className="flex items-center gap-3 min-w-0">
-                    {/*  <img
-                      src={APP_LOGO}
-                      className="h-8 w-8 rounded-md object-cover ring-1 ring-border shrink-0"
-                      alt="Logo"
-                    /> */}
-                    <span className="font-semibold tracking-tight truncate text-slate-100">
+                    <span className="font-semibold tracking-tight truncate text-black">
                       {APP_TITLE}
                     </span>
                   </div>
                   <button
                     onClick={toggleSidebar}
                     type="button"
-                    className="ml-auto h-8 w-8 flex items-center justify-center bg-transparent hover:bg-slate-800 rounded-lg transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 shrink-0"
+                    className="ml-auto h-8 w-8 flex items-center justify-center bg-transparent hover:bg-[var(--chart-3)] rounded-lg transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--ring)] shrink-0"
                   >
-                    <PanelLeft className="h-4 w-4 text-slate-300" />
+                    <PanelLeft className="h-4 w-4 text-black" />
                   </button>
                 </>
               )}
@@ -212,7 +207,7 @@ function DashboardLayoutContent({
           </SidebarHeader>
 
           <SidebarContent className="gap-0 bg-transparent flex-1 overflow-auto">
-            <SidebarMenu className="px-2 py-1 bg-slate-900 flex-1 overflow-auto">
+            <SidebarMenu className="px-2 py-1 bg-[var(--sidebar)] flex-1 overflow-auto">
               {menuItems.map(item => {
                 const isActive = location === item.path;
                 return (
@@ -221,11 +216,9 @@ function DashboardLayoutContent({
                       isActive={isActive}
                       onClick={() => setLocation(item.path)}
                       tooltip={item.label}
-                      className={`h-12 transition-all font-normal ${isActive ? "bg-slate-800 text-white" : "text-slate-300 hover:bg-slate-800 hover:text-white"}`}
+                      className={`h-12 transition-all font-normal ${isActive ? "bg-[var(--primary)] text-[var(--sidebar-foreground)]" : "text-[var(--sidebar-foreground)]/70 hover:bg-[var(--chart-3)] hover:text-[var(--sidebar-foreground)]"}`}
                     >
-                      <item.icon
-                        className={`h-6 w-6 mr-2 ${isActive ? "text-blue-400" : "text-slate-300"}`}
-                      />
+                      <item.icon className={`h-6 w-6 mr-2 ${isActive ? "text-[var(--sidebar-foreground)]" : "text-[var(--sidebar-foreground)]/70"}`} />
                       <span className="truncate">{item.label}</span>
                     </SidebarMenuButton>
                   </SidebarMenuItem>
@@ -239,11 +232,9 @@ function DashboardLayoutContent({
                       isActive={location === "/empresa"}
                       onClick={() => setLocation("/empresa")}
                       tooltip="Empresa"
-                      className={`h-12 transition-all font-normal ${location === "/empresa" ? "bg-slate-800 text-white" : "text-slate-300 hover:bg-slate-800 hover:text-white"}`}
+                      className={`h-12 transition-all font-normal ${location === "/empresa" ? "bg-[var(--primary)] text-[var(--sidebar-foreground)]" : "text-[var(--sidebar-foreground)]/70 hover:bg-[var(--chart-3)] hover:text-[var(--sidebar-foreground)]"}`}
                     >
-                      <User
-                        className={`h-6 w-6 mr-2 ${location === "/empresa" ? "text-blue-400" : "text-slate-300"}`}
-                      />
+                      <User className={`h-6 w-6 mr-2 ${location === "/empresa" ? "text-[var(--sidebar-foreground)]" : "text-[var(--sidebar-foreground)]/70"}`} />
                       <span className="truncate">Empresa</span>
                     </SidebarMenuButton>
                   </SidebarMenuItem>
@@ -252,22 +243,22 @@ function DashboardLayoutContent({
             </SidebarMenu>
           </SidebarContent>
 
-          <SidebarFooter className="flex items-center p-4 border-t border-slate-700 bg-slate-900">
+          <SidebarFooter className="flex items-center p-4 border-t border-[var(--sidebar-border)] bg-[var(--sidebar)]">
             <Button
               onClick={async () => {
                 await logout();
                 setLocation("/login");
               }}
-              className={`flex items-center justify-center gap-2 text-slate-200 font-semibold bg-slate-800 hover:bg-slate-700 ${isCollapsed ? "w-12 h-12 p-0 rounded-md" : "w-full"}`}
+              className={`flex items-center justify-center gap-2 text-[var(--sidebar-foreground)] font-semibold bg-[var(--sidebar-primary)] hover:bg-[var(--primary)] ${isCollapsed ? "w-12 h-12 p-0 rounded-md" : "w-full"}`}
             >
-              <LogOut className="h-5 w-5 text-slate-200" />
+              <LogOut className="h-5 w-5 text-black" />
               {!isCollapsed && <span>Sair</span>}
             </Button>
           </SidebarFooter>
         </Sidebar>
         <button
           type="button"
-          className={`absolute top-0 right-0 w-1 h-full cursor-col-resize hover:bg-slate-700 transition-colors ${isCollapsed ? "hidden" : ""}`}
+          className={`absolute top-0 right-0 w-1 h-full cursor-col-resize hover:bg-[var(--chart-4)] transition-colors ${isCollapsed ? "hidden" : ""}`}
           onMouseDown={() => {
             if (isCollapsed) return;
             setIsResizing(true);
@@ -279,12 +270,12 @@ function DashboardLayoutContent({
 
       <SidebarInset>
         {isMobile && (
-          <div className="flex border-b h-14 items-center justify-between bg-slate-900/95 px-2 backdrop-blur supports-[backdrop-filter]:backdrop-blur sticky top-0 z-40">
+          <div className="flex border-b h-14 items-center justify-between bg-[var(--sidebar)]/95 px-2 backdrop-blur supports-[backdrop-filter]:backdrop-blur sticky top-0 z-40">
             <div className="flex items-center gap-2">
-              <SidebarTrigger className="h-9 w-9 rounded-lg bg-slate-800 text-slate-100" />
+              <SidebarTrigger className="h-9 w-9 rounded-lg bg-[var(--sidebar-primary)] text-[var(--sidebar-foreground)]" />
               <div className="flex items-center gap-3">
                 <div className="flex flex-col gap-1">
-                  <span className="tracking-tight text-slate-100 font-semibold">
+                  <span className="tracking-tight text-black font-semibold">
                     {activeMenuItem?.label ?? APP_TITLE}
                   </span>
                 </div>
@@ -292,7 +283,7 @@ function DashboardLayoutContent({
             </div>
           </div>
         )}
-        <main className="flex-1 p-4 bg-slate-50 dark:bg-slate-800">
+        <main className="flex-1 p-4 bg-[var(--background)] dark:bg-[var(--card)]">
           {children}
         </main>
       </SidebarInset>
