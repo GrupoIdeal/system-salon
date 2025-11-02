@@ -67,16 +67,16 @@ export function AppointmentStats({
       <Card>
         <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
           <CardTitle className="text-sm font-medium">Confirmados</CardTitle>
-          <Clock className="h-4 w-4 text-[var(--primary)]" />
+          <Clock className="h-4 w-4 text-[var(--success)]" />
         </CardHeader>
         <CardContent>
-          <div className="text-2xl font-bold text-[var(--primary)]">
+          <div className="text-2xl font-bold text-[var(--success)]">
             {confirmedAppointments}
           </div>
           <div className="flex items-center gap-2">
             <Badge
               variant="outline"
-              className="bg-[var(--chart-1)] text-[var(--primary)] text-xs"
+              className="bg-[var(--warning)]/10 text-[var(--warning)] text-xs"
             >
               {pendingAppointments} pendentes
             </Badge>

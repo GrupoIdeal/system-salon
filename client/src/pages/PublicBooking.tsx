@@ -20,6 +20,7 @@ import {
 } from "lucide-react";
 import { format, addDays, startOfDay, isSameDay } from "date-fns";
 import { ptBR } from "date-fns/locale";
+import { APP_LOGO } from "@/const";
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -240,6 +241,15 @@ function PublicBookingPage() {
         {/* Header com título à esquerda e card escuro do salão à direita */}
         <div className="mb-6 w-full flex flex-col lg:flex-row items-start lg:items-center gap-4">
           <div className="flex-1">
+            {APP_LOGO && (
+              <div className="mb-4">
+                <img
+                  src={APP_LOGO}
+                  alt="Logo"
+                  className="w-56 h-auto object-contain mx-0"
+                />
+              </div>
+            )}
             <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-2">
               Agendar Horário
             </h1>
@@ -527,8 +537,18 @@ function PublicBookingPage() {
               <div className="space-y-6">
                 {/* Seleção de data */}
                 <div>
+                  {/* Cabeçalho com mês/ano visível em todos os breakpoints (fix para mobile) */}
+                  <div className="flex items-center justify-between mb-2">
+                    <div className="text-sm font-medium text-[var(--primary)]">
+                      {selectedDate
+                        ? format(selectedDate, "MMMM yyyy", { locale: ptBR })
+                        : availableDates.length > 0
+                          ? format(availableDates[0], "MMMM yyyy", { locale: ptBR })
+                          : format(new Date(), "MMMM yyyy", { locale: ptBR })}
+                    </div>
+                  </div>
                   <h4 className="font-medium mb-3">Selecione uma data:</h4>
-                  <div className="grid grid-cols-7 gap-2">
+                  <div className="grid grid-cols-4 sm:grid-cols-7 gap-2">
                     {availableDates.map(date => {
                       const isSelected =
                         selectedDate && isSameDay(date, selectedDate);
@@ -536,16 +556,18 @@ function PublicBookingPage() {
                       return (
                         <button
                           key={date.toISOString()}
-                          className={`p-2 text-sm rounded-lg border transition-colors ${isSelected
+                          className={`p-1.5 text-xs sm:text-sm rounded-lg border transition-colors flex flex-col items-center ${isSelected
                             ? "bg-[var(--primary)] text-[var(--primary-foreground)]"
-                            : "bg-white hover:bg-[var(--background)] border-gray-200"
+                            : "bg-white hover:bg-[var(--background)] border-[var(--border)]"
                             }`}
                           onClick={() => handleDateSelect(date)}
                         >
-                          <div className="text-xs text-gray-500">
+                          <div className="text-xs text-gray-500 hidden sm:block">
                             {format(date, "EEE", { locale: ptBR })}
                           </div>
-                          <div className="font-medium">{format(date, "d")}</div>
+                          <div className="font-medium text-sm sm:text-base leading-none">
+                            {format(date, "d")}
+                          </div>
                         </button>
                       );
                     })}

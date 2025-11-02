@@ -229,9 +229,9 @@ export default function Appointments() {
   const getStatusColor = (status: string) => {
     switch (status) {
       case "confirmed":
-        return "bg-[var(--chart-1)] text-[var(--chart-4)]";
+        return "bg-[var(--success)]/10 text-[var(--success)]";
       case "pending":
-        return "bg-[var(--chart-2)] text-[var(--chart-4)]";
+        return "bg-[var(--warning)]/10 text-[var(--warning)]";
       case "completed":
         return "bg-[var(--chart-3)] text-[var(--chart-4)]";
       case "cancelled":

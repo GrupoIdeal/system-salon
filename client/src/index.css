@@ -68,6 +68,11 @@
   --accent-foreground: #3b2e24;
   --destructive: #d14a3a;
   --destructive-foreground: #ffffff;
+  /* cores para estados comuns */
+  --success: #16a34a; /* verde (success) */
+  --success-foreground: #ffffff;
+  --warning: #f59e0b; /* amarelo/laranja (warning) */
+  --warning-foreground: #241b14;
   --border: #e6ddd3;
   --input: #ffffff;
   --ring: #c6ad8f;
@@ -99,6 +104,11 @@
   --accent-foreground: #f6efe6;
   --destructive: #9f2f24;
   --destructive-foreground: #fffaf5;
+  /* cores para estados comuns - dark */
+  --success: #15803d;
+  --success-foreground: #fffaf5;
+  --warning: #b45309;
+  --warning-foreground: #241b14;
   --border: rgba(255, 255, 255, 0.06);
   --input: rgba(255, 255, 255, 0.04);
   --ring: #bfa07a;
