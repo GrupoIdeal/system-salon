@@ -20,7 +20,6 @@ export const publicTrpcClient = publicTrpc.createClient({
       url: `${PUBLIC_API_BASE}/public`,
       transformer: superjson,
       fetch(input, init) {
-        console.log("[public-trpc] request:", input, init?.method || "POST");
         return globalThis.fetch(input, {
           ...(init ?? {}),
           headers: new Headers((init?.headers as Record<string, string>) || {}),

@@ -1,6 +1,6 @@
 // Página pública de agendamento para clientes
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { publicTrpc, publicTrpcClient } from "@/lib/public-trpc";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -82,23 +82,6 @@ function PublicBookingPage() {
   const instagram = (salon as unknown as { instagram?: string } | undefined)?.instagram;
 
   const specialistsQuery = publicTrpc.booking.getAllSpecialists.useQuery();
-
-  // Debug: logar status/dados/erros da query para investigar problema de não mostrar especialistas
-  useEffect(() => {
-    console.log("[PublicBooking] specialistsQuery status:", {
-      status: specialistsQuery.status,
-      isLoading: specialistsQuery.isLoading,
-      isError: specialistsQuery.isError,
-      data: specialistsQuery.data,
-      error: specialistsQuery.error,
-    });
-  }, [
-    specialistsQuery.status,
-    specialistsQuery.isLoading,
-    specialistsQuery.isError,
-    specialistsQuery.data,
-    specialistsQuery.error,
-  ]);
 
   const servicesQuery = publicTrpc.booking.getSpecialistServices.useQuery(
     { specialistId: selectedSpecialist },

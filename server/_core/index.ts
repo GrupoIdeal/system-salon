@@ -2,11 +2,14 @@ import "dotenv/config";
 import express from "express";
 import { createServer } from "http";
 import net from "net";
+import helmet from "helmet";
+import rateLimit from "express-rate-limit";
 import { createExpressMiddleware } from "@trpc/server/adapters/express";
 import { registerOAuthRoutes } from "./oauth";
 import { appRouter, publicRouter } from "../routers";
 import { createContext } from "./context";
 import { serveStatic, setupVite } from "./vite";
+import { ENV } from "./env";
 
 function isPortAvailable(port: number): Promise<boolean> {
   return new Promise(resolve => {
@@ -30,12 +33,39 @@ async function findAvailablePort(startPort: number = 3000): Promise<number> {
 async function startServer() {
   const app = express();
   const server = createServer(app);
+
+  // Helmet para segurança de headers HTTP
+  app.use(
+    helmet({
+      contentSecurityPolicy: ENV.isProduction ? undefined : false,
+      crossOriginEmbedderPolicy: false,
+    })
+  );
+
+  // Rate limiting para rotas públicas
+  const publicLimiter = rateLimit({
+    windowMs: 15 * 60 * 1000, // 15 minutos
+    max: 100, // Limite de 100 requisições por IP
+    message: "Muitas requisições deste IP, tente novamente mais tarde",
+    standardHeaders: true,
+    legacyHeaders: false,
+  });
+
+  // Rate limiting para autenticação (pode ser usado futuramente em rota específica de login)
+  // const authLimiter = rateLimit({
+  //   windowMs: 15 * 60 * 1000,
+  //   max: 5,
+  //   message: "Muitas tentativas de login, tente novamente em 15 minutos",
+  //   skipSuccessfulRequests: true,
+  // });
+
   // Configure body parser with larger size limit for file uploads
-  app.use(express.json({ limit: "50mb" }));
-  app.use(express.urlencoded({ limit: "50mb", extended: true }));
+  app.use(express.json({ limit: "10mb" })); // Reduzido de 50mb para 10mb
+  app.use(express.urlencoded({ limit: "10mb", extended: true }));
   // OAuth callback under /api/oauth/callback
   registerOAuthRoutes(app);
-  // tRPC API
+
+  // tRPC API protegida
   app.use(
     "/api/trpc",
     createExpressMiddleware({
@@ -44,16 +74,31 @@ async function startServer() {
     })
   );
 
-  // tRPC API pública (sem autenticação)
+  // tRPC API pública com CORS restrito e rate limiting
+  const allowedOrigins = ENV.isProduction
+    ? [process.env.FRONTEND_URL || ""].filter(Boolean)
+    : ["http://localhost:3000", "http://localhost:5173"];
+
   app.use(
     "/api/public",
+    publicLimiter,
     (req, res, next) => {
-      res.header("Access-Control-Allow-Origin", "*");
-      res.header("Access-Control-Allow-Methods", "GET,POST,PUT,DELETE,OPTIONS");
-      res.header(
-        "Access-Control-Allow-Headers",
-        "Content-Type, Authorization, Content-Length, X-Requested-With"
-      );
+      const origin = req.headers.origin;
+
+      // Em desenvolvimento, permite qualquer origem local
+      if (!ENV.isProduction || (origin && allowedOrigins.includes(origin))) {
+        res.header("Access-Control-Allow-Origin", origin || "*");
+        res.header(
+          "Access-Control-Allow-Methods",
+          "GET,POST,PUT,DELETE,OPTIONS"
+        );
+        res.header(
+          "Access-Control-Allow-Headers",
+          "Content-Type, Authorization, Content-Length, X-Requested-With"
+        );
+        res.header("Access-Control-Allow-Credentials", "true");
+      }
+
       if (req.method === "OPTIONS") {
         res.sendStatus(200);
       } else {

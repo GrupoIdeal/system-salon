@@ -188,12 +188,16 @@ function DashboardLayoutContent({
                 </div>
               ) : (
                 <>
-                  {/* Logo e título */}
-                  <div className="flex items-center gap-3 min-w-0">
+                  {/* Logo e título - clicável para ir ao dashboard */}
+                  <button
+                    onClick={() => setLocation("/dashboard")}
+                    type="button"
+                    className="flex items-center gap-3 min-w-0 hover:opacity-80 transition-opacity focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--ring)] rounded-md px-2 py-1 -ml-2"
+                  >
                     <span className="font-semibold tracking-tight truncate text-black">
                       {APP_TITLE}
                     </span>
-                  </div>
+                  </button>
                   <button
                     onClick={toggleSidebar}
                     type="button"

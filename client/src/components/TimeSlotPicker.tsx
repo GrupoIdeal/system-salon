@@ -24,20 +24,6 @@ export function TimeSlotPicker({
   onTimeSelect,
   disabled = false,
 }: TimeSlotPickerProps) {
-  // Estado removido pois não está sendo usado atualmente
-
-  // Debug logs
-  console.log("TimeSlotPicker Debug:", {
-    specialistId,
-    serviceId,
-    date: date?.toISOString(),
-    dateString: date?.toDateString(),
-    enabled: !!(specialistId && serviceId && date),
-    currentTime: new Date().toLocaleString("pt-BR", {
-      timeZone: "America/Sao_Paulo",
-    }),
-  });
-
   // Busca horários disponíveis
   const availableSlotsQuery = trpc.appointments.getAvailableSlots.useQuery(
     {
@@ -50,17 +36,6 @@ export function TimeSlotPicker({
       refetchOnWindowFocus: false,
     }
   );
-
-  // Debug dos resultados da query
-  console.log("Available Slots Query Debug:", {
-    isLoading: availableSlotsQuery.isLoading,
-    isError: availableSlotsQuery.isError,
-    error: availableSlotsQuery.error?.message,
-    data: availableSlotsQuery.data,
-    dataLength: availableSlotsQuery.data?.length,
-    status: availableSlotsQuery.status,
-    fetchStatus: availableSlotsQuery.fetchStatus,
-  });
 
   // Valida horário selecionado
   const validateSlotQuery = trpc.appointments.validateSlot.useQuery(
@@ -100,13 +75,11 @@ export function TimeSlotPicker({
 
   const formatTimeSlot = (time: string) => {
     if (!time || typeof time !== "string") {
-      console.error("❌ formatTimeSlot: Invalid time parameter:", time);
       return "00:00";
     }
 
     const parts = time.split(":");
     if (parts.length !== 2) {
-      console.error("❌ formatTimeSlot: Invalid time format:", time);
       return "00:00";
     }
 
@@ -121,19 +94,16 @@ export function TimeSlotPicker({
 
     slots.forEach(slot => {
       if (!slot || typeof slot !== "string") {
-        console.error("❌ groupSlotsByPeriod: Invalid slot:", slot);
         return;
       }
 
       const parts = slot.split(":");
       if (parts.length !== 2) {
-        console.error("❌ groupSlotsByPeriod: Invalid slot format:", slot);
         return;
       }
 
       const hour = parseInt(parts[0]);
       if (Number.isNaN(hour)) {
-        console.error("❌ groupSlotsByPeriod: Invalid hour in slot:", slot);
         return;
       }
 
@@ -190,29 +160,20 @@ export function TimeSlotPicker({
   const rawSlots = availableSlotsQuery.data || [];
   const slots = rawSlots.filter(slot => {
     if (!slot || typeof slot !== "string") {
-      console.warn("❌ Filtering out invalid slot:", slot);
       return false;
     }
 
     const parts = slot.split(":");
     if (parts.length !== 2) {
-      console.warn("❌ Filtering out malformed slot:", slot);
       return false;
     }
 
     const [hours, minutes] = parts.map(Number);
     if (Number.isNaN(hours) || Number.isNaN(minutes)) {
-      console.warn("❌ Filtering out slot with invalid numbers:", slot);
       return false;
     }
 
     return true;
-  });
-
-  console.log("📊 Slots validation:", {
-    rawCount: rawSlots.length,
-    validCount: slots.length,
-    filtered: rawSlots.length - slots.length,
   });
 
   if (slots.length === 0) {

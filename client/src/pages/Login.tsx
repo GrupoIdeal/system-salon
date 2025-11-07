@@ -3,7 +3,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { APP_LOGO } from "@/const";
-import { AlertCircle, Loader2 } from "lucide-react";
+import { AlertCircle, Loader2, Eye, EyeOff } from "lucide-react";
 import { useState } from "react";
 import { useLocation } from "wouter";
 import { storeAuthToken } from "@/lib/auth-utils";
@@ -12,22 +12,17 @@ import { trpc } from "@/lib/trpc";
 export default function Login() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState("");
   const [, setLocation] = useLocation();
   const utils = trpc.useUtils();
 
-  const checkCookies = () => {
-    console.log("Verificando cookies no cliente:", document.cookie);
-  };
-
   const loginMutation = trpc.auth.login.useMutation({
     onSuccess: async data => {
-      checkCookies();
       if (data.sessionToken) {
         storeAuthToken(data.sessionToken);
         await utils.auth.me.invalidate();
         setTimeout(() => {
-          checkCookies();
           setLocation("/dashboard");
         }, 1000);
       } else {
@@ -114,15 +109,30 @@ export default function Login() {
                   >
                     Senha
                   </label>
-                  <Input
-                    id="password"
-                    type="password"
-                    placeholder="••••••••"
-                    value={password}
-                    onChange={e => setPassword(e.target.value)}
-                    disabled={loginMutation.isPending}
-                    className="bg-white/80 border-[var(--border)]"
-                  />
+                  <div className="relative">
+                    <Input
+                      id="password"
+                      type={showPassword ? "text" : "password"}
+                      placeholder="••••••••"
+                      value={password}
+                      onChange={e => setPassword(e.target.value)}
+                      disabled={loginMutation.isPending}
+                      className="bg-white/80 border-[var(--border)] pr-10"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setShowPassword(!showPassword)}
+                      className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-700 transition-colors"
+                      disabled={loginMutation.isPending}
+                      aria-label={showPassword ? "Ocultar senha" : "Mostrar senha"}
+                    >
+                      {showPassword ? (
+                        <EyeOff className="h-4 w-4" />
+                      ) : (
+                        <Eye className="h-4 w-4" />
+                      )}
+                    </button>
+                  </div>
                 </div>
                 <Button
                   type="submit"

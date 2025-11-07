@@ -1,27 +1,70 @@
 import { z } from "zod";
 
+// Função helper para sanitizar strings (remove HTML e scripts)
+// Disponível para uso futuro em transformações
+const sanitizeString = (str: string) => {
+  return str
+    .replace(/<script\b[^<]*(?:(?!<\/script>)<[^<]*)*<\/script>/gi, "")
+    .replace(/<[^>]*>/g, "")
+    .trim();
+};
+
+// Previne warning de variável não utilizada
+void sanitizeString;
+
 // ============================================================================
 // AUTH VALIDATIONS
 // ============================================================================
 
 export const loginSchema = z.object({
-  email: z.string().email("Email inválido"),
-  password: z.string().min(6, "Senha deve ter no mínimo 6 caracteres"),
+  email: z
+    .string()
+    .email("Email inválido")
+    .max(320, "Email muito longo")
+    .toLowerCase()
+    .trim(),
+  password: z
+    .string()
+    .min(6, "Senha deve ter no mínimo 6 caracteres")
+    .max(100, "Senha muito longa"),
 });
 
 export const registerSchema = z.object({
-  email: z.string().email("Email inválido"),
-  password: z.string().min(6, "Senha deve ter no mínimo 6 caracteres"),
-  name: z.string().min(2, "Nome deve ter no mínimo 2 caracteres"),
+  email: z
+    .string()
+    .email("Email inválido")
+    .max(320, "Email muito longo")
+    .toLowerCase()
+    .trim(),
+  password: z
+    .string()
+    .min(6, "Senha deve ter no mínimo 6 caracteres")
+    .max(100, "Senha muito longa")
+    .regex(
+      /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)/,
+      "Senha deve conter letras maiúsculas, minúsculas e números"
+    ),
+  name: z
+    .string()
+    .min(2, "Nome deve ter no mínimo 2 caracteres")
+    .max(100, "Nome muito longo"),
 });
 
 export const passwordResetRequestSchema = z.object({
-  email: z.string().email("Email inválido"),
+  email: z
+    .string()
+    .email("Email inválido")
+    .max(320, "Email muito longo")
+    .toLowerCase()
+    .trim(),
 });
 
 export const passwordResetSchema = z.object({
-  token: z.string(),
-  password: z.string().min(6, "Senha deve ter no mínimo 6 caracteres"),
+  token: z.string().max(500, "Token inválido"),
+  password: z
+    .string()
+    .min(6, "Senha deve ter no mínimo 6 caracteres")
+    .max(100, "Senha muito longa"),
 });
 
 // ============================================================================
@@ -29,20 +72,38 @@ export const passwordResetSchema = z.object({
 // ============================================================================
 
 export const salonSchema = z.object({
-  name: z.string().min(2, "Nome do salão é obrigatório"),
-  cnpj: z.string().optional(),
-  address: z.string().optional(),
-  phone: z.string().optional(),
-  email: z.string().email().optional(),
-  logo: z.string().optional(),
+  name: z
+    .string()
+    .min(2, "Nome do salão é obrigatório")
+    .max(200, "Nome muito longo"),
+  cnpj: z.string().max(20, "CNPJ inválido").optional(),
+  address: z.string().max(500, "Endereço muito longo").optional(),
+  phone: z.string().max(20, "Telefone inválido").optional(),
+  email: z
+    .string()
+    .email("Email inválido")
+    .max(320, "Email muito longo")
+    .optional(),
+  logo: z.string().url("URL inválida").max(1000, "URL muito longa").optional(),
   workingHours: z
     .record(
       z.string(),
       z.array(
         z.object({
-          start: z.string(),
-          end: z.string(),
-          lunch: z.object({ start: z.string(), end: z.string() }).optional(),
+          start: z
+            .string()
+            .regex(/^\d{2}:\d{2}$/, "Formato de horário inválido"),
+          end: z.string().regex(/^\d{2}:\d{2}$/, "Formato de horário inválido"),
+          lunch: z
+            .object({
+              start: z
+                .string()
+                .regex(/^\d{2}:\d{2}$/, "Formato de horário inválido"),
+              end: z
+                .string()
+                .regex(/^\d{2}:\d{2}$/, "Formato de horário inválido"),
+            })
+            .optional(),
         })
       )
     )
@@ -54,20 +115,38 @@ export const salonSchema = z.object({
 // ============================================================================
 
 export const specialistSchema = z.object({
-  name: z.string().min(2, "Nome do especialista é obrigatório"),
-  specialty: z.string().optional(),
-  photo: z.string().optional(),
-  email: z.string().email().optional(),
-  phone: z.string().optional(),
-  bio: z.string().optional(),
+  name: z
+    .string()
+    .min(2, "Nome do especialista é obrigatório")
+    .max(200, "Nome muito longo"),
+  specialty: z.string().max(255, "Especialidade muito longa").optional(),
+  photo: z.string().url("URL inválida").max(1000, "URL muito longa").optional(),
+  email: z
+    .string()
+    .email("Email inválido")
+    .max(320, "Email muito longo")
+    .optional(),
+  phone: z.string().max(20, "Telefone inválido").optional(),
+  bio: z.string().max(1000, "Biografia muito longa").optional(),
   workingDays: z
     .record(
       z.string(),
       z.array(
         z.object({
-          start: z.string(),
-          end: z.string(),
-          lunch: z.object({ start: z.string(), end: z.string() }).optional(),
+          start: z
+            .string()
+            .regex(/^\d{2}:\d{2}$/, "Formato de horário inválido"),
+          end: z.string().regex(/^\d{2}:\d{2}$/, "Formato de horário inválido"),
+          lunch: z
+            .object({
+              start: z
+                .string()
+                .regex(/^\d{2}:\d{2}$/, "Formato de horário inválido"),
+              end: z
+                .string()
+                .regex(/^\d{2}:\d{2}$/, "Formato de horário inválido"),
+            })
+            .optional(),
         })
       )
     )

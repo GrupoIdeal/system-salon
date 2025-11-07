@@ -13,10 +13,7 @@ export const getLoginUrl = () => {
   const state = btoa(redirectUri);
 
   if (!oauthPortalUrl || !appId) {
-    // Exibe erro amigável no console e retorna uma URL de fallback
-    console.error(
-      "Configuração de OAuth inválida: VITE_OAUTH_PORTAL_URL ou VITE_APP_ID não definida."
-    );
+    // Configuração OAuth inválida - retorna URL de fallback
     return "/erro-configuracao";
   }
 

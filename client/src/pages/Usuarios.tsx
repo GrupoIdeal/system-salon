@@ -184,8 +184,8 @@ export default function Usuarios() {
 
             setForm({ name: "", email: "", password: "", role: "user", permissions: {} });
             listQuery.refetch();
-        } catch (err) {
-            console.error("Erro ao salvar usuário:", err);
+        } catch {
+            // Erro será tratado pelo React Query e exibido em toast
             toast.error("Erro ao salvar usuário");
         }
     };

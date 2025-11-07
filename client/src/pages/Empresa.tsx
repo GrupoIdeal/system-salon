@@ -66,7 +66,7 @@ export default function Empresa() {
       setEditMode(false);
       salonQuery.refetch();
     } catch (error) {
-      console.error("Erro ao salvar dados da empresa:", error);
+      // Erro será tratado pelo React Query
     }
   };
 
