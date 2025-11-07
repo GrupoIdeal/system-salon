@@ -57,6 +57,27 @@
       "when": 1761787005003,
       "tag": "0007_wonderful_red_ghost",
       "breakpoints": true
+    },
+    {
+      "idx": 8,
+      "version": "7",
+      "when": 1762444748699,
+      "tag": "0008_quiet_maddog",
+      "breakpoints": true
+    },
+    {
+      "idx": 9,
+      "version": "7",
+      "when": 1762462576206,
+      "tag": "0009_narrow_hellion",
+      "breakpoints": true
+    },
+    {
+      "idx": 10,
+      "version": "7",
+      "when": 1762464887755,
+      "tag": "0010_skinny_magma",
+      "breakpoints": true
     }
   ]
 }

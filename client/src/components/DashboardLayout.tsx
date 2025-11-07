@@ -238,6 +238,17 @@ function DashboardLayoutContent({
                       <span className="truncate">Empresa</span>
                     </SidebarMenuButton>
                   </SidebarMenuItem>
+                  <SidebarMenuItem>
+                    <SidebarMenuButton
+                      isActive={location === "/usuarios"}
+                      onClick={() => setLocation("/usuarios")}
+                      tooltip="Usuários"
+                      className={`h-12 transition-all font-normal ${location === "/usuarios" ? "bg-[var(--primary)] text-[var(--sidebar-foreground)]" : "text-[var(--sidebar-foreground)]/70 hover:bg-[var(--chart-3)] hover:text-[var(--sidebar-foreground)]"}`}
+                    >
+                      <Users className={`h-6 w-6 mr-2 ${location === "/usuarios" ? "text-[var(--sidebar-foreground)]" : "text-[var(--sidebar-foreground)]/70"}`} />
+                      <span className="truncate">Usuários</span>
+                    </SidebarMenuButton>
+                  </SidebarMenuItem>
                 </>
               )}
             </SidebarMenu>

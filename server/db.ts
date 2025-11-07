@@ -130,6 +130,18 @@ export async function upsertUser(
       updateSet.photoUrl = user.photoUrl ?? null;
     }
 
+    // Permissões granulares (JSONB) - permitir setar explicitamente
+    if ("permissions" in user) {
+      values.permissions = user.permissions ?? null;
+      updateSet.permissions = user.permissions ?? null;
+    }
+
+    // salonId: permitir associar usuário explicitamente a um salão
+    if ("salonId" in user) {
+      values.salonId = user.salonId ?? null;
+      updateSet.salonId = user.salonId ?? null;
+    }
+
     if (user.phone !== undefined) {
       values.phone = user.phone;
       updateSet.phone = user.phone;
@@ -199,13 +211,35 @@ export async function getSalonByUserId(
   const db = await getDb();
   if (!db) return undefined;
 
-  const result = await db
+  // Primeiro, tenta encontrar salão onde o usuário é owner
+  const ownerResult = await db
     .select()
     .from(salons)
     .where(eq(salons.userId, userId))
     .limit(1);
 
-  return result.length > 0 ? result[0] : undefined;
+  if (ownerResult.length > 0) return ownerResult[0];
+
+  // Se não for owner, verificar se o usuário tem salonId associado
+  const userResult = await db
+    .select()
+    .from(users)
+    .where(eq(users.id, userId))
+    .limit(1);
+
+  if (userResult.length === 0) return undefined;
+
+  const userRow = userResult[0] as User;
+  const salonId = userRow.salonId;
+  if (!salonId) return undefined;
+
+  const salonResult = await db
+    .select()
+    .from(salons)
+    .where(eq(salons.id, salonId))
+    .limit(1);
+
+  return salonResult.length > 0 ? salonResult[0] : undefined;
 }
 
 export async function getSalonById(
@@ -1309,6 +1343,7 @@ export async function getAvailableTimeSlots(
     found: !!service,
     name: service?.name,
     duration: service?.duration,
+    specialistId: (service as any)?.specialistId,
   });
 
   console.log("🏢 Salon data:", {
@@ -1316,8 +1351,26 @@ export async function getAvailableTimeSlots(
     name: salon?.name,
   });
 
-  if (!specialist || !service) {
-    console.log("❌ Specialist or service not found");
+  // Validations: service must exist; specialist must exist.
+  if (!service) {
+    console.log("❌ Service not found");
+    return [];
+  }
+
+  if (!specialist) {
+    console.log("❌ Specialist not found");
+    return [];
+  }
+
+  // If the service is tied to a specific specialist, ensure it matches the requested specialist.
+  // If service.specialistId is null, the service is considered "unassigned" and may be performed by any specialist.
+  if (service.specialistId && service.specialistId !== specialistId) {
+    console.log(
+      "❌ Service is assigned to a different specialist:",
+      service.specialistId,
+      "!=",
+      specialistId
+    );
     return [];
   }
 

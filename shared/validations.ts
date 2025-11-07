@@ -125,7 +125,7 @@ export const serviceSchema = z.object({
       return num >= 0;
     }, "Preço deve ser positivo"),
   status: z.enum(["active", "inactive"]).default("active"),
-  specialistId: z.string().optional(),
+  specialistId: z.string().nullable().optional(),
 });
 
 // ============================================================================

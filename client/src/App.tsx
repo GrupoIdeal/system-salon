@@ -15,6 +15,7 @@ import RedefinirSenha from "./pages/RedefinirSenha";
 import Empresa from "./pages/Empresa";
 import Specialists from "./pages/Specialists";
 import PublicBooking from "./pages/PublicBooking";
+import Usuarios from "./pages/Usuarios";
 import { useAuth } from "@/_core/hooks/useAuth";
 import { useEffect } from "react";
 import Footer from "@/components/Footer";
@@ -99,6 +100,10 @@ function Router() {
       <Route
         path="/especialistas"
         component={() => <ProtectedRoute component={Specialists} />}
+      />
+      <Route
+        path="/usuarios"
+        component={() => <ProtectedRoute component={Usuarios} adminOnly />}
       />
       <Route path="/404" component={NotFound} />
       {/* Final fallback route */}

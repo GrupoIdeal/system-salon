@@ -118,6 +118,9 @@ export default function Services() {
           ...formData,
           duration: parseInt(formData.duration),
           price: parseFloat(formData.price),
+          // convert sentinel 'none' to null to avoid FK insertion errors
+          specialistId:
+            formData.specialistId === "none" ? null : formData.specialistId,
         },
       });
     } else {
@@ -125,6 +128,8 @@ export default function Services() {
         ...formData,
         duration: parseInt(formData.duration),
         price: parseFloat(formData.price),
+        // convert sentinel 'none' to null to avoid FK insertion errors
+        specialistId: formData.specialistId === "none" ? null : formData.specialistId,
       });
     }
   };
@@ -277,7 +282,8 @@ export default function Services() {
                     onValueChange={value =>
                       setFormData({
                         ...formData,
-                        specialistId: value === "none" ? "" : value,
+                        // keep sentinel 'none' in state; convert to null only when submitting
+                        specialistId: value,
                       })
                     }
                   >
@@ -333,8 +339,8 @@ export default function Services() {
                     </div>
                     <span
                       className={`text-xs font-semibold px-2 py-1 rounded ${service.status === "active"
-                          ? "bg-[var(--chart-1)] text-[var(--chart-4)]"
-                          : "bg-gray-100 text-gray-800"
+                        ? "bg-[var(--chart-1)] text-[var(--chart-4)]"
+                        : "bg-gray-100 text-gray-800"
                         }`}
                     >
                       {service.status === "active" ? "Ativo" : "Inativo"}

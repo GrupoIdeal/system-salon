@@ -69,71 +69,37 @@ async function main() {
       address: "Rua Dez, 40",
       phone: "88999999777",
       email: "teste@teste.com",
-      workingHours: {
-        // Segunda a Sexta: 08:00-12:00 e 14:00-18:00
-        monday: [
-          {
-            start: "08:00",
-            end: "12:00",
-          },
-          {
-            start: "14:00",
-            end: "18:00",
-          },
-        ],
-        tuesday: [
-          {
-            start: "08:00",
-            end: "12:00",
-          },
-          {
-            start: "14:00",
-            end: "18:00",
-          },
-        ],
-        wednesday: [
-          {
-            start: "08:00",
-            end: "12:00",
-          },
-          {
-            start: "14:00",
-            end: "18:00",
-          },
-        ],
-        thursday: [
-          {
-            start: "08:00",
-            end: "12:00",
-          },
-          {
-            start: "14:00",
-            end: "18:00",
-          },
-        ],
-        friday: [
-          {
-            start: "08:00",
-            end: "12:00",
-          },
-          {
-            start: "14:00",
-            end: "18:00",
-          },
-        ],
-        // Sábado: 08:00-13:00
-        saturday: [
-          {
-            start: "08:00",
-            end: "13:00",
-          },
-        ],
-        // Domingo: fechado
-        sunday: [],
-      },
+      logo: null,
     });
     if (process.env.NODE_ENV !== "production") {
       console.log("✅ Dados da empresa criados com sucesso!");
+    }
+  }
+
+  // Criar usuário adicional solicitado manualmente (adm@adm.com) — senha: 277897
+  const extraEmail = "adm@adm.com";
+  const extraPassword = "277897";
+
+  const existingExtra = await db
+    .select()
+    .from(users)
+    .where(eq(users.email, extraEmail));
+  if (existingExtra.length > 0) {
+    if (process.env.NODE_ENV !== "production") {
+      console.log(`👤 Usuário ${extraEmail} já existe, pulando criação...`);
+    }
+  } else {
+    const extraHash = await bcrypt.hash(extraPassword, 10);
+    const extraId = nanoid();
+    await db.insert(users).values({
+      id: extraId,
+      email: extraEmail,
+      password: extraHash,
+      name: "Administrador",
+      role: "admin",
+    });
+    if (process.env.NODE_ENV !== "production") {
+      console.log(`✅ Usuário ${extraEmail} criado com sucesso!`);
     }
   }
 
@@ -141,6 +107,8 @@ async function main() {
     console.log("✅ Horários de funcionamento configurados!");
     console.log("\n📧 Email: adm@admin.com");
     console.log("🔑 Senha: 123123");
+    console.log("📧 Email extra: adm@adm.com");
+    console.log("🔑 Senha extra: 277897");
   }
 
   process.exit(0);

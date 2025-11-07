@@ -18,6 +18,8 @@ export const roleEnum = pgEnum("role", ["user", "admin"]);
  */
 export const users = pgTable("users", {
   id: varchar("id", { length: 64 }).primaryKey(),
+  // Associação opcional ao salão ao qual o usuário pertence
+  salonId: varchar("salonId", { length: 64 }),
   email: varchar("email", { length: 320 }).notNull().unique(),
   password: text("password").notNull(),
   name: text("name").notNull(),
@@ -27,6 +29,8 @@ export const users = pgTable("users", {
   lastSignedIn: timestamp("lastSignedIn"),
   photoUrl: text("photoUrl"),
   phone: varchar("phone", { length: 20 }),
+  // Permissões granulares armazenadas como JSON (ex: { manage_clients: true })
+  permissions: jsonb("permissions").$type<Record<string, boolean> | null>(),
 });
 
 export type User = typeof users.$inferSelect;

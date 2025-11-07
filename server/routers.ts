@@ -10,6 +10,7 @@ import bcrypt from "bcrypt";
 import crypto from "crypto";
 import { sdk } from "./_core/sdk";
 import { eq } from "drizzle-orm";
+import { ENV } from "./_core/env";
 import {
   getUser,
   getUserByEmail,
@@ -34,7 +35,6 @@ import {
   updateAppointment,
   deleteAppointment,
   recordAppointmentRevenue,
-  // getTransactionsBySalonId removed from imports (unused in routers)
   createPasswordReset,
   getPasswordResetByToken,
   markPasswordResetAsUsed,
@@ -166,8 +166,10 @@ export const appRouter = router({
   // ============================================================================
 
   auth: router({
-    me: publicProcedure.query(({ ctx: _ctx }) => {
-      return _ctx.user;
+    me: publicProcedure.query(async ({ ctx: _ctx }) => {
+      if (!_ctx.user) return null;
+      const salon = await getSalonByUserId(_ctx.user.id);
+      return { ..._ctx.user, salonId: salon?.id ?? null };
     }),
 
     logout: publicProcedure.mutation(({ ctx: _ctx }) => {
@@ -189,12 +191,17 @@ export const appRouter = router({
 
         const userId = generateId();
 
-        // Create user
+        // Determinar salonId padrão a partir do owner (modo único salão). Se não houver, deixar null.
+        const ownerSalon = await getSalonByUserId(ENV.ownerId);
+        const defaultSalonId = ownerSalon?.id ?? null;
+
+        // Create user (associando ao salão padrão)
         await upsertUser({
           id: userId,
           name: _input.name,
           email: _input.email,
           password: await bcrypt.hash(_input.password, 10),
+          salonId: defaultSalonId,
         });
 
         return {
@@ -226,9 +233,13 @@ export const appRouter = router({
           });
         }
 
-        // Configurar cookie de sessão com JWT
+        // Busca o salão associado ao usuário (pode ser null)
+        const salon = await getSalonByUserId(user.id);
+
+        // Criar token de sessão; opcionalmente incluir meta (nome e salonId)
         const sessionToken = await sdk.createSessionToken(user.id, {
           name: user.name,
+          salonId: salon?.id ?? null,
         });
 
         const cookieOptions = {
@@ -240,13 +251,13 @@ export const appRouter = router({
 
         return {
           success: true,
-          // Também retornamos o token para que o cliente possa armazená-lo
           sessionToken,
           user: {
             id: user.id,
             email: user.email,
             name: user.name,
             role: user.role,
+            salonId: salon?.id ?? null,
           },
         };
       }),
@@ -742,11 +753,21 @@ export const appRouter = router({
           typeof _input.price === "string"
             ? _input.price
             : _input.price.toString();
+
+        // Converter sentinel 'none' para null para evitar FK inválida
+        const specialistId =
+          _input.specialistId === undefined ||
+          _input.specialistId === "none" ||
+          _input.specialistId === null
+            ? null
+            : _input.specialistId;
+
         const service = await createService({
           id: generateId(),
           salonId: salon.id,
           ..._input,
           price,
+          specialistId,
         });
 
         return service;
@@ -777,31 +798,17 @@ export const appRouter = router({
             typeof _input.data.price === "string"
               ? _input.data.price
               : _input.data.price.toString(),
-        };
+        } as any;
+
+        // Converter 'none' ou null para null ao atualizar specialistId
+        if (
+          updateData.specialistId === "none" ||
+          updateData.specialistId === null
+        ) {
+          updateData.specialistId = null;
+        }
+
         await updateService(_input.id, updateData);
-        return { success: true };
-      }),
-
-    delete: protectedProcedure
-      .input(z.object({ id: z.string() }))
-      .mutation(async ({ ctx: _ctx, input: _input }) => {
-        const service = await getServiceById(_input.id);
-        if (!service) {
-          throw new TRPCError({
-            code: "NOT_FOUND",
-            message: "Serviço não encontrado",
-          });
-        }
-
-        const salon = await getSalonByUserId(_ctx.user.id);
-        if (!salon || service.salonId !== salon.id) {
-          throw new TRPCError({
-            code: "FORBIDDEN",
-            message: "Acesso negado",
-          });
-        }
-
-        await deleteService(_input.id);
         return { success: true };
       }),
   }),
@@ -1364,12 +1371,70 @@ export const appRouter = router({
 
   users: router({
     list: protectedProcedure.query(async ({ ctx: _ctx }) => {
-      // Apenas admin pode listar todos os usuários
+      // Apenas admin pode listar todos os usuários do seu salão
       if (!_ctx.user || _ctx.user.role !== "admin") {
         throw new TRPCError({ code: "FORBIDDEN", message: "Acesso negado" });
       }
-      return await listUsers();
+
+      // Garantir que o admin pertence a um salão
+      const salon = await getSalonByUserId(_ctx.user.id);
+      if (!salon) {
+        throw new TRPCError({
+          code: "NOT_FOUND",
+          message: "Salão não encontrado",
+        });
+      }
+
+      // Buscar todos e filtrar apenas usuários do mesmo salão
+      const allUsers = await listUsers();
+      return allUsers.filter(u => (u as any).salonId === salon.id);
     }),
+
+    // Criar novo usuário (apenas admin) — sempre atribuir ao salão do admin
+    create: protectedProcedure
+      .input(
+        z.object({
+          name: z.string().min(2),
+          email: z.string().email(),
+          password: z.string().min(6),
+          role: z.enum(["user", "admin"]).default("user"),
+          permissions: z.record(z.string(), z.boolean()).optional(),
+        })
+      )
+      .mutation(async ({ ctx: _ctx, input: _input }) => {
+        if (!_ctx.user || _ctx.user.role !== "admin") {
+          throw new TRPCError({ code: "FORBIDDEN", message: "Acesso negado" });
+        }
+
+        // Associar sempre o novo usuário ao salão do admin
+        const salon = await getSalonByUserId(_ctx.user.id);
+        if (!salon) {
+          throw new TRPCError({
+            code: "NOT_FOUND",
+            message: "Salão não encontrado",
+          });
+        }
+
+        // Se for admin e não recebeu permissões, dar permissão total
+        const perms =
+          _input.role === "admin"
+            ? { manage_all: true }
+            : (_input.permissions ?? undefined);
+
+        const newId = generateId();
+        await upsertUser({
+          id: newId,
+          name: _input.name,
+          email: _input.email,
+          password: await bcrypt.hash(_input.password, 10),
+          role: _input.role,
+          permissions: perms as any,
+          salonId: salon.id,
+        });
+
+        return { success: true, userId: newId } as const;
+      }),
+
     edit: protectedProcedure
       .input(
         z.object({
@@ -1380,11 +1445,13 @@ export const appRouter = router({
             role: z.enum(["user", "admin"]).optional(),
             photoUrl: z.string().optional(),
             phone: z.string().optional(),
+            permissions: z.record(z.string(), z.boolean()).optional(),
+            password: z.string().min(6).optional(),
           }),
         })
       )
       .mutation(async ({ ctx: _ctx, input: _input }) => {
-        // Permite que o próprio usuário edite seus dados OU admin
+        // Permite que o próprio usuário edite seus dados OU admin do mesmo salão
         if (
           !_ctx.user ||
           (_ctx.user.role !== "admin" && _ctx.user.id !== _input.id)
@@ -1398,13 +1465,48 @@ export const appRouter = router({
             message: "Usuário não encontrado",
           });
         }
-        await upsertUser({ id: _input.id, ..._input.data });
+
+        // Se o editor é admin, garantir que o usuário alvo pertença ao mesmo salão
+        if (_ctx.user.role === "admin") {
+          const adminSalon = await getSalonByUserId(_ctx.user.id);
+          if (!adminSalon || (user as any).salonId !== adminSalon.id) {
+            throw new TRPCError({
+              code: "FORBIDDEN",
+              message: "Acesso negado",
+            });
+          }
+        }
+
+        // Construir objeto de update explicitamente
+        const updatePayload: any = { id: _input.id };
+        if (typeof _input.data.name !== "undefined")
+          updatePayload.name = _input.data.name;
+        if (typeof _input.data.email !== "undefined")
+          updatePayload.email = _input.data.email;
+        if (typeof _input.data.role !== "undefined")
+          updatePayload.role = _input.data.role;
+        if ("photoUrl" in _input.data)
+          updatePayload.photoUrl = _input.data.photoUrl;
+        if (typeof _input.data.phone !== "undefined")
+          updatePayload.phone = _input.data.phone;
+        if (typeof _input.data.permissions !== "undefined")
+          updatePayload.permissions = _input.data.permissions;
+
+        // Se veio password, fazer hash e incluir no payload
+        if (
+          typeof _input.data.password !== "undefined" &&
+          _input.data.password !== null
+        ) {
+          updatePayload.password = await bcrypt.hash(_input.data.password, 10);
+        }
+
+        await upsertUser(updatePayload as any);
         return { success: true };
       }),
     resetPassword: protectedProcedure
       .input(z.object({ id: z.string(), password: z.string() }))
       .mutation(async ({ ctx: _ctx, input: _input }) => {
-        // Permite que o próprio usuário troque a senha OU admin
+        // Permite que o próprio usuário troque a senha OU admin do mesmo salão
         if (
           !_ctx.user ||
           (_ctx.user.role !== "admin" && _ctx.user.id !== _input.id)
@@ -1418,6 +1520,17 @@ export const appRouter = router({
             message: "Usuário não encontrado",
           });
         }
+
+        if (_ctx.user.role === "admin") {
+          const adminSalon = await getSalonByUserId(_ctx.user.id);
+          if (!adminSalon || (user as any).salonId !== adminSalon.id) {
+            throw new TRPCError({
+              code: "FORBIDDEN",
+              message: "Acesso negado",
+            });
+          }
+        }
+
         await upsertUser({
           id: _input.id,
           password: await bcrypt.hash(_input.password, 10),
@@ -1427,7 +1540,7 @@ export const appRouter = router({
     delete: protectedProcedure
       .input(z.object({ id: z.string() }))
       .mutation(async ({ ctx: _ctx, input: _input }) => {
-        // Apenas admin pode remover usuários
+        // Apenas admin pode remover usuários do seu próprio salão
         if (!_ctx.user || _ctx.user.role !== "admin") {
           throw new TRPCError({ code: "FORBIDDEN", message: "Acesso negado" });
         }
@@ -1438,6 +1551,12 @@ export const appRouter = router({
             message: "Usuário não encontrado",
           });
         }
+
+        const adminSalon = await getSalonByUserId(_ctx.user.id);
+        if (!adminSalon || (user as any).salonId !== adminSalon.id) {
+          throw new TRPCError({ code: "FORBIDDEN", message: "Acesso negado" });
+        }
+
         // Não permitir que o admin remova a si mesmo
         if (_ctx.user.id === _input.id) {
           throw new TRPCError({
