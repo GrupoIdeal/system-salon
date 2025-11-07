@@ -65,7 +65,7 @@ export default function Empresa() {
       await updateMutation.mutateAsync(form);
       setEditMode(false);
       salonQuery.refetch();
-    } catch (error) {
+    } catch (_error) {
       // Erro será tratado pelo React Query
     }
   };

@@ -1,0 +1,27 @@
+# Dependências
+node_modules/
+dist/
+build/
+
+# Arquivos gerados
+*.log
+*.dump
+.vite/
+.turbo/
+
+# Migrações do banco
+drizzle/migrations/
+drizzle/meta/
+
+# Backups
+backups/
+
+# Configuração
+.env
+.env.*
+!.env.example
+
+# Arquivos temporários
+*.tmp
+*.temp
+.DS_Store
