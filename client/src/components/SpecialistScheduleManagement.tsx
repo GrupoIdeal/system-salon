@@ -59,38 +59,111 @@ export function SpecialistScheduleManagement({
   onClose,
   specialistId,
 }: SpecialistScheduleProps) {
-  const [selectedSpecialist, setSelectedSpecialist] = useState(
-    specialistId || ""
+  const [selectedSpecialist, setSelectedSpecialist] = useState<string | undefined>(
+    specialistId || undefined
   );
   const [newUnavailableDate, setNewUnavailableDate] = useState("");
 
   const specialistsQuery = trpc.specialists.list.useQuery();
 
   const scheduleQuery = trpc.schedule.getSpecialistSchedule.useQuery(
-    { specialistId: selectedSpecialist },
+    { specialistId: selectedSpecialist || "" },
     { enabled: !!selectedSpecialist }
   );
+
+  const utils = trpc.useContext();
+
+  // Ao trocar de especialista, cancelar fetchs pendentes e invalidar cache
+  const handleSelectSpecialist = async (value: string) => {
+    const prev = selectedSpecialist;
+    if (prev) {
+      try {
+        await utils.schedule.getSpecialistSchedule.cancel({ specialistId: prev });
+      } catch (e) {
+        // ignore
+      }
+      // garantir que não fique otimistic data do prev specialist
+      utils.schedule.getSpecialistSchedule.invalidate({ specialistId: prev });
+    }
+
+    setSelectedSpecialist(value || undefined);
+  };
 
   const updateScheduleMutation =
     trpc.schedule.updateSpecialistSchedule.useMutation({
       onSuccess: () => {
         toast.success("Configurações atualizadas com sucesso!");
-        scheduleQuery.refetch();
+        if (selectedSpecialist) {
+          utils.schedule.getSpecialistSchedule.invalidate({ specialistId: selectedSpecialist });
+        }
       },
       onError: error => {
         toast.error(`Erro: ${error.message}`);
       },
     });
 
+  // Mutation com update otimista para atualizar imediatamente a UI
   const updateWorkingHoursMutation =
     trpc.schedule.updateWorkingHours.useMutation({
-      onSuccess: () => {
-        toast.success("Horário de trabalho atualizado!");
-        scheduleQuery.refetch();
+      onMutate: async vars => {
+        // cancelar fetchs em andamento
+        await utils.schedule.getSpecialistSchedule.cancel({ specialistId: vars.specialistId });
+
+        // snapshot do estado anterior para rollback
+        const previous = utils.schedule.getSpecialistSchedule.getData({ specialistId: vars.specialistId });
+
+        // aplicar mudança otimista no cache
+        utils.schedule.getSpecialistSchedule.setData({ specialistId: vars.specialistId }, old => {
+          if (!old) return old;
+
+          // Atualiza workingHours (array) e workingHoursFormatted (UI)
+          const newWorkingHours = (old.workingHours || []).map(wh =>
+            wh.dayOfWeek === vars.dayOfWeek ? {
+              ...wh, ...{
+                isWorking: vars.isWorking,
+                startTime: vars.startTime ?? wh.startTime,
+                endTime: vars.endTime ?? wh.endTime,
+                breakStartTime: vars.breakStartTime ?? wh.breakStartTime,
+                breakEndTime: vars.breakEndTime ?? wh.breakEndTime,
+              }
+            } : wh
+          );
+
+          const newWorkingHoursFormatted = (old.workingHoursFormatted || []).map(f =>
+            f.dayOfWeek === vars.dayOfWeek ? {
+              ...f, ...{
+                isWorking: vars.isWorking,
+                startTime: vars.startTime ?? f.startTime,
+                endTime: vars.endTime ?? f.endTime,
+                breakStartTime: vars.breakStartTime ?? f.breakStartTime,
+                breakEndTime: vars.breakEndTime ?? f.breakEndTime,
+              }
+            } : f
+          );
+
+          return {
+            ...old,
+            workingHours: newWorkingHours,
+            workingHoursFormatted: newWorkingHoursFormatted,
+          } as typeof old;
+        });
+
+        return { previous };
       },
-      onError: error => {
-        toast.error(`Erro: ${error.message}`);
+      onError: (err, vars, context) => {
+        // rollback em caso de erro
+        if (context?.previous) {
+          utils.schedule.getSpecialistSchedule.setData({ specialistId: vars.specialistId }, context.previous);
+        }
+        toast.error(`Erro: ${err.message}`);
       },
+      onSettled: (data, error, vars) => {
+        // garantir dados atualizados do servidor
+        if (vars?.specialistId) {
+          utils.schedule.getSpecialistSchedule.invalidate({ specialistId: vars.specialistId });
+        }
+      },
+      // Toast removido - será exibido apenas ao salvar todas as alterações
     });
 
   const addUnavailableDateMutation =
@@ -117,7 +190,8 @@ export function SpecialistScheduleManagement({
     });
 
   const handleScheduleUpdate = (field: string, value: unknown) => {
-    if (!selectedSpecialist) return;
+    const sid = selectedSpecialist;
+    if (!sid) return;
 
     type UpdateSchedulePayload = {
       specialistId: string;
@@ -129,7 +203,7 @@ export function SpecialistScheduleManagement({
       allowOnlineBooking?: boolean;
     };
 
-    const updateData: UpdateSchedulePayload = { specialistId: selectedSpecialist };
+    const updateData: UpdateSchedulePayload = { specialistId: sid };
 
     switch (field) {
       case "timeSlotDuration":
@@ -163,11 +237,11 @@ export function SpecialistScheduleManagement({
     field: string,
     value: unknown
   ) => {
-    if (!selectedSpecialist) return;
+    const sid = selectedSpecialist;
+    if (!sid) return;
 
-    const currentDay = scheduleQuery.data?.workingHoursFormatted.find(
-      wh => wh.dayOfWeek === dayOfWeek
-    );
+    const cached = utils.schedule.getSpecialistSchedule.getData({ specialistId: sid }) || scheduleQuery.data;
+    const currentDay = cached?.workingHoursFormatted.find((wh: { dayOfWeek: number }) => wh.dayOfWeek === dayOfWeek);
     if (!currentDay) return;
 
     type UpdateWorkingHoursPayload = {
@@ -181,7 +255,7 @@ export function SpecialistScheduleManagement({
     };
 
     const updateData: UpdateWorkingHoursPayload = {
-      specialistId: selectedSpecialist,
+      specialistId: sid,
       dayOfWeek,
       isWorking: currentDay.isWorking,
       startTime: currentDay.startTime ?? undefined,
@@ -214,19 +288,21 @@ export function SpecialistScheduleManagement({
   };
 
   const handleAddUnavailableDate = () => {
-    if (!selectedSpecialist || !newUnavailableDate) return;
+    const sid = selectedSpecialist;
+    if (!sid || !newUnavailableDate) return;
 
     addUnavailableDateMutation.mutate({
-      specialistId: selectedSpecialist,
+      specialistId: sid,
       date: new Date(newUnavailableDate),
     });
   };
 
   const handleRemoveUnavailableDate = (dateString: string) => {
-    if (!selectedSpecialist) return;
+    const sid = selectedSpecialist;
+    if (!sid) return;
 
     removeUnavailableDateMutation.mutate({
-      specialistId: selectedSpecialist,
+      specialistId: sid,
       date: new Date(dateString),
     });
   };
@@ -254,8 +330,8 @@ export function SpecialistScheduleManagement({
             <div className="space-y-2">
               <Label htmlFor="specialist">Especialista</Label>
               <Select
-                value={selectedSpecialist}
-                onValueChange={setSelectedSpecialist}
+                value={selectedSpecialist ?? ""}
+                onValueChange={handleSelectSpecialist}
               >
                 <SelectTrigger>
                   <SelectValue placeholder="Selecione um especialista" />
@@ -645,7 +721,9 @@ export function SpecialistScheduleManagement({
             <Button
               onClick={() => {
                 scheduleQuery.refetch();
-                toast.success("Alterações salvas");
+                toast.success("Alterações salvas com sucesso!");
+                // Fechar o modal após salvar
+                onClose();
               }}
               className="bg-[var(--primary)] hover:bg-[var(--chart-4)] text-[var(--primary-foreground)]"
             >

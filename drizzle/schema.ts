@@ -337,3 +337,42 @@ export const transactions = pgTable(
 
 export type Transaction = typeof transactions.$inferSelect;
 export type InsertTransaction = typeof transactions.$inferInsert;
+
+// Nova tabela persistente para schedules dos especialistas
+export const specialistSchedules = pgTable(
+  "specialistSchedules",
+  {
+    specialistId: varchar("specialistId", { length: 64 }).primaryKey(),
+    timeSlotDuration: integer("timeSlotDuration").default(30).notNull(),
+    bufferTime: integer("bufferTime").default(0).notNull(),
+    allowBookingDaysInAdvance: integer("allowBookingDaysInAdvance")
+      .default(30)
+      .notNull(),
+    minimumNoticeHours: integer("minimumNoticeHours").default(2).notNull(),
+    autoConfirmBookings: boolean("autoConfirmBookings").default(true).notNull(),
+    allowOnlineBooking: boolean("allowOnlineBooking").default(true).notNull(),
+    workingHours: jsonb("workingHours").$type<
+      Array<{
+        dayOfWeek: number;
+        isWorking: boolean;
+        startTime?: string | null;
+        endTime?: string | null;
+        breakStartTime?: string | null;
+        breakEndTime?: string | null;
+      }>
+    >(),
+    customUnavailableDates: jsonb("customUnavailableDates")
+      .default([])
+      .$type<string[]>(),
+    createdAt: timestamp("createdAt").defaultNow(),
+    updatedAt: timestamp("updatedAt").defaultNow(),
+  },
+  table => ({
+    updatedAtIdx: index("specialistSchedules_updatedAt_idx").on(
+      table.updatedAt
+    ),
+  })
+);
+
+export type SpecialistScheduleRow = typeof specialistSchedules.$inferSelect;
+export type InsertSpecialistSchedule = typeof specialistSchedules.$inferInsert;

@@ -30,6 +30,196 @@ import {
 
 // SyncStatusIndicator removed - sync functionality no longer needed
 
+// Componente para exibir card de especialista com horários
+function SpecialistCard({
+  specialist,
+  onEdit,
+  onDelete,
+}: {
+  specialist: {
+    id: string;
+    name: string;
+    email?: string | null;
+    phone?: string | null;
+    photo?: string | null;
+    specialty?: string | null;
+    bio?: string | null;
+  };
+  onEdit: (specialist: {
+    id: string;
+    name: string;
+    email?: string | null;
+    phone?: string | null;
+    photo?: string | null;
+    specialty?: string | null;
+    bio?: string | null;
+  }) => void;
+  onDelete: (id: string) => void;
+}) {
+  const scheduleQuery = trpc.schedule.getSpecialistSchedule.useQuery({
+    specialistId: specialist.id,
+  });
+
+  const daysOfWeek = ["Dom", "Seg", "Ter", "Qua", "Qui", "Sex", "Sáb"];
+
+  return (
+    <Card className="shadow rounded-xl border border-muted bg-white">
+      <CardContent className="p-6">
+        {/* Header com foto e informações */}
+        <div className="flex items-start gap-4 mb-4">
+          <Avatar className="h-20 w-20 border-2 border-white shadow-lg">
+            {specialist.photo ? (
+              <AvatarImage
+                src={specialist.photo}
+                alt={specialist.name}
+                className="object-cover"
+              />
+            ) : (
+              <AvatarFallback>
+                <User2 className="h-10 w-10 text-muted-foreground" />
+              </AvatarFallback>
+            )}
+          </Avatar>
+          <div className="flex-1">
+            <div className="font-bold text-lg text-gray-600 mb-1">
+              {specialist.name}
+            </div>
+            <div className="text-muted-foreground text-sm mb-1">
+              {specialist.specialty}
+            </div>
+            <div className="text-muted-foreground text-sm">
+              {specialist.email}
+            </div>
+            <div className="text-muted-foreground text-sm">
+              {specialist.phone}
+            </div>
+          </div>
+          <div className="flex gap-2">
+            <Button
+              variant="outline"
+              size="sm"
+              className="flex items-center gap-1"
+              onClick={() => onEdit(specialist)}
+            >
+              <Edit size={14} />
+              Editar
+            </Button>
+            <Button
+              variant="outline"
+              size="sm"
+              className="flex items-center gap-1 text-red-600 hover:text-red-700 hover:bg-red-50"
+              onClick={() => onDelete(specialist.id)}
+            >
+              <Trash2 size={14} />
+              Excluir
+            </Button>
+          </div>
+        </div>
+
+        {specialist.bio && (
+          <div className="text-xs text-muted-foreground italic mb-4 pb-4 border-b">
+            {specialist.bio}
+          </div>
+        )}
+
+        {/* Horários de trabalho */}
+        <div className="mt-4">
+          <div className="text-sm font-semibold text-gray-700 mb-3">
+            Horários de Trabalho
+          </div>
+          {scheduleQuery.isLoading ? (
+            <div className="text-xs text-muted-foreground py-2">
+              Carregando horários...
+            </div>
+          ) : scheduleQuery.error ? (
+            <div className="text-xs text-red-500 py-2">
+              Erro ao carregar horários
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 gap-2">
+              {scheduleQuery.data?.workingHours
+                .filter((wh) => wh.isWorking)
+                .map((wh) => (
+                  <div
+                    key={wh.dayOfWeek}
+                    className="flex items-center justify-between text-xs py-1.5 px-3 bg-blue-50 dark:bg-blue-950 rounded-md"
+                  >
+                    <span className="font-medium text-blue-900 dark:text-blue-100 w-12">
+                      {daysOfWeek[wh.dayOfWeek]}
+                    </span>
+                    <div className="flex items-center gap-3 text-blue-700 dark:text-blue-300">
+                      <span>
+                        {wh.startTime} - {wh.endTime}
+                      </span>
+                      {wh.breakStartTime && wh.breakEndTime && (
+                        <span className="text-blue-600 dark:text-blue-400 text-[10px]">
+                          (Pausa: {wh.breakStartTime} - {wh.breakEndTime})
+                        </span>
+                      )}
+                    </div>
+                  </div>
+                ))}
+              {(!scheduleQuery.data?.workingHours ||
+                scheduleQuery.data.workingHours.filter((wh) => wh.isWorking)
+                  .length === 0) && (
+                  <div className="text-xs text-amber-600 bg-amber-50 dark:bg-amber-950 dark:text-amber-400 py-2 px-3 rounded-md">
+                    ⚠️ Nenhum horário de trabalho configurado
+                  </div>
+                )}
+            </div>
+          )}
+        </div>
+
+        {/* Configurações adicionais */}
+        {scheduleQuery.data && (
+          <div className="mt-4 pt-4 border-t">
+            <div className="grid grid-cols-2 gap-3 text-xs">
+              <div className="flex items-center gap-2">
+                <div className="w-2 h-2 rounded-full bg-green-500"></div>
+                <span className="text-muted-foreground">
+                  Slot: {scheduleQuery.data.timeSlotDuration} min
+                </span>
+              </div>
+              <div className="flex items-center gap-2">
+                <div className="w-2 h-2 rounded-full bg-blue-500"></div>
+                <span className="text-muted-foreground">
+                  Intervalo: {scheduleQuery.data.bufferTime} min
+                </span>
+              </div>
+              <div className="flex items-center gap-2">
+                <div
+                  className={`w-2 h-2 rounded-full ${scheduleQuery.data.autoConfirmBookings
+                    ? "bg-green-500"
+                    : "bg-gray-400"
+                    }`}
+                ></div>
+                <span className="text-muted-foreground">
+                  {scheduleQuery.data.autoConfirmBookings
+                    ? "Auto-confirma"
+                    : "Confirmação manual"}
+                </span>
+              </div>
+              <div className="flex items-center gap-2">
+                <div
+                  className={`w-2 h-2 rounded-full ${scheduleQuery.data.allowOnlineBooking
+                    ? "bg-green-500"
+                    : "bg-gray-400"
+                    }`}
+                ></div>
+                <span className="text-muted-foreground">
+                  {scheduleQuery.data.allowOnlineBooking
+                    ? "Online habilitado"
+                    : "Online desabilitado"}
+                </span>
+              </div>
+            </div>
+          </div>
+        )}
+      </CardContent>
+    </Card>
+  );
+}
+
 export default function Specialists() {
   const nameId = useId();
   const specialtyId = useId();
@@ -52,7 +242,6 @@ export default function Specialists() {
     null
   );
   const [showScheduleManagement, setShowScheduleManagement] = useState(false);
-  const [scheduleEnabled, setScheduleEnabled] = useState(false);
   const [scheduleDraft, setScheduleDraft] = useState(() => ({
     timeSlotDuration: 30,
     bufferTime: 0,
@@ -84,7 +273,6 @@ export default function Specialists() {
       specialistsQuery.refetch();
       toast.success("Especialista criado com sucesso");
       resetForm();
-      setScheduleEnabled(false);
       // Reset draft para valores padrão
       setScheduleDraft({
         timeSlotDuration: 30,
@@ -243,10 +431,10 @@ export default function Specialists() {
         data: specialistData,
       });
     } else {
-      // ao criar, enviar especialista e schedule (se habilitado) para operação atômica no servidor
+      // ao criar, sempre enviar schedule (obrigatório)
       createMutation.mutate({
         specialist: specialistData,
-        schedule: scheduleEnabled ? scheduleDraft : undefined,
+        schedule: scheduleDraft,
       });
     }
   };
@@ -491,318 +679,302 @@ export default function Specialists() {
                 <div className="col-span-2">
                   {/* Quando criando, permitir configuração inline; ao editar, usar modal existente */}
                   {!isEditing ? (
-                    <div className="space-y-3">
-                      <div className="flex items-center justify-between p-3 border rounded">
-                        <div>
-                          <div className="font-medium">
-                            Configurar horários agora
-                          </div>
-                          <div className="text-sm text-muted-foreground">
-                            Permite definir horários e preferências antes de
-                            salvar
-                          </div>
+                    <div className="space-y-4">
+                      <div className="p-3 border rounded bg-blue-50 dark:bg-blue-950">
+                        <div className="font-medium text-blue-900 dark:text-blue-100">
+                          Configure os horários de trabalho
                         </div>
-                        <Switch
-                          checked={scheduleEnabled}
-                          onCheckedChange={setScheduleEnabled}
-                        />
+                        <div className="text-sm text-blue-700 dark:text-blue-300">
+                          É obrigatório definir os horários ao criar um especialista
+                        </div>
                       </div>
 
-                      {scheduleEnabled ? (
-                        <div className="space-y-4">
-                          <Card>
-                            <CardHeader>
-                              <CardTitle>Configurações Gerais</CardTitle>
-                              <CardDescription>
-                                Defina duração de slots, antecedência e opções
-                                de agendamento
-                              </CardDescription>
-                            </CardHeader>
-                            <CardContent className="space-y-3">
-                              <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                                <div>
-                                  <label className="text-sm">
-                                    Duração do slot (min)
-                                  </label>
-                                  <Input
-                                    type="number"
-                                    value={scheduleDraft.timeSlotDuration}
-                                    onChange={e =>
-                                      setScheduleDraft({
-                                        ...scheduleDraft,
-                                        timeSlotDuration: parseInt(
-                                          e.target.value || "0"
-                                        ),
-                                      })
-                                    }
-                                  />
-                                </div>
-                                <div>
-                                  <label className="text-sm">
-                                    Intervalo entre agendamentos (min)
-                                  </label>
-                                  <Input
-                                    type="number"
-                                    value={scheduleDraft.bufferTime}
-                                    onChange={e =>
-                                      setScheduleDraft({
-                                        ...scheduleDraft,
-                                        bufferTime: parseInt(
-                                          e.target.value || "0"
-                                        ),
-                                      })
-                                    }
-                                  />
-                                </div>
-                                <div>
-                                  <label className="text-sm">
-                                    Dias de antecedência
-                                  </label>
-                                  <Input
-                                    type="number"
-                                    value={
-                                      scheduleDraft.allowBookingDaysInAdvance
-                                    }
-                                    onChange={e =>
-                                      setScheduleDraft({
-                                        ...scheduleDraft,
-                                        allowBookingDaysInAdvance: parseInt(
-                                          e.target.value || "0"
-                                        ),
-                                      })
-                                    }
-                                  />
-                                </div>
-                                <div>
-                                  <label className="text-sm">
-                                    Antecedência mínima (h)
-                                  </label>
-                                  <Input
-                                    type="number"
-                                    value={scheduleDraft.minimumNoticeHours}
-                                    onChange={e =>
-                                      setScheduleDraft({
-                                        ...scheduleDraft,
-                                        minimumNoticeHours: parseInt(
-                                          e.target.value || "0"
-                                        ),
-                                      })
-                                    }
-                                  />
-                                </div>
+                      <div className="space-y-4">
+                        <Card>
+                          <CardHeader>
+                            <CardTitle>Configurações Gerais</CardTitle>
+                            <CardDescription>
+                              Defina duração de slots, antecedência e opções
+                              de agendamento
+                            </CardDescription>
+                          </CardHeader>
+                          <CardContent className="space-y-3">
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                              <div>
+                                <label className="text-sm">
+                                  Duração do slot (min)
+                                </label>
+                                <Input
+                                  type="number"
+                                  value={scheduleDraft.timeSlotDuration}
+                                  onChange={e =>
+                                    setScheduleDraft({
+                                      ...scheduleDraft,
+                                      timeSlotDuration: parseInt(
+                                        e.target.value || "0"
+                                      ),
+                                    })
+                                  }
+                                />
                               </div>
-                              <div className="flex items-center gap-4">
-                                <div className="flex items-center gap-2">
-                                  <Switch
-                                    checked={scheduleDraft.autoConfirmBookings}
-                                    onCheckedChange={val =>
-                                      setScheduleDraft({
-                                        ...scheduleDraft,
-                                        autoConfirmBookings: !!val,
-                                      })
-                                    }
-                                  />
-                                  <span className="text-sm">
-                                    Confirmação automática
-                                  </span>
-                                </div>
-                                <div className="flex items-center gap-2">
-                                  <Switch
-                                    checked={scheduleDraft.allowOnlineBooking}
-                                    onCheckedChange={val =>
-                                      setScheduleDraft({
-                                        ...scheduleDraft,
-                                        allowOnlineBooking: !!val,
-                                      })
-                                    }
-                                  />
-                                  <span className="text-sm">
-                                    Agendamento online
-                                  </span>
-                                </div>
+                              <div>
+                                <label className="text-sm">
+                                  Intervalo entre agendamentos (min)
+                                </label>
+                                <Input
+                                  type="number"
+                                  value={scheduleDraft.bufferTime}
+                                  onChange={e =>
+                                    setScheduleDraft({
+                                      ...scheduleDraft,
+                                      bufferTime: parseInt(
+                                        e.target.value || "0"
+                                      ),
+                                    })
+                                  }
+                                />
                               </div>
-                            </CardContent>
-                          </Card>
+                              <div>
+                                <label className="text-sm">
+                                  Dias de antecedência
+                                </label>
+                                <Input
+                                  type="number"
+                                  value={
+                                    scheduleDraft.allowBookingDaysInAdvance
+                                  }
+                                  onChange={e =>
+                                    setScheduleDraft({
+                                      ...scheduleDraft,
+                                      allowBookingDaysInAdvance: parseInt(
+                                        e.target.value || "0"
+                                      ),
+                                    })
+                                  }
+                                />
+                              </div>
+                              <div>
+                                <label className="text-sm">
+                                  Antecedência mínima (h)
+                                </label>
+                                <Input
+                                  type="number"
+                                  value={scheduleDraft.minimumNoticeHours}
+                                  onChange={e =>
+                                    setScheduleDraft({
+                                      ...scheduleDraft,
+                                      minimumNoticeHours: parseInt(
+                                        e.target.value || "0"
+                                      ),
+                                    })
+                                  }
+                                />
+                              </div>
+                            </div>
+                            <div className="flex items-center gap-4">
+                              <div className="flex items-center gap-2">
+                                <Switch
+                                  checked={scheduleDraft.autoConfirmBookings}
+                                  onCheckedChange={val =>
+                                    setScheduleDraft({
+                                      ...scheduleDraft,
+                                      autoConfirmBookings: !!val,
+                                    })
+                                  }
+                                />
+                                <span className="text-sm">
+                                  Confirmação automática
+                                </span>
+                              </div>
+                              <div className="flex items-center gap-2">
+                                <Switch
+                                  checked={scheduleDraft.allowOnlineBooking}
+                                  onCheckedChange={val =>
+                                    setScheduleDraft({
+                                      ...scheduleDraft,
+                                      allowOnlineBooking: !!val,
+                                    })
+                                  }
+                                />
+                                <span className="text-sm">
+                                  Agendamento online
+                                </span>
+                              </div>
+                            </div>
+                          </CardContent>
+                        </Card>
 
-                          <Card>
-                            <CardHeader>
-                              <CardTitle>Horários por dia</CardTitle>
-                              <CardDescription>
-                                Marque os dias em que o especialista trabalha e
-                                configure horários
-                              </CardDescription>
-                            </CardHeader>
-                            <CardContent>
-                              <div className="grid grid-cols-1 gap-2">
-                                {/* Ferramenta: copiar horário de um dia para todos */}
-                                <div className="flex items-center gap-3 mb-2">
-                                  <label className="text-sm font-medium">
-                                    Fonte:
-                                  </label>
-                                  <select
-                                    value={copyFromDay}
-                                    onChange={e =>
-                                      setCopyFromDay(parseInt(e.target.value))
-                                    }
-                                    className="rounded-md border px-2 py-1 text-sm"
-                                  >
-                                    {[
-                                      "Dom",
-                                      "Seg",
-                                      "Ter",
-                                      "Qua",
-                                      "Qui",
-                                      "Sex",
-                                      "Sáb",
-                                    ].map((label, idx) => (
-                                      <option key={idx} value={idx}>
-                                        {label}
-                                      </option>
-                                    ))}
-                                  </select>
-                                  <Button
-                                    type="button"
-                                    variant="outline"
-                                    onClick={() =>
-                                      copyScheduleToAll(copyFromDay)
-                                    }
-                                    className="px-3 py-1 text-sm"
-                                  >
-                                    Aplicar para todos os dias
-                                  </Button>
-                                </div>
-                                {scheduleDraft.workingHours.map(
-                                  (
-                                    d: {
-                                      dayOfWeek: number;
-                                      isWorking: boolean;
-                                      startTime?: string;
-                                      endTime?: string;
-                                      breakStartTime?: string;
-                                      breakEndTime?: string;
-                                    },
-                                    idx: number
-                                  ) => (
-                                    <div
-                                      key={d.dayOfWeek}
-                                      className="flex items-center gap-3"
-                                    >
-                                      <div className="w-32 text-sm font-medium">
-                                        {
-                                          [
-                                            "Dom",
-                                            "Seg",
-                                            "Ter",
-                                            "Qua",
-                                            "Qui",
-                                            "Sex",
-                                            "Sáb",
-                                          ][d.dayOfWeek]
-                                        }
-                                      </div>
-                                      <Switch
-                                        checked={d.isWorking}
-                                        onCheckedChange={val => {
-                                          const newArr = [
-                                            ...scheduleDraft.workingHours,
-                                          ];
-                                          newArr[idx] = {
-                                            ...newArr[idx],
-                                            isWorking: !!val,
-                                          };
-                                          setScheduleDraft({
-                                            ...scheduleDraft,
-                                            workingHours: newArr,
-                                          });
-                                        }}
-                                      />
-                                      <Input
-                                        type="time"
-                                        value={d.startTime}
-                                        onChange={e => {
-                                          const newArr = [
-                                            ...scheduleDraft.workingHours,
-                                          ];
-                                          newArr[idx] = {
-                                            ...newArr[idx],
-                                            startTime: e.target.value,
-                                          };
-                                          setScheduleDraft({
-                                            ...scheduleDraft,
-                                            workingHours: newArr,
-                                          });
-                                        }}
-                                        className="w-28"
-                                      />
-                                      <Input
-                                        type="time"
-                                        value={d.endTime}
-                                        onChange={e => {
-                                          const newArr = [
-                                            ...scheduleDraft.workingHours,
-                                          ];
-                                          newArr[idx] = {
-                                            ...newArr[idx],
-                                            endTime: e.target.value,
-                                          };
-                                          setScheduleDraft({
-                                            ...scheduleDraft,
-                                            workingHours: newArr,
-                                          });
-                                        }}
-                                        className="w-28"
-                                      />
-                                      <Input
-                                        type="time"
-                                        value={d.breakStartTime}
-                                        onChange={e => {
-                                          const newArr = [
-                                            ...scheduleDraft.workingHours,
-                                          ];
-                                          newArr[idx] = {
-                                            ...newArr[idx],
-                                            breakStartTime: e.target.value,
-                                          };
-                                          setScheduleDraft({
-                                            ...scheduleDraft,
-                                            workingHours: newArr,
-                                          });
-                                        }}
-                                        className="w-28"
-                                      />
-                                      <Input
-                                        type="time"
-                                        value={d.breakEndTime}
-                                        onChange={e => {
-                                          const newArr = [
-                                            ...scheduleDraft.workingHours,
-                                          ];
-                                          newArr[idx] = {
-                                            ...newArr[idx],
-                                            breakEndTime: e.target.value,
-                                          };
-                                          setScheduleDraft({
-                                            ...scheduleDraft,
-                                            workingHours: newArr,
-                                          });
-                                        }}
-                                        className="w-28"
-                                      />
-                                    </div>
-                                  )
-                                )}
+                        <Card>
+                          <CardHeader>
+                            <CardTitle>Horários por dia</CardTitle>
+                            <CardDescription>
+                              Marque os dias em que o especialista trabalha e
+                              configure horários
+                            </CardDescription>
+                          </CardHeader>
+                          <CardContent>
+                            <div className="grid grid-cols-1 gap-2">
+                              {/* Ferramenta: copiar horário de um dia para todos */}
+                              <div className="flex items-center gap-3 mb-2">
+                                <label className="text-sm font-medium">
+                                  Fonte:
+                                </label>
+                                <select
+                                  value={copyFromDay}
+                                  onChange={e =>
+                                    setCopyFromDay(parseInt(e.target.value))
+                                  }
+                                  className="rounded-md border px-2 py-1 text-sm"
+                                >
+                                  {[
+                                    "Dom",
+                                    "Seg",
+                                    "Ter",
+                                    "Qua",
+                                    "Qui",
+                                    "Sex",
+                                    "Sáb",
+                                  ].map((label, idx) => (
+                                    <option key={idx} value={idx}>
+                                      {label}
+                                    </option>
+                                  ))}
+                                </select>
+                                <Button
+                                  type="button"
+                                  variant="outline"
+                                  onClick={() =>
+                                    copyScheduleToAll(copyFromDay)
+                                  }
+                                  className="px-3 py-1 text-sm"
+                                >
+                                  Aplicar para todos os dias
+                                </Button>
                               </div>
-                            </CardContent>
-                          </Card>
-                        </div>
-                      ) : (
-                        <div className="p-4 border rounded-lg bg-gray-50">
-                          <p className="text-sm text-gray-600">
-                            Os horários serão configurados após salvar o
-                            especialista
-                          </p>
-                        </div>
-                      )}
+                              {scheduleDraft.workingHours.map(
+                                (
+                                  d: {
+                                    dayOfWeek: number;
+                                    isWorking: boolean;
+                                    startTime?: string;
+                                    endTime?: string;
+                                    breakStartTime?: string;
+                                    breakEndTime?: string;
+                                  },
+                                  idx: number
+                                ) => (
+                                  <div
+                                    key={d.dayOfWeek}
+                                    className="flex items-center gap-3"
+                                  >
+                                    <div className="w-32 text-sm font-medium">
+                                      {
+                                        [
+                                          "Dom",
+                                          "Seg",
+                                          "Ter",
+                                          "Qua",
+                                          "Qui",
+                                          "Sex",
+                                          "Sáb",
+                                        ][d.dayOfWeek]
+                                      }
+                                    </div>
+                                    <Switch
+                                      checked={d.isWorking}
+                                      onCheckedChange={val => {
+                                        const newArr = [
+                                          ...scheduleDraft.workingHours,
+                                        ];
+                                        newArr[idx] = {
+                                          ...newArr[idx],
+                                          isWorking: !!val,
+                                        };
+                                        setScheduleDraft({
+                                          ...scheduleDraft,
+                                          workingHours: newArr,
+                                        });
+                                      }}
+                                    />
+                                    <Input
+                                      type="time"
+                                      value={d.startTime}
+                                      onChange={e => {
+                                        const newArr = [
+                                          ...scheduleDraft.workingHours,
+                                        ];
+                                        newArr[idx] = {
+                                          ...newArr[idx],
+                                          startTime: e.target.value,
+                                        };
+                                        setScheduleDraft({
+                                          ...scheduleDraft,
+                                          workingHours: newArr,
+                                        });
+                                      }}
+                                      className="w-28"
+                                    />
+                                    <Input
+                                      type="time"
+                                      value={d.endTime}
+                                      onChange={e => {
+                                        const newArr = [
+                                          ...scheduleDraft.workingHours,
+                                        ];
+                                        newArr[idx] = {
+                                          ...newArr[idx],
+                                          endTime: e.target.value,
+                                        };
+                                        setScheduleDraft({
+                                          ...scheduleDraft,
+                                          workingHours: newArr,
+                                        });
+                                      }}
+                                      className="w-28"
+                                    />
+                                    <Input
+                                      type="time"
+                                      value={d.breakStartTime}
+                                      onChange={e => {
+                                        const newArr = [
+                                          ...scheduleDraft.workingHours,
+                                        ];
+                                        newArr[idx] = {
+                                          ...newArr[idx],
+                                          breakStartTime: e.target.value,
+                                        };
+                                        setScheduleDraft({
+                                          ...scheduleDraft,
+                                          workingHours: newArr,
+                                        });
+                                      }}
+                                      className="w-28"
+                                    />
+                                    <Input
+                                      type="time"
+                                      value={d.breakEndTime}
+                                      onChange={e => {
+                                        const newArr = [
+                                          ...scheduleDraft.workingHours,
+                                        ];
+                                        newArr[idx] = {
+                                          ...newArr[idx],
+                                          breakEndTime: e.target.value,
+                                        };
+                                        setScheduleDraft({
+                                          ...scheduleDraft,
+                                          workingHours: newArr,
+                                        });
+                                      }}
+                                      className="w-28"
+                                    />
+                                  </div>
+                                )
+                              )}
+                            </div>
+                          </CardContent>
+                        </Card>
+                      </div>
                     </div>
                   ) : (
                     <SpecialistScheduleManagement
@@ -820,7 +992,6 @@ export default function Specialists() {
                     variant="outline"
                     onClick={() => {
                       resetForm();
-                      setScheduleEnabled(false);
                     }}
                   >
                     Cancelar
@@ -852,82 +1023,20 @@ export default function Specialists() {
             <h2 className="text-xl font-bold mb-6 text-gray-600">
               Especialistas cadastrados
             </h2>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div className="grid grid-cols-1 gap-6">
               {specialistsQuery.isLoading && <div>Carregando...</div>}
               {specialistsQuery.data?.length === 0 && (
                 <div className="col-span-full text-center text-muted-foreground">
                   Nenhum especialista cadastrado.
                 </div>
               )}
-              {specialistsQuery.data?.map(spec => (
-                <Card
+              {specialistsQuery.data?.map((spec) => (
+                <SpecialistCard
                   key={spec.id}
-                  className="flex items-center gap-6 p-6 shadow rounded-xl border border-muted bg-white"
-                >
-                  <Avatar className="h-24 w-24 border-2 border-white shadow-lg">
-                    {spec.photo ? (
-                      <AvatarImage
-                        src={spec.photo}
-                        alt={spec.name}
-                        className="object-cover"
-                      />
-                    ) : (
-                      <AvatarFallback>
-                        <User2 className="h-12 w-12 text-muted-foreground " />
-                      </AvatarFallback>
-                    )}
-                  </Avatar>
-                  <div className="flex-1">
-                    <div className="font-bold text-lg text-gray-600 mb-1">
-                      {spec.name}
-                    </div>
-                    <div className="text-muted-foreground text-sm mb-1">
-                      {spec.specialty}
-                    </div>
-                    <div className="text-muted-foreground text-sm">
-                      {spec.email}
-                    </div>
-                    <div className="text-muted-foreground text-sm mb-2">
-                      {spec.phone}
-                    </div>
-                    {spec.bio && (
-                      <div className="text-xs text-muted-foreground italic mt-2">
-                        {spec.bio}
-                      </div>
-                    )}
-                  </div>
-                  <div className="flex flex-col gap-2 mt-4">
-                    <div className="flex flex-row gap-2">
-                      <Button
-                        variant="outline"
-                        className="flex items-center gap-2 px-3 py-2 text-[var(--primary)] border-[var(--border)] hover:bg-[var(--chart-1)] hover:text-[var(--primary)] font-medium rounded-lg shadow-sm text-xs"
-                        onClick={() =>
-                          handleEditSpecialist({
-                            id: spec.id,
-                            name: spec.name,
-                            email: spec.email,
-                            phone: spec.phone,
-                            photo: spec.photo,
-                            specialty: spec.specialty,
-                            bio: spec.bio,
-                            // workingDays removed - handled separately
-                          })
-                        }
-                      >
-                        <Edit size={16} />
-                        Editar
-                      </Button>
-                      <Button
-                        variant="outline"
-                        className="flex items-center gap-2 px-3 py-2 text-[var(--primary)] border-[var(--border)] hover:bg-[var(--chart-1)] hover:text-[var(--primary)] font-medium rounded-lg shadow-sm text-xs"
-                        onClick={() => confirmDelete(spec.id)}
-                      >
-                        <Trash2 size={16} />
-                        Excluir
-                      </Button>{" "}
-                    </div>
-                  </div>
-                </Card>
+                  specialist={spec}
+                  onEdit={handleEditSpecialist}
+                  onDelete={confirmDelete}
+                />
               ))}
             </div>
           </div>

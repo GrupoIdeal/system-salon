@@ -78,6 +78,7 @@ import {
   addCustomUnavailableDate,
   removeCustomUnavailableDate,
   updateWorkingHoursForDay,
+  createSpecialistSchedule,
 } from "./specialist-schedule";
 import {
   loginSchema,
@@ -404,7 +405,7 @@ export const appRouter = router({
       .input(
         z.object({
           specialist: specialistSchema,
-          schedule: scheduleSchema.optional(),
+          schedule: scheduleSchema,
         })
       )
       .mutation(async ({ ctx: _ctx, input: _input }) => {
@@ -453,56 +454,37 @@ export const appRouter = router({
           workingDays,
         });
 
-        // Se veio schedule, aplicar de forma atômica: se falhar ao aplicar schedule, remover specialist criado e retornar erro
-        if (_input.schedule) {
+        // Criar o schedule inicial para o especialista com os dados fornecidos
+        try {
+          await createSpecialistSchedule(newSpecialist.id, {
+            timeSlotDuration: _input.schedule.timeSlotDuration,
+            bufferTime: _input.schedule.bufferTime,
+            allowBookingDaysInAdvance:
+              _input.schedule.allowBookingDaysInAdvance,
+            minimumNoticeHours: _input.schedule.minimumNoticeHours,
+            autoConfirmBookings: _input.schedule.autoConfirmBookings,
+            allowOnlineBooking: _input.schedule.allowOnlineBooking,
+            workingHours: _input.schedule.workingHours,
+          });
+        } catch (err) {
+          // Rollback: remover especialista criado para manter consistência
           try {
-            // Atualizar configurações gerais (não inclui workingHours)
-            await updateSpecialistSchedule(newSpecialist.id, {
-              timeSlotDuration: _input.schedule.timeSlotDuration,
-              bufferTime: _input.schedule.bufferTime,
-              allowBookingDaysInAdvance:
-                _input.schedule.allowBookingDaysInAdvance,
-              minimumNoticeHours: _input.schedule.minimumNoticeHours,
-              autoConfirmBookings: _input.schedule.autoConfirmBookings,
-              allowOnlineBooking: _input.schedule.allowOnlineBooking,
-            });
-
-            // Aplicar horários por dia, se fornecidos
-            if (_input.schedule.workingHours) {
-              for (const day of _input.schedule.workingHours) {
-                await updateWorkingHoursForDay(
-                  newSpecialist.id,
-                  day.dayOfWeek,
-                  {
-                    isWorking: !!day.isWorking,
-                    startTime: day.startTime || undefined,
-                    endTime: day.endTime || undefined,
-                    breakStartTime: day.breakStartTime || undefined,
-                    breakEndTime: day.breakEndTime || undefined,
-                  }
-                );
-              }
-            }
-          } catch (err) {
-            // Rollback: remover especialista criado para manter consistência
-            try {
-              await deleteSpecialist(newSpecialist.id);
-            } catch (rollbackErr) {
-              console.error(
-                "Rollback falhou ao remover especialista:",
-                rollbackErr
-              );
-            }
-
+            await deleteSpecialist(newSpecialist.id);
+          } catch (rollbackErr) {
             console.error(
-              "Erro ao aplicar schedule durante criação atômica:",
-              err
+              "Rollback falhou ao remover especialista:",
+              rollbackErr
             );
-            throw new TRPCError({
-              code: "INTERNAL_SERVER_ERROR",
-              message: "Falha ao aplicar agenda inicial. Operação revertida.",
-            });
           }
+
+          console.error(
+            "Erro ao criar schedule durante criação do especialista:",
+            err
+          );
+          throw new TRPCError({
+            code: "INTERNAL_SERVER_ERROR",
+            message: "Falha ao criar agenda inicial. Operação revertida.",
+          });
         }
 
         return newSpecialist;
@@ -1884,7 +1866,9 @@ export const appRouter = router({
         }
 
         const { specialistId, ...updates } = input;
-        return await updateSpecialistSchedule(specialistId, updates);
+        // Persist updates and return the display-ready schedule to the client
+        await updateSpecialistSchedule(specialistId, updates);
+        return await getSpecialistScheduleForDisplay(specialistId);
       }),
 
     updateWorkingHours: protectedProcedure
@@ -1919,7 +1903,8 @@ export const appRouter = router({
         const { specialistId, dayOfWeek, ...workingHours } = input;
         await updateWorkingHoursForDay(specialistId, dayOfWeek, workingHours);
 
-        return { success: true };
+        // Retornar o schedule atualizado para facilitar sincronização otimista no cliente
+        return await getSpecialistScheduleForDisplay(specialistId);
       }),
 
     addUnavailableDate: protectedProcedure

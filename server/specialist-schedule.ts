@@ -1,7 +1,10 @@
 // Sistema de Configurações de Horário por Especialista
 import { eq } from "drizzle-orm";
 import { getDb } from "./db";
-import { specialists } from "../drizzle/schema";
+import {
+  specialists,
+  specialistSchedules as specialistSchedulesTable,
+} from "../drizzle/schema";
 
 export interface WorkingHours {
   dayOfWeek: number; // 0 = domingo, 1 = segunda, ..., 6 = sábado
@@ -30,108 +33,416 @@ export interface TimeSlot {
   reason?: string; // motivo da indisponibilidade
 }
 
-// Mock do armazenamento (em produção usar tabela do banco)
-const specialistSchedules: Map<string, SpecialistSchedule> = new Map();
+// Horário padrão para novos especialistas - função que retorna cópia profunda para evitar referências compartilhadas
+function getDefaultSchedule(): Omit<SpecialistSchedule, "specialistId"> {
+  // Usar JSON para garantir clonagem profunda e evitar qualquer referência compartilhada entre especialistas
+  return JSON.parse(
+    JSON.stringify({
+      workingHours: [
+        { dayOfWeek: 0, isWorking: false }, // Domingo
+        {
+          dayOfWeek: 1,
+          isWorking: true,
+          startTime: "09:00",
+          endTime: "18:00",
+          breakStartTime: "12:00",
+          breakEndTime: "13:00",
+        }, // Segunda
+        {
+          dayOfWeek: 2,
+          isWorking: true,
+          startTime: "09:00",
+          endTime: "18:00",
+          breakStartTime: "12:00",
+          breakEndTime: "13:00",
+        }, // Terça
+        {
+          dayOfWeek: 3,
+          isWorking: true,
+          startTime: "09:00",
+          endTime: "18:00",
+          breakStartTime: "12:00",
+          breakEndTime: "13:00",
+        }, // Quarta
+        {
+          dayOfWeek: 4,
+          isWorking: true,
+          startTime: "09:00",
+          endTime: "18:00",
+          breakStartTime: "12:00",
+          breakEndTime: "13:00",
+        }, // Quinta
+        {
+          dayOfWeek: 5,
+          isWorking: true,
+          startTime: "09:00",
+          endTime: "18:00",
+          breakStartTime: "12:00",
+          breakEndTime: "13:00",
+        }, // Sexta
+        { dayOfWeek: 6, isWorking: true, startTime: "09:00", endTime: "16:00" }, // Sábado - sem pausa
+      ],
+      timeSlotDuration: 30,
+      bufferTime: 15,
+      allowBookingDaysInAdvance: 30,
+      minimumNoticeHours: 2,
+      autoConfirmBookings: true,
+      allowOnlineBooking: true,
+      customUnavailableDates: [],
+    })
+  );
+}
 
-// Horário padrão para novos especialistas
-const defaultSchedule: Omit<SpecialistSchedule, "specialistId"> = {
-  workingHours: [
-    { dayOfWeek: 0, isWorking: false }, // Domingo
-    {
-      dayOfWeek: 1,
-      isWorking: true,
-      startTime: "09:00",
-      endTime: "18:00",
-      breakStartTime: "12:00",
-      breakEndTime: "13:00",
-    }, // Segunda
-    {
-      dayOfWeek: 2,
-      isWorking: true,
-      startTime: "09:00",
-      endTime: "18:00",
-      breakStartTime: "12:00",
-      breakEndTime: "13:00",
-    }, // Terça
-    {
-      dayOfWeek: 3,
-      isWorking: true,
-      startTime: "09:00",
-      endTime: "18:00",
-      breakStartTime: "12:00",
-      breakEndTime: "13:00",
-    }, // Quarta
-    {
-      dayOfWeek: 4,
-      isWorking: true,
-      startTime: "09:00",
-      endTime: "18:00",
-      breakStartTime: "12:00",
-      breakEndTime: "13:00",
-    }, // Quinta
-    {
-      dayOfWeek: 5,
-      isWorking: true,
-      startTime: "09:00",
-      endTime: "18:00",
-      breakStartTime: "12:00",
-      breakEndTime: "13:00",
-    }, // Sexta
-    { dayOfWeek: 6, isWorking: true, startTime: "09:00", endTime: "16:00" }, // Sábado - sem pausa
-  ],
-  timeSlotDuration: 30,
-  bufferTime: 15,
-  allowBookingDaysInAdvance: 30,
-  minimumNoticeHours: 2,
-  autoConfirmBookings: true,
-  allowOnlineBooking: true,
-  customUnavailableDates: [],
-};
+// Helper para mapear row -> SpecialistSchedule
+function rowToSchedule(
+  specialistId: string,
+  row: any | null
+): SpecialistSchedule {
+  const defaultSched = getDefaultSchedule();
 
-// Buscar ou criar configuração do especialista
+  if (!row) {
+    return { specialistId, ...defaultSched } as SpecialistSchedule;
+  }
+
+  const customUnavailableDates: Date[] = Array.isArray(
+    row.customUnavailableDates
+  )
+    ? row.customUnavailableDates.map((d: string | Date) => new Date(d))
+    : [];
+
+  const workingHours = Array.isArray(row.workingHours)
+    ? JSON.parse(JSON.stringify(row.workingHours)) // Clonagem profunda para evitar referências compartilhadas
+    : JSON.parse(JSON.stringify(defaultSched.workingHours));
+
+  return {
+    specialistId,
+    workingHours,
+    timeSlotDuration: row.timeSlotDuration ?? defaultSched.timeSlotDuration,
+    bufferTime: row.bufferTime ?? defaultSched.bufferTime,
+    allowBookingDaysInAdvance:
+      row.allowBookingDaysInAdvance ?? defaultSched.allowBookingDaysInAdvance,
+    minimumNoticeHours:
+      row.minimumNoticeHours ?? defaultSched.minimumNoticeHours,
+    autoConfirmBookings:
+      row.autoConfirmBookings ?? defaultSched.autoConfirmBookings,
+    allowOnlineBooking:
+      row.allowOnlineBooking ?? defaultSched.allowOnlineBooking,
+    customUnavailableDates,
+  };
+}
+
+// Buscar configuração do especialista (persistida no DB) - NÃO cria automaticamente
 export async function getSpecialistSchedule(
   specialistId: string
 ): Promise<SpecialistSchedule> {
-  if (specialistSchedules.has(specialistId)) {
-    const schedule = specialistSchedules.get(specialistId);
-    if (schedule) return schedule;
+  const db = await getDb();
+  if (!db) {
+    return { specialistId, ...getDefaultSchedule() } as SpecialistSchedule;
   }
 
-  // Criar configuração padrão
-  const schedule: SpecialistSchedule = {
-    specialistId,
-    ...defaultSchedule,
-  };
+  // Tenta buscar na tabela specialistSchedules
+  const row = await db
+    .select()
+    .from(specialistSchedulesTable)
+    .where(eq(specialistSchedulesTable.specialistId, specialistId))
+    .then(r => r[0] || null);
 
-  specialistSchedules.set(specialistId, schedule);
+  if (row) return rowToSchedule(specialistId, row);
 
-  console.log(
-    `📅 Configuração padrão criada para especialista: ${specialistId}`
-  );
+  // Fallback: tentar usar legacy specialists.workingDays (migração de dados antigos)
+  const legacy = await db
+    .select({ workingDays: specialists.workingDays })
+    .from(specialists)
+    .where(eq(specialists.id, specialistId))
+    .then(r => r[0]);
 
-  return schedule;
+  if (legacy?.workingDays) {
+    // Converter formato legacy (record por dia) para array de workingHours
+    const dayMapping: Record<string, number> = {
+      sunday: 0,
+      monday: 1,
+      tuesday: 2,
+      wednesday: 3,
+      thursday: 4,
+      friday: 5,
+      saturday: 6,
+    };
+
+    const workingHoursArr: WorkingHours[] = Object.entries(
+      legacy.workingDays
+    ).flatMap(([dayName, periods]) => {
+      const dayOfWeek = dayMapping[dayName];
+      if (dayOfWeek === undefined) return [];
+      const arr = Array.isArray(periods) ? periods : [periods];
+      return arr.map(
+        (p: {
+          start: string;
+          end: string;
+          lunch?: { start: string; end: string };
+        }) => ({
+          dayOfWeek,
+          isWorking: true,
+          startTime: p.start,
+          endTime: p.end,
+          breakStartTime: p.lunch?.start ?? undefined,
+          breakEndTime: p.lunch?.end ?? undefined,
+        })
+      );
+    });
+
+    await db.insert(specialistSchedulesTable).values({
+      specialistId,
+      workingHours: workingHoursArr,
+      createdAt: new Date(),
+      updatedAt: new Date(),
+    });
+
+    const inserted = await db
+      .select()
+      .from(specialistSchedulesTable)
+      .where(eq(specialistSchedulesTable.specialistId, specialistId))
+      .then(r => r[0] || null);
+
+    return rowToSchedule(specialistId, inserted);
+  }
+
+  // Se não existe schedule, retorna valores padrão SEM persistir no banco
+  // Isso permite que o frontend envie os horários corretos na criação
+  return { specialistId, ...getDefaultSchedule() } as SpecialistSchedule;
 }
 
-// Atualizar configuração do especialista
+// Criar schedule inicial para um especialista (usado na criação do especialista)
+export async function createSpecialistSchedule(
+  specialistId: string,
+  schedule?: Partial<Omit<SpecialistSchedule, "specialistId">>
+): Promise<SpecialistSchedule> {
+  const db = await getDb();
+  if (!db) {
+    return { specialistId, ...getDefaultSchedule() } as SpecialistSchedule;
+  }
+
+  // Verificar se já existe
+  const existing = await db
+    .select()
+    .from(specialistSchedulesTable)
+    .where(eq(specialistSchedulesTable.specialistId, specialistId))
+    .then(r => r[0] || null);
+
+  if (existing) {
+    // Já existe, apenas retorna
+    return rowToSchedule(specialistId, existing);
+  }
+
+  const defaultSched = getDefaultSchedule();
+
+  // Criar novo registro com valores fornecidos ou padrão
+  const createValues = {
+    specialistId,
+    timeSlotDuration:
+      schedule?.timeSlotDuration ?? defaultSched.timeSlotDuration,
+    bufferTime: schedule?.bufferTime ?? defaultSched.bufferTime,
+    allowBookingDaysInAdvance:
+      schedule?.allowBookingDaysInAdvance ??
+      defaultSched.allowBookingDaysInAdvance,
+    minimumNoticeHours:
+      schedule?.minimumNoticeHours ?? defaultSched.minimumNoticeHours,
+    autoConfirmBookings:
+      schedule?.autoConfirmBookings ?? defaultSched.autoConfirmBookings,
+    allowOnlineBooking:
+      schedule?.allowOnlineBooking ?? defaultSched.allowOnlineBooking,
+    // Se workingHours foi fornecido, usar; caso contrário, criar array vazio (sem horários padrão)
+    workingHours: schedule?.workingHours
+      ? schedule.workingHours.map(wh => ({ ...wh }))
+      : Array.from({ length: 7 }, (_, i) => ({
+          dayOfWeek: i,
+          isWorking: false,
+          startTime: undefined,
+          endTime: undefined,
+          breakStartTime: undefined,
+          breakEndTime: undefined,
+        })),
+    customUnavailableDates: schedule?.customUnavailableDates
+      ? schedule.customUnavailableDates.map(d =>
+          d instanceof Date ? d.toISOString() : d
+        )
+      : [],
+    createdAt: new Date(),
+    updatedAt: new Date(),
+  };
+
+  await db.insert(specialistSchedulesTable).values(createValues);
+
+  const row = await db
+    .select()
+    .from(specialistSchedulesTable)
+    .where(eq(specialistSchedulesTable.specialistId, specialistId))
+    .then(r => r[0] || null);
+
+  return rowToSchedule(specialistId, row);
+}
+
+// Atualizar configuração do especialista (parcial) — persiste no DB
 export async function updateSpecialistSchedule(
   specialistId: string,
   updates: Partial<Omit<SpecialistSchedule, "specialistId">>
 ): Promise<SpecialistSchedule> {
-  const currentSchedule = await getSpecialistSchedule(specialistId);
+  const db = await getDb();
+  if (!db)
+    return { specialistId, ...getDefaultSchedule() } as SpecialistSchedule;
 
-  const updatedSchedule = {
-    ...currentSchedule,
+  // Busca registro existente
+  const existing = await db
+    .select()
+    .from(specialistSchedulesTable)
+    .where(eq(specialistSchedulesTable.specialistId, specialistId))
+    .then(r => r[0] || null);
+
+  if (!existing) {
+    // Cria novo registro com valores mesclados
+    const createValues = {
+      specialistId,
+      timeSlotDuration:
+        updates.timeSlotDuration ?? getDefaultSchedule().timeSlotDuration,
+      bufferTime: updates.bufferTime ?? getDefaultSchedule().bufferTime,
+      allowBookingDaysInAdvance:
+        updates.allowBookingDaysInAdvance ??
+        getDefaultSchedule().allowBookingDaysInAdvance,
+      minimumNoticeHours:
+        updates.minimumNoticeHours ?? getDefaultSchedule().minimumNoticeHours,
+      autoConfirmBookings:
+        updates.autoConfirmBookings ?? getDefaultSchedule().autoConfirmBookings,
+      allowOnlineBooking:
+        updates.allowOnlineBooking ?? getDefaultSchedule().allowOnlineBooking,
+      workingHours: updates.workingHours ?? getDefaultSchedule().workingHours,
+      customUnavailableDates: (updates.customUnavailableDates ?? []).map(d =>
+        d instanceof Date ? d.toISOString() : d
+      ),
+      createdAt: new Date(),
+      updatedAt: new Date(),
+    };
+
+    await db.insert(specialistSchedulesTable).values(createValues);
+
+    const row = await db
+      .select()
+      .from(specialistSchedulesTable)
+      .where(eq(specialistSchedulesTable.specialistId, specialistId))
+      .then(r => r[0] || null);
+
+    return rowToSchedule(specialistId, row);
+  }
+
+  // Mesclar updates com existing
+  const defaultSched = getDefaultSchedule();
+  const mergedWorkingHours = updates.workingHours
+    ? updates.workingHours.map(wh => ({ ...wh }))
+    : Array.isArray(existing.workingHours)
+      ? existing.workingHours.map((wh: any) => ({ ...wh }))
+      : defaultSched.workingHours.map(wh => ({ ...wh }));
+
+  const mergedCustomDates = updates.customUnavailableDates
+    ? updates.customUnavailableDates.map(d =>
+        d instanceof Date ? d.toISOString() : d
+      )
+    : Array.isArray(existing.customUnavailableDates)
+      ? existing.customUnavailableDates.slice()
+      : [];
+
+  const mergedRecord: Record<string, unknown> = {
+    ...existing,
     ...updates,
+    workingHours: mergedWorkingHours,
+    customUnavailableDates: mergedCustomDates,
+    updatedAt: new Date(),
   };
 
-  specialistSchedules.set(specialistId, updatedSchedule);
+  await db
+    .update(specialistSchedulesTable)
+    .set(mergedRecord)
+    .where(eq(specialistSchedulesTable.specialistId, specialistId));
 
-  console.log(`📝 Configuração do especialista atualizada:`, {
-    specialistId,
-    updates,
-  });
+  // Obter row atualizada do DB para retornar
+  const updatedRow = await db
+    .select()
+    .from(specialistSchedulesTable)
+    .where(eq(specialistSchedulesTable.specialistId, specialistId))
+    .then(r => r[0] || null);
 
-  return updatedSchedule;
+  return rowToSchedule(specialistId, updatedRow);
+}
+
+// Adicionar data indisponível personalizada
+export async function addCustomUnavailableDate(
+  specialistId: string,
+  date: Date
+): Promise<void> {
+  const schedule = await getSpecialistSchedule(specialistId);
+  const db = await getDb();
+  if (!db) return;
+
+  const exists = schedule.customUnavailableDates.some(
+    d => d.toDateString() === date.toDateString()
+  );
+
+  if (!exists) {
+    const newDates = [
+      ...schedule.customUnavailableDates.map(d => d.toISOString()),
+      date.toISOString(),
+    ];
+    await db
+      .update(specialistSchedulesTable)
+      .set({ customUnavailableDates: newDates, updatedAt: new Date() })
+      .where(eq(specialistSchedulesTable.specialistId, specialistId));
+  }
+}
+
+// Remover data indisponível personalizada
+export async function removeCustomUnavailableDate(
+  specialistId: string,
+  date: Date
+): Promise<void> {
+  const schedule = await getSpecialistSchedule(specialistId);
+  const db = await getDb();
+  if (!db) return;
+
+  const newDates = schedule.customUnavailableDates
+    .filter(d => d.toDateString() !== date.toDateString())
+    .map(d => d.toISOString());
+
+  await db
+    .update(specialistSchedulesTable)
+    .set({ customUnavailableDates: newDates, updatedAt: new Date() })
+    .where(eq(specialistSchedulesTable.specialistId, specialistId));
+}
+
+// Configurar horário específico para um dia da semana
+export async function updateWorkingHoursForDay(
+  specialistId: string,
+  dayOfWeek: number,
+  workingHours: Omit<WorkingHours, "dayOfWeek">
+): Promise<void> {
+  const schedule = await getSpecialistSchedule(specialistId);
+  const db = await getDb();
+  if (!db) return;
+
+  // Criar nova array imutável para evitar mutações que afetem outros especialistas
+  const existing = Array.isArray(schedule.workingHours)
+    ? schedule.workingHours.map(wh => ({ ...wh }))
+    : [];
+  const idx = existing.findIndex(wh => wh.dayOfWeek === dayOfWeek);
+  let newWorkingHours;
+  if (idx !== -1) {
+    newWorkingHours = existing.map(wh =>
+      wh.dayOfWeek === dayOfWeek ? { dayOfWeek, ...workingHours } : wh
+    );
+  } else {
+    newWorkingHours = [...existing, { dayOfWeek, ...workingHours }];
+  }
+
+  await db
+    .update(specialistSchedulesTable)
+    .set({ workingHours: newWorkingHours, updatedAt: new Date() })
+    .where(eq(specialistSchedulesTable.specialistId, specialistId));
 }
 
 // Verificar se especialista trabalha em determinado dia
@@ -249,97 +560,6 @@ export async function generateSpecialistTimeSlots(
   return slots;
 }
 
-// Adicionar data indisponível personalizada
-export async function addCustomUnavailableDate(
-  specialistId: string,
-  date: Date
-): Promise<void> {
-  const schedule = await getSpecialistSchedule(specialistId);
-
-  // Verificar se já existe
-  const exists = schedule.customUnavailableDates.some(
-    d => d.toDateString() === date.toDateString()
-  );
-
-  if (!exists) {
-    schedule.customUnavailableDates.push(date);
-    specialistSchedules.set(specialistId, schedule);
-
-    console.log(
-      `🚫 Data indisponível adicionada para ${specialistId}: ${date.toLocaleDateString("pt-BR")}`
-    );
-  }
-}
-
-// Remover data indisponível personalizada
-export async function removeCustomUnavailableDate(
-  specialistId: string,
-  date: Date
-): Promise<void> {
-  const schedule = await getSpecialistSchedule(specialistId);
-
-  schedule.customUnavailableDates = schedule.customUnavailableDates.filter(
-    d => d.toDateString() !== date.toDateString()
-  );
-
-  specialistSchedules.set(specialistId, schedule);
-
-  console.log(
-    `✅ Data indisponível removida para ${specialistId}: ${date.toLocaleDateString("pt-BR")}`
-  );
-}
-
-// Configurar horário específico para um dia da semana
-export async function updateWorkingHoursForDay(
-  specialistId: string,
-  dayOfWeek: number,
-  workingHours: Omit<WorkingHours, "dayOfWeek">
-): Promise<void> {
-  const schedule = await getSpecialistSchedule(specialistId);
-
-  const dayIndex = schedule.workingHours.findIndex(
-    wh => wh.dayOfWeek === dayOfWeek
-  );
-
-  if (dayIndex !== -1) {
-    schedule.workingHours[dayIndex] = {
-      dayOfWeek,
-      ...workingHours,
-    };
-  } else {
-    schedule.workingHours.push({
-      dayOfWeek,
-      ...workingHours,
-    });
-  }
-
-  specialistSchedules.set(specialistId, schedule);
-
-  console.log(
-    `📅 Horário atualizado para ${getDayName(dayOfWeek)}:`,
-    workingHours
-  );
-}
-
-// Verificar se pode aceitar agendamento online
-export async function canAcceptOnlineBooking(
-  specialistId: string,
-  date: Date
-): Promise<boolean> {
-  const schedule = await getSpecialistSchedule(specialistId);
-
-  if (!schedule.allowOnlineBooking) {
-    return false;
-  }
-
-  const now = new Date();
-  const maxDate = new Date(
-    now.getTime() + schedule.allowBookingDaysInAdvance * 24 * 60 * 60 * 1000
-  );
-
-  return date <= maxDate && (await isSpecialistWorking(specialistId, date));
-}
-
 // Obter configurações para exibição no frontend
 export async function getSpecialistScheduleForDisplay(specialistId: string) {
   const schedule = await getSpecialistSchedule(specialistId);
@@ -424,10 +644,9 @@ export async function initializeExistingSpecialists(
   let initialized = 0;
 
   for (const specialist of specialistsList) {
-    if (!specialistSchedules.has(specialist.id)) {
-      await getSpecialistSchedule(specialist.id); // Cria configuração padrão
-      initialized++;
-    }
+    // Garante persistência no DB
+    const schedule = await getSpecialistSchedule(specialist.id);
+    if (schedule) initialized++;
   }
 
   console.log(

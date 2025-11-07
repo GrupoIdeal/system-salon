@@ -76,6 +76,7 @@ export const specialistSchema = z.object({
 });
 
 // Schedule schema to allow creating specialist together with initial schedule
+// workingHours é OBRIGATÓRIO - todo especialista deve ter horários definidos
 export const scheduleSchema = z.object({
   timeSlotDuration: z.number().int().min(1).default(30),
   bufferTime: z.number().int().min(0).default(0),
@@ -83,18 +84,16 @@ export const scheduleSchema = z.object({
   minimumNoticeHours: z.number().int().min(0).default(2),
   autoConfirmBookings: z.boolean().default(true),
   allowOnlineBooking: z.boolean().default(true),
-  workingHours: z
-    .array(
-      z.object({
-        dayOfWeek: z.number().int().min(0).max(6),
-        isWorking: z.boolean(),
-        startTime: z.string().optional(),
-        endTime: z.string().optional(),
-        breakStartTime: z.string().optional(),
-        breakEndTime: z.string().optional(),
-      })
-    )
-    .optional(),
+  workingHours: z.array(
+    z.object({
+      dayOfWeek: z.number().int().min(0).max(6),
+      isWorking: z.boolean(),
+      startTime: z.string().optional(),
+      endTime: z.string().optional(),
+      breakStartTime: z.string().optional(),
+      breakEndTime: z.string().optional(),
+    })
+  ), // OBRIGATÓRIO - array com 7 dias (0-6)
 });
 
 // ============================================================================
