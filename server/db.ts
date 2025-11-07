@@ -1343,7 +1343,7 @@ export async function getAvailableTimeSlots(
     found: !!service,
     name: service?.name,
     duration: service?.duration,
-    specialistId: (service as any)?.specialistId,
+    specialistId: service?.specialistId ?? null,
   });
 
   console.log("🏢 Salon data:", {

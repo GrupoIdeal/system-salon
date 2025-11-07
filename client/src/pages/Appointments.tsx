@@ -43,6 +43,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { toast } from "sonner";
 
 interface AppointmentData {
   id: string;
@@ -130,18 +131,27 @@ export default function Appointments() {
 
   // Mutations para ações rápidas
   const completeAppointmentMutation = trpc.appointments.complete.useMutation({
-    onSuccess: () => appointmentsQuery.refetch(),
-    onError: error => alert(`Erro ao concluir agendamento: ${error.message}`),
+    onSuccess: () => {
+      appointmentsQuery.refetch();
+      toast.success("Agendamento concluído com sucesso");
+    },
+    onError: error => toast.error(`Erro ao concluir agendamento: ${error.message}`),
   });
 
   const cancelAppointmentMutation = trpc.appointments.cancel.useMutation({
-    onSuccess: () => appointmentsQuery.refetch(),
-    onError: error => alert(`Erro ao cancelar agendamento: ${error.message}`),
+    onSuccess: () => {
+      appointmentsQuery.refetch();
+      toast.success("Agendamento cancelado com sucesso");
+    },
+    onError: error => toast.error(`Erro ao cancelar agendamento: ${error.message}`),
   });
 
   const deleteAppointmentMutation = trpc.appointments.delete.useMutation({
-    onSuccess: () => appointmentsQuery.refetch(),
-    onError: error => alert(`Erro ao excluir agendamento: ${error.message}`),
+    onSuccess: () => {
+      appointmentsQuery.refetch();
+      toast.success("Agendamento removido com sucesso");
+    },
+    onError: error => toast.error(`Erro ao excluir agendamento: ${error.message}`),
   });
 
   // Contagem de agendamentos por data para o calendário

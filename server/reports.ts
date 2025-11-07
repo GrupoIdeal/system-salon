@@ -663,14 +663,22 @@ export function exportToCSV(data: unknown[]): string {
     ...data.map(row =>
       headers
         .map(header => {
-          // eslint-disable-next-line @typescript-eslint/no-explicit-any
-          let value: any = (row as any)[header];
+          const value = (row as Record<string, unknown>)[header];
+          let out: string | number = "";
           if (value === null || value === undefined) {
-            value = "";
-          } else if (typeof value === "string" && value.includes(",")) {
-            value = `"${value}"`;
+            out = "";
+          } else if (typeof value === "string") {
+            out = value.includes(",") ? `"${value}"` : value;
+          } else if (typeof value === "number") {
+            out = value;
+          } else {
+            try {
+              out = JSON.stringify(value);
+            } catch {
+              out = "";
+            }
           }
-          return value;
+          return out;
         })
         .join(",")
     ),

@@ -21,6 +21,7 @@ import {
 import { format, addDays, startOfDay, isSameDay } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { APP_LOGO } from "@/const";
+import { toast } from "sonner";
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -121,9 +122,10 @@ function PublicBookingPage() {
         setBookingResult(result);
         setStep("confirmation");
         setIsSubmitting(false);
+        toast.success("Agendamento criado com sucesso");
       },
       onError: error => {
-        alert("Erro ao criar agendamento: " + error.message);
+        toast.error("Erro ao criar agendamento: " + (error?.message || "Erro desconhecido"));
         setIsSubmitting(false);
       },
     });
@@ -214,7 +216,7 @@ function PublicBookingPage() {
       !clientData.name ||
       !clientData.phone
     ) {
-      alert("Por favor, preencha todos os campos obrigatórios.");
+      toast.error("Por favor, preencha todos os campos obrigatórios.");
       return;
     }
 

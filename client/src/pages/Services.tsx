@@ -35,6 +35,8 @@ import {
 import { trpc } from "@/lib/trpc";
 import { Plus, Trash2, Edit2, Loader2 } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
+import { toast } from "sonner";
+import { getErrorMessage } from "@/lib/utils";
 
 interface Service {
   id: string;
@@ -81,6 +83,10 @@ export default function Services() {
         specialistId: "none",
       });
       setIsDialogOpen(false);
+      toast.success("Serviço criado com sucesso");
+    },
+    onError: (error: unknown) => {
+      toast.error(getErrorMessage(error) || "Erro ao criar serviço");
     },
   });
 
@@ -97,6 +103,10 @@ export default function Services() {
       });
       setEditingId(null);
       setIsDialogOpen(false);
+      toast.success("Serviço atualizado com sucesso");
+    },
+    onError: (error: unknown) => {
+      toast.error(getErrorMessage(error) || "Erro ao atualizar serviço");
     },
   });
 
@@ -104,6 +114,10 @@ export default function Services() {
     onSuccess: () => {
       servicesQuery.refetch();
       setDeleteId(null);
+      toast.success("Serviço removido com sucesso");
+    },
+    onError: (error: unknown) => {
+      toast.error(getErrorMessage(error) || "Erro ao remover serviço");
     },
   });
 

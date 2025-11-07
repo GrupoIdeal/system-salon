@@ -92,6 +92,7 @@ import {
   passwordResetSchema,
   scheduleSchema,
 } from "@shared/validations";
+import type { Service, User, InsertUser } from "../drizzle/schema";
 
 const generateId = () => crypto.randomBytes(16).toString("hex");
 
@@ -239,7 +240,6 @@ export const appRouter = router({
         // Criar token de sessão; opcionalmente incluir meta (nome e salonId)
         const sessionToken = await sdk.createSessionToken(user.id, {
           name: user.name,
-          salonId: salon?.id ?? null,
         });
 
         const cookieOptions = {
@@ -729,10 +729,7 @@ export const appRouter = router({
 
         const salon = await getSalonByUserId(_ctx.user.id);
         if (!salon || service.salonId !== salon.id) {
-          throw new TRPCError({
-            code: "FORBIDDEN",
-            message: "Acesso negado",
-          });
+          throw new TRPCError({ code: "FORBIDDEN", message: "Acesso negado" });
         }
 
         return service;
@@ -754,7 +751,6 @@ export const appRouter = router({
             ? _input.price
             : _input.price.toString();
 
-        // Converter sentinel 'none' para null para evitar FK inválida
         const specialistId =
           _input.specialistId === undefined ||
           _input.specialistId === "none" ||
@@ -786,10 +782,7 @@ export const appRouter = router({
 
         const salon = await getSalonByUserId(_ctx.user.id);
         if (!salon || service.salonId !== salon.id) {
-          throw new TRPCError({
-            code: "FORBIDDEN",
-            message: "Acesso negado",
-          });
+          throw new TRPCError({ code: "FORBIDDEN", message: "Acesso negado" });
         }
 
         const updateData = {
@@ -798,9 +791,8 @@ export const appRouter = router({
             typeof _input.data.price === "string"
               ? _input.data.price
               : _input.data.price.toString(),
-        } as any;
+        } as unknown as Partial<Service>;
 
-        // Converter 'none' ou null para null ao atualizar specialistId
         if (
           updateData.specialistId === "none" ||
           updateData.specialistId === null
@@ -809,6 +801,51 @@ export const appRouter = router({
         }
 
         await updateService(_input.id, updateData);
+        return { success: true };
+      }),
+
+    // delete: permite remoção via frontend com validações
+    delete: protectedProcedure
+      .input(z.object({ id: z.string() }))
+      .mutation(async ({ ctx: _ctx, input: _input }) => {
+        const service = await getServiceById(_input.id);
+        if (!service) {
+          throw new TRPCError({
+            code: "NOT_FOUND",
+            message: "Serviço não encontrado",
+          });
+        }
+
+        const salon = await getSalonByUserId(_ctx.user.id);
+        if (!salon || service.salonId !== salon.id) {
+          throw new TRPCError({ code: "FORBIDDEN", message: "Acesso negado" });
+        }
+
+        // Impedir remoção se houver agendamentos futuros para este serviço
+        try {
+          const allAppointments = await getAppointmentsWithDetailsBySalonId(
+            salon.id
+          );
+          const now = new Date();
+          const hasFuture = allAppointments.some(
+            a => a.serviceId === _input.id && new Date(a.appointmentDate) >= now
+          );
+          if (hasFuture) {
+            throw new TRPCError({
+              code: "CONFLICT",
+              message:
+                "Não é possível remover serviço com agendamentos futuros",
+            });
+          }
+        } catch (err) {
+          // Se falhar ao checar agendamentos, não bloquear sem razão — log e continuar
+          console.error(
+            "Erro ao verificar agendamentos antes de deletar serviço:",
+            err
+          );
+        }
+
+        await deleteService(_input.id);
         return { success: true };
       }),
   }),
@@ -1001,7 +1038,7 @@ export const appRouter = router({
           _input.data.serviceId,
           _input.data.appointmentDate,
           _input.data.appointmentTime,
-          _input.id
+          _input.id // excluir o próprio agendamento da checagem
         );
 
         if (!validation.valid) {
@@ -1387,7 +1424,7 @@ export const appRouter = router({
 
       // Buscar todos e filtrar apenas usuários do mesmo salão
       const allUsers = await listUsers();
-      return allUsers.filter(u => (u as any).salonId === salon.id);
+      return allUsers.filter((u: User) => u.salonId === salon.id);
     }),
 
     // Criar novo usuário (apenas admin) — sempre atribuir ao salão do admin
@@ -1416,7 +1453,7 @@ export const appRouter = router({
         }
 
         // Se for admin e não recebeu permissões, dar permissão total
-        const perms =
+        const perms: Record<string, boolean> | undefined =
           _input.role === "admin"
             ? { manage_all: true }
             : (_input.permissions ?? undefined);
@@ -1428,7 +1465,7 @@ export const appRouter = router({
           email: _input.email,
           password: await bcrypt.hash(_input.password, 10),
           role: _input.role,
-          permissions: perms as any,
+          permissions: perms,
           salonId: salon.id,
         });
 
@@ -1469,7 +1506,7 @@ export const appRouter = router({
         // Se o editor é admin, garantir que o usuário alvo pertença ao mesmo salão
         if (_ctx.user.role === "admin") {
           const adminSalon = await getSalonByUserId(_ctx.user.id);
-          if (!adminSalon || (user as any).salonId !== adminSalon.id) {
+          if (!adminSalon || (user as User).salonId !== adminSalon.id) {
             throw new TRPCError({
               code: "FORBIDDEN",
               message: "Acesso negado",
@@ -1478,7 +1515,9 @@ export const appRouter = router({
         }
 
         // Construir objeto de update explicitamente
-        const updatePayload: any = { id: _input.id };
+        const updatePayload: Partial<InsertUser> & { id: string } = {
+          id: _input.id,
+        };
         if (typeof _input.data.name !== "undefined")
           updatePayload.name = _input.data.name;
         if (typeof _input.data.email !== "undefined")
@@ -1500,7 +1539,7 @@ export const appRouter = router({
           updatePayload.password = await bcrypt.hash(_input.data.password, 10);
         }
 
-        await upsertUser(updatePayload as any);
+        await upsertUser(updatePayload);
         return { success: true };
       }),
     resetPassword: protectedProcedure
@@ -1523,7 +1562,7 @@ export const appRouter = router({
 
         if (_ctx.user.role === "admin") {
           const adminSalon = await getSalonByUserId(_ctx.user.id);
-          if (!adminSalon || (user as any).salonId !== adminSalon.id) {
+          if (!adminSalon || (user as User).salonId !== adminSalon.id) {
             throw new TRPCError({
               code: "FORBIDDEN",
               message: "Acesso negado",
@@ -1553,7 +1592,7 @@ export const appRouter = router({
         }
 
         const adminSalon = await getSalonByUserId(_ctx.user.id);
-        if (!adminSalon || (user as any).salonId !== adminSalon.id) {
+        if (!adminSalon || (user as User).salonId !== adminSalon.id) {
           throw new TRPCError({ code: "FORBIDDEN", message: "Acesso negado" });
         }
 

@@ -28,6 +28,7 @@ import {
 import { trpc } from "@/lib/trpc";
 import { Plus, Trash2, Edit2, Loader2 } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
+import { toast } from "sonner";
 
 export default function Clients() {
   const [search, setSearch] = useState<string>("");
@@ -55,6 +56,10 @@ export default function Clients() {
       clientsQuery.refetch();
       setFormData({ name: "", email: "", phone: "", notes: "" });
       setIsDialogOpen(false);
+      toast.success("Cliente criado com sucesso");
+    },
+    onError: error => {
+      toast.error(error?.message || "Erro ao criar cliente");
     },
   });
 
@@ -64,6 +69,10 @@ export default function Clients() {
       setFormData({ name: "", email: "", phone: "", notes: "" });
       setEditingId(null);
       setIsDialogOpen(false);
+      toast.success("Cliente atualizado com sucesso");
+    },
+    onError: error => {
+      toast.error(error?.message || "Erro ao atualizar cliente");
     },
   });
 
@@ -71,6 +80,10 @@ export default function Clients() {
     onSuccess: () => {
       clientsQuery.refetch();
       setDeleteId(null);
+      toast.success("Cliente removido com sucesso");
+    },
+    onError: error => {
+      toast.error(error?.message || "Erro ao remover cliente");
     },
   });
 

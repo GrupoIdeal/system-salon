@@ -22,6 +22,8 @@ import {
     AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { Plus, Trash2, Edit2 } from "lucide-react";
+import { toast } from "sonner";
+import { getErrorMessage } from "@/lib/utils";
 
 const AVAILABLE_PERMISSIONS = [
     { key: "manage_clients", label: "Gerenciar clientes" },
@@ -53,6 +55,10 @@ export default function Usuarios() {
         onSuccess: () => {
             listQuery.refetch();
             setIsDialogOpen(false);
+            toast.success("Usuário criado com sucesso");
+        },
+        onError: (err: unknown) => {
+            toast.error(getErrorMessage(err) || "Erro ao criar usuário");
         },
     });
     const editMutation = trpc.users.edit.useMutation({
@@ -60,17 +66,28 @@ export default function Usuarios() {
             listQuery.refetch();
             setIsDialogOpen(false);
             setEditingId(null);
+            toast.success("Usuário atualizado");
+        },
+        onError: (err: unknown) => {
+            toast.error(getErrorMessage(err) || "Erro ao atualizar usuário");
         },
     });
     const deleteMutation = trpc.users.delete.useMutation({
         onSuccess: () => {
             listQuery.refetch();
             setConfirmDeleteId(null);
+            toast.success("Usuário removido");
+        },
+        onError: (err: unknown) => {
+            toast.error(getErrorMessage(err) || "Erro ao remover usuário");
         },
     });
     const resetPasswordMutation = trpc.users.resetPassword.useMutation({
         onSuccess: () => {
-            // noop
+            toast.success("Senha atualizada com sucesso");
+        },
+        onError: (err: unknown) => {
+            toast.error(getErrorMessage(err) || "Erro ao atualizar senha");
         },
     });
     const listQuery = trpc.users.list.useQuery(undefined, { enabled: !!user && user.role === "admin" });
@@ -135,9 +152,8 @@ export default function Usuarios() {
 
     const handleResetPassword = async (id: string) => {
         const pw = prompt("Digite a nova senha para o usuário (mínimo 6 caracteres)", "changeme");
-        if (!pw || pw.length < 6) return alert("Senha inválida");
+        if (!pw || pw.length < 6) return toast.error("Senha inválida");
         await resetPasswordMutation.mutateAsync({ id, password: pw });
-        alert("Senha atualizada");
     };
 
     const handleSubmit = async (e: React.FormEvent) => {
@@ -170,7 +186,7 @@ export default function Usuarios() {
             listQuery.refetch();
         } catch (err) {
             console.error("Erro ao salvar usuário:", err);
-            alert("Erro ao salvar usuário");
+            toast.error("Erro ao salvar usuário");
         }
     };
 
