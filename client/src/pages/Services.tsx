@@ -37,6 +37,7 @@ import { Plus, Trash2, Edit2, Loader2 } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { toast } from "sonner";
 import { getErrorMessage } from "@/lib/utils";
+import { Checkbox } from "@/components/ui/checkbox";
 
 interface Service {
   id: string;
@@ -44,6 +45,7 @@ interface Service {
   description: string | null;
   duration: number;
   price: string;
+  priceFrom?: boolean | null;
   status: "active" | "inactive" | null;
   specialistId: string | null;
 }
@@ -55,15 +57,17 @@ export default function Services() {
   const [formData, setFormData] = useState<{
     name: string;
     description: string;
-    duration: string;
+    duration: string; // in hours as string
     price: string;
+    priceFrom?: boolean;
     status: "active" | "inactive";
     specialistId: string;
   }>({
     name: "",
     description: "",
-    duration: "60",
+    duration: "1",
     price: "",
+    priceFrom: false,
     status: "active",
     specialistId: "none",
   });
@@ -77,8 +81,9 @@ export default function Services() {
       setFormData({
         name: "",
         description: "",
-        duration: "60",
+        duration: "1",
         price: "",
+        priceFrom: false,
         status: "active",
         specialistId: "none",
       });
@@ -96,8 +101,9 @@ export default function Services() {
       setFormData({
         name: "",
         description: "",
-        duration: "60",
+        duration: "1",
         price: "",
+        priceFrom: false,
         status: "active",
         specialistId: "none",
       });
@@ -125,12 +131,16 @@ export default function Services() {
     e.preventDefault();
     if (!formData.name || !formData.price) return;
 
+    // converter horas (string) -> minutos (number)
+    const durationHours = parseFloat(formData.duration) || 0;
+    const durationMinutes = Math.round(durationHours * 60);
+
     if (editingId) {
       updateMutation.mutate({
         id: editingId,
         data: {
           ...formData,
-          duration: parseInt(formData.duration),
+          duration: durationMinutes,
           price: parseFloat(formData.price),
           // convert sentinel 'none' to null to avoid FK insertion errors
           specialistId:
@@ -140,10 +150,11 @@ export default function Services() {
     } else {
       createMutation.mutate({
         ...formData,
-        duration: parseInt(formData.duration),
+        duration: durationMinutes,
         price: parseFloat(formData.price),
         // convert sentinel 'none' to null to avoid FK insertion errors
-        specialistId: formData.specialistId === "none" ? null : formData.specialistId,
+        specialistId:
+          formData.specialistId === "none" ? null : formData.specialistId,
       });
     }
   };
@@ -152,8 +163,10 @@ export default function Services() {
     setFormData({
       name: service.name,
       description: service.description ?? "",
-      duration: service.duration.toString(),
+      // converter minutos para horas como string
+      duration: (service.duration / 60).toString(),
       price: service.price,
+      priceFrom: !!service.priceFrom,
       status: service.status ?? "active",
       specialistId: service.specialistId ? service.specialistId : "none",
     });
@@ -183,8 +196,9 @@ export default function Services() {
                   setFormData({
                     name: "",
                     description: "",
-                    duration: "60",
+                    duration: "1",
                     price: "",
+                    priceFrom: false,
                     status: "active",
                     specialistId: "none",
                   });
@@ -236,16 +250,17 @@ export default function Services() {
                 <div className="grid grid-cols-2 gap-4">
                   <div>
                     <label htmlFor="duration" className="text-sm font-medium">
-                      Duração (min)
+                      Duração (hrs)
                     </label>
                     <Input
                       id="duration"
                       type="number"
+                      step="0.25"
                       value={formData.duration}
                       onChange={e =>
                         setFormData({ ...formData, duration: e.target.value })
                       }
-                      placeholder="60"
+                      placeholder="1"
                       required
                     />
                   </div>
@@ -264,6 +279,18 @@ export default function Services() {
                       placeholder="0.00"
                       required
                     />
+                    <div className="flex items-center gap-2 mt-2">
+                      <Checkbox
+                        id="priceFrom"
+                        checked={!!formData.priceFrom}
+                        onCheckedChange={checked =>
+                          setFormData({ ...formData, priceFrom: !!checked })
+                        }
+                      />
+                      <label htmlFor="priceFrom" className="text-sm">
+                        A partir de
+                      </label>
+                    </div>
                   </div>
                 </div>
                 <fieldset className="mb-4">
@@ -352,10 +379,11 @@ export default function Services() {
                       </CardDescription>
                     </div>
                     <span
-                      className={`text-xs font-semibold px-2 py-1 rounded ${service.status === "active"
-                        ? "bg-[var(--chart-1)] text-[var(--chart-4)]"
-                        : "bg-gray-100 text-gray-800"
-                        }`}
+                      className={`text-xs font-semibold px-2 py-1 rounded ${
+                        service.status === "active"
+                          ? "bg-[var(--chart-1)] text-[var(--chart-4)]"
+                          : "bg-gray-100 text-gray-800"
+                      }`}
                     >
                       {service.status === "active" ? "Ativo" : "Inativo"}
                     </span>
@@ -365,15 +393,26 @@ export default function Services() {
                   <div className="grid grid-cols-2 gap-2 text-sm">
                     <div>
                       <p className="text-muted-foreground">Duração</p>
-                      <p className="font-semibold">{service.duration} min</p>
+                      <p className="font-semibold">
+                        {(() => {
+                          const mins = service.duration ?? 0;
+                          const hours = Math.floor(mins / 60);
+                          const remaining = mins % 60;
+                          if (hours > 0 && remaining > 0)
+                            return `${hours}h ${remaining}m`;
+                          if (hours > 0) return `${hours}h`;
+                          return `${remaining}m`;
+                        })()}
+                      </p>
                     </div>
                     <div>
                       <p className="text-muted-foreground">Preço</p>
                       <p className="font-semibold">
-                        {new Intl.NumberFormat("pt-BR", {
-                          style: "currency",
-                          currency: "BRL",
-                        }).format(parseFloat(service.price))}
+                        {(service.priceFrom ? "A partir de " : "") +
+                          new Intl.NumberFormat("pt-BR", {
+                            style: "currency",
+                            currency: "BRL",
+                          }).format(parseFloat(service.price))}
                       </p>
                     </div>
                   </div>

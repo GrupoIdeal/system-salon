@@ -1,26 +1,166 @@
 {
   "version": "7",
-  "dialect": "mysql",
+  "dialect": "pg",
   "entries": [
     {
       "idx": 0,
-      "version": "5",
+      "version": "7",
       "when": 1761048668429,
-      "tag": "0000_hot_carmella_unuscione",
+      "tag": "0000_bizarre_rage",
       "breakpoints": true
     },
     {
       "idx": 1,
-      "version": "5",
+      "version": "7",
       "when": 1761048752831,
-      "tag": "0001_gigantic_mandarin",
+      "tag": "0001_wild_silver_surfer",
       "breakpoints": true
     },
     {
       "idx": 2,
-      "version": "5",
+      "version": "7",
       "when": 1761052206939,
-      "tag": "0002_glorious_silvermane",
+      "tag": "0002_bent_professor_monster",
+      "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "7",
+      "when": 1761052260000,
+      "tag": "0003_opposite_miss_america",
+      "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "7",
+      "when": 1761052300000,
+      "tag": "0004_grey_swarm",
+      "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "7",
+      "when": 1761052350000,
+      "tag": "0005_multi_working_hours",
+      "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "7",
+      "when": 1761052400000,
+      "tag": "0006_short_harrier",
+      "breakpoints": true
+    },
+    {
+      "idx": 7,
+      "version": "7",
+      "when": 1761052450000,
+      "tag": "0007_wonderful_red_ghost",
+      "breakpoints": true
+    },
+    {
+      "idx": 8,
+      "version": "7",
+      "when": 1761052500000,
+      "tag": "0008_quiet_maddog",
+      "breakpoints": true
+    },
+    {
+      "idx": 9,
+      "version": "7",
+      "when": 1761052550000,
+      "tag": "0008_remove_salon_working_hours",
+      "breakpoints": true
+    },
+    {
+      "idx": 10,
+      "version": "7",
+      "when": 1761052600000,
+      "tag": "0009_create_missing_enums",
+      "breakpoints": true
+    },
+    {
+      "idx": 11,
+      "version": "7",
+      "when": 1761052650000,
+      "tag": "0009_narrow_hellion",
+      "breakpoints": true
+    },
+    {
+      "idx": 12,
+      "version": "7",
+      "when": 1761052700000,
+      "tag": "0010_add_permissions_to_users",
+      "breakpoints": true
+    },
+    {
+      "idx": 13,
+      "version": "7",
+      "when": 1761052750000,
+      "tag": "0010_skinny_magma",
+      "breakpoints": true
+    },
+    {
+      "idx": 14,
+      "version": "7",
+      "when": 1761052800000,
+      "tag": "0011_add_salonid_to_users",
+      "breakpoints": true
+    },
+    {
+      "idx": 15,
+      "version": "7",
+      "when": 1761052850000,
+      "tag": "0011_small_supreme_intelligence",
+      "breakpoints": true
+    },
+    {
+      "idx": 16,
+      "version": "7",
+      "when": 1761052900000,
+      "tag": "0012_populate_users_salonid",
+      "breakpoints": true
+    },
+    {
+      "idx": 17,
+      "version": "7",
+      "when": 1761052950000,
+      "tag": "0012_round_starjammers",
+      "breakpoints": true
+    },
+    {
+      "idx": 18,
+      "version": "7",
+      "when": 1761053000000,
+      "tag": "0013_create_specialist_schedules",
+      "breakpoints": true
+    },
+    {
+      "idx": 19,
+      "version": "7",
+      "when": 1761053050000,
+      "tag": "0014_backfill_specialist_schedules",
+      "breakpoints": true
+    },
+    {
+      "idx": 20,
+      "version": "7",
+      "when": 1761053100000,
+      "tag": "0015_create_audit_logs",
+      "breakpoints": true
+    },
+    {
+      "idx": 21,
+      "version": "7",
+      "when": 1761053150000,
+      "tag": "0016_add_audit_logs_salonid_createdat_idx",
+      "breakpoints": true
+    },
+    {
+      "idx": 22,
+      "version": "7",
+      "when": 1761053200000,
+      "tag": "0017_add_pricefrom_services",
       "breakpoints": true
     }
   ]

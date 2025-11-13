@@ -155,6 +155,8 @@ export const services = pgTable(
     description: text("description"),
     duration: integer("duration").notNull(), // in minutes
     price: decimal("price", { precision: 10, scale: 2 }).notNull(),
+    // Indica se o preço é um valor 'a partir de' (mínimo)
+    priceFrom: boolean("priceFrom").default(false).notNull(),
     status: serviceStatusEnum("status").default("active"),
     createdAt: timestamp("createdAt").defaultNow(),
     updatedAt: timestamp("updatedAt").defaultNow(),
