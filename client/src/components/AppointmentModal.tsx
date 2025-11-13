@@ -311,7 +311,18 @@ export function AppointmentModal({
                         <div className="flex flex-col">
                           <span>{service.name}</span>
                           <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                            <span>⏱️ {service.duration}min</span>
+                            <span>
+                              ⏱️{" "}
+                              {(() => {
+                                const mins = service.duration ?? 0;
+                                const hours = Math.floor(mins / 60);
+                                const remaining = mins % 60;
+                                if (hours > 0 && remaining > 0)
+                                  return `${hours}h ${remaining}m`;
+                                if (hours > 0) return `${hours}h`;
+                                return `${remaining}m`;
+                              })()}
+                            </span>
                             <span>💰 R$ {service.price}</span>
                           </div>
                         </div>
@@ -380,7 +391,17 @@ export function AppointmentModal({
               <div className="flex items-center justify-between text-sm">
                 <span className="font-medium">Serviço:</span>
                 <span>
-                  {selectedService?.name} ({selectedService?.duration}min)
+                  {selectedService?.name} (
+                  {(() => {
+                    const mins = selectedService?.duration ?? 0;
+                    const hours = Math.floor(mins / 60);
+                    const remaining = mins % 60;
+                    if (hours > 0 && remaining > 0)
+                      return `${hours}h ${remaining}m`;
+                    if (hours > 0) return `${hours}h`;
+                    return `${remaining}m`;
+                  })()}
+                  )
                 </span>
               </div>
               <div className="flex items-center justify-between text-sm">
@@ -438,7 +459,21 @@ export function AppointmentModal({
                   </Label>
                   <p className="font-medium">{selectedService?.name}</p>
                   <p className="text-sm text-muted-foreground">
-                    {selectedService?.duration}min • R$ {selectedService?.price}
+                    {(() => {
+                      const mins = selectedService?.duration ?? 0;
+                      const hours = Math.floor(mins / 60);
+                      const remaining = mins % 60;
+                      if (hours > 0 && remaining > 0)
+                        return `${hours}h ${remaining}m`;
+                      if (hours > 0) return `${hours}h`;
+                      return `${remaining}m`;
+                    })()}{" "}
+                    •{" "}
+                    {(selectedService?.priceFrom ? "A partir de " : "") +
+                      new Intl.NumberFormat("pt-BR", {
+                        style: "currency",
+                        currency: "BRL",
+                      }).format(parseFloat(selectedService?.price || "0"))}
                   </p>
                 </div>
               </div>
@@ -584,17 +619,19 @@ export function AppointmentModal({
             {[1, 2, 3, 4].map(stepNumber => (
               <div key={stepNumber} className="flex items-center gap-2">
                 <div
-                  className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-medium ${stepNumber <= step
-                    ? "bg-primary text-primary-foreground"
-                    : "bg-muted text-muted-foreground"
-                    }`}
+                  className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-medium ${
+                    stepNumber <= step
+                      ? "bg-primary text-primary-foreground"
+                      : "bg-muted text-muted-foreground"
+                  }`}
                 >
                   {stepNumber}
                 </div>
                 {stepNumber < 4 && (
                   <div
-                    className={`w-8 h-0.5 ${stepNumber < step ? "bg-primary" : "bg-muted"
-                      }`}
+                    className={`w-8 h-0.5 ${
+                      stepNumber < step ? "bg-primary" : "bg-muted"
+                    }`}
                   />
                 )}
               </div>
