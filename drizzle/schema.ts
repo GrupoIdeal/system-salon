@@ -201,6 +201,8 @@ export const appointments = pgTable(
     status: appointmentStatusEnum("appointment_status").default("pending"),
     notes: text("notes"),
     isPublic: boolean("isPublic").default(false),
+    // Valor efetivamente pago pelo cliente (opcional)
+    paidAmount: decimal("paidAmount", { precision: 10, scale: 2 }),
     createdAt: timestamp("createdAt").defaultNow(),
     updatedAt: timestamp("updatedAt").defaultNow(),
   },

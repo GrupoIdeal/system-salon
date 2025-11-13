@@ -22,6 +22,7 @@ import { format, addDays, startOfDay, isSameDay } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { APP_LOGO } from "@/const";
 import { toast } from "sonner";
+import { formatDuration, formatServicePrice } from "@/lib/format";
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -486,22 +487,10 @@ function PublicBookingPage() {
                       </div>
                       <div className="text-right">
                         <div className="text-lg font-bold text-[var(--primary)]">
-                          {(service.priceFrom ? "A partir de " : "") +
-                            new Intl.NumberFormat("pt-BR", {
-                              style: "currency",
-                              currency: "BRL",
-                            }).format(parseFloat(service.price))}
+                          {formatServicePrice(service.price, service.priceFrom)}
                         </div>
                         <div className="text-sm text-gray-500">
-                          {(() => {
-                            const mins = service.duration ?? 0;
-                            const hours = Math.floor(mins / 60);
-                            const remaining = mins % 60;
-                            if (hours > 0 && remaining > 0)
-                              return `${hours}h ${remaining}m`;
-                            if (hours > 0) return `${hours}h`;
-                            return `${remaining}m`;
-                          })()}
+                          {formatDuration(service.duration)}
                         </div>
                       </div>
                     </div>
@@ -533,21 +522,11 @@ function PublicBookingPage() {
               <div className="text-sm text-gray-600">
                 Serviço:{" "}
                 <span className="font-medium">{selectedServiceData.name}</span>•
-                {(selectedServiceData.priceFrom ? "A partir de " : "") +
-                  new Intl.NumberFormat("pt-BR", {
-                    style: "currency",
-                    currency: "BRL",
-                  }).format(parseFloat(selectedServiceData.price))}{" "}
-                •{" "}
-                {(() => {
-                  const mins = selectedServiceData.duration ?? 0;
-                  const hours = Math.floor(mins / 60);
-                  const remaining = mins % 60;
-                  if (hours > 0 && remaining > 0)
-                    return `${hours}h ${remaining}m`;
-                  if (hours > 0) return `${hours}h`;
-                  return `${remaining}m`;
-                })()}
+                {formatServicePrice(
+                  selectedServiceData.price,
+                  selectedServiceData.priceFrom
+                )}{" "}
+                • {formatDuration(selectedServiceData.duration)}
               </div>
             </CardHeader>
             <CardContent>

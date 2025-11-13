@@ -1,0 +1,1 @@
+ALTER TABLE "appointments" ADD COLUMN "paidAmount" numeric(10, 2);

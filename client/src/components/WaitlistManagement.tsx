@@ -44,6 +44,7 @@ import {
 } from "lucide-react";
 import { trpc } from "@/lib/trpc";
 import { toast } from "sonner";
+import { formatDuration, formatServicePrice } from "@/utils/formatters";
 
 interface WaitlistManagementProps {
   isOpen: boolean;
@@ -252,23 +253,11 @@ export function WaitlistManagement({
                               </div>
                               {service && (
                                 <div className="text-xs text-muted-foreground">
-                                  {(() => {
-                                    const mins = service.duration ?? 0;
-                                    const hours = Math.floor(mins / 60);
-                                    const remaining = mins % 60;
-                                    if (hours > 0 && remaining > 0)
-                                      return `${hours}h ${remaining}m`;
-                                    if (hours > 0) return `${hours}h`;
-                                    return `${remaining}m`;
-                                  })()}{" "}
-                                  •{" "}
-                                  {(service.priceFrom ? "A partir de " : "") +
-                                    new Intl.NumberFormat("pt-BR", {
-                                      style: "currency",
-                                      currency: "BRL",
-                                    }).format(
-                                      parseFloat(String(service.price))
-                                    )}
+                                  {formatDuration(service.duration)} •{" "}
+                                  {formatServicePrice(
+                                    service.price,
+                                    service.priceFrom
+                                  )}
                                 </div>
                               )}
                             </div>

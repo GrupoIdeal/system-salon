@@ -1049,7 +1049,8 @@ export async function recordAppointmentRevenue(
     | "debit_card"
     | "pix"
     | "bank_transfer"
-    | "other"
+    | "other",
+  amountPaid?: number // novo parâmetro opcional para sobrescrever o preço do serviço
 ) {
   const db = await getDb();
   if (!db) throw new Error("Database não disponível");
@@ -1082,7 +1083,12 @@ export async function recordAppointmentRevenue(
     throw new Error("Dados incompletos para registrar transação");
   }
 
-  const amount = Number(service.price);
+  // Se amountPaid foi fornecido, usa esse valor; caso contrário usa o preço do serviço
+  const amount =
+    typeof amountPaid === "number" && !Number.isNaN(amountPaid)
+      ? amountPaid
+      : Number(service.price);
+
   const specialistCommission = amount * 0.6; // 60% para o especialista
   const serviceFee = amount - specialistCommission; // 40% para o salão
 
@@ -1103,6 +1109,18 @@ export async function recordAppointmentRevenue(
     description: `Serviço: ${service.name} - Cliente: ${client?.name || "N/A"}`,
     transactionDate: new Date(),
   });
+
+  // Se foi fornecido amountPaid, salvar no agendamento (paidAmount)
+  if (typeof amountPaid === "number" && !Number.isNaN(amountPaid)) {
+    try {
+      // Converter para string para compatibilizar com o tipo decimal no schema
+      await updateAppointment(appointment.id, {
+        paidAmount: amount.toString(),
+      });
+    } catch (err) {
+      console.error("Failed to save paidAmount on appointment:", err);
+    }
+  }
 
   return transaction;
 }
