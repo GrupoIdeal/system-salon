@@ -33,6 +33,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { trpc } from "@/lib/trpc";
+import { formatDuration, formatServicePrice } from "@/lib/format";
 import { Plus, Trash2, Edit2, Loader2 } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { toast } from "sonner";
@@ -394,25 +395,13 @@ export default function Services() {
                     <div>
                       <p className="text-muted-foreground">Duração</p>
                       <p className="font-semibold">
-                        {(() => {
-                          const mins = service.duration ?? 0;
-                          const hours = Math.floor(mins / 60);
-                          const remaining = mins % 60;
-                          if (hours > 0 && remaining > 0)
-                            return `${hours}h ${remaining}m`;
-                          if (hours > 0) return `${hours}h`;
-                          return `${remaining}m`;
-                        })()}
+                        {formatDuration(service.duration)}
                       </p>
                     </div>
                     <div>
                       <p className="text-muted-foreground">Preço</p>
                       <p className="font-semibold">
-                        {(service.priceFrom ? "A partir de " : "") +
-                          new Intl.NumberFormat("pt-BR", {
-                            style: "currency",
-                            currency: "BRL",
-                          }).format(parseFloat(service.price))}
+                        {formatServicePrice(service.price, service.priceFrom)}
                       </p>
                     </div>
                   </div>

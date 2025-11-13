@@ -40,6 +40,7 @@ import {
   Target,
   Activity,
 } from "lucide-react";
+import { formatDuration } from "@/lib/format";
 import { trpc } from "@/lib/trpc";
 import { toast } from "sonner";
 
@@ -266,7 +267,7 @@ export function ReportsManagement({ isOpen, onClose }: ReportsManagementProps) {
                     <p className="text-xs text-muted-foreground">
                       {formatPercentage(
                         (statsQuery.data.completed / statsQuery.data.total) *
-                        100
+                          100
                       )}{" "}
                       do total
                     </p>
@@ -416,12 +417,15 @@ export function ReportsManagement({ isOpen, onClose }: ReportsManagementProps) {
                       </TableCell>
                       <TableCell>
                         <div className="flex items-center gap-2">
-                          <div className={`w-2 h-2 rounded-full ${specialist.completionRate >= 80
-                            ? "bg-[var(--primary)]"
-                            : specialist.completionRate >= 60
-                              ? "bg-[var(--secondary)]"
-                              : "bg-[var(--destructive)]"
-                            }`} />
+                          <div
+                            className={`w-2 h-2 rounded-full ${
+                              specialist.completionRate >= 80
+                                ? "bg-[var(--primary)]"
+                                : specialist.completionRate >= 60
+                                  ? "bg-[var(--secondary)]"
+                                  : "bg-[var(--destructive)]"
+                            }`}
+                          />
                           {formatPercentage(specialist.completionRate)}
                         </div>
                       </TableCell>
@@ -433,15 +437,13 @@ export function ReportsManagement({ isOpen, onClose }: ReportsManagementProps) {
                       </TableCell>
                       <TableCell>
                         <div className="space-y-1">
-                          {specialist.topServices
-                            .slice(0, 2)
-                            .map(service => (
-                              <div key={service.serviceId} className="text-xs">
-                                <Badge variant="outline" className="text-xs">
-                                  {service.serviceName} ({service.count})
-                                </Badge>
-                              </div>
-                            ))}
+                          {specialist.topServices.slice(0, 2).map(service => (
+                            <div key={service.serviceId} className="text-xs">
+                              <Badge variant="outline" className="text-xs">
+                                {service.serviceName} ({service.count})
+                              </Badge>
+                            </div>
+                          ))}
                         </div>
                       </TableCell>
                     </TableRow>
@@ -516,20 +518,18 @@ export function ReportsManagement({ isOpen, onClose }: ReportsManagementProps) {
                       <TableCell>
                         <div className="flex items-center gap-1">
                           <Clock className="h-3 w-3" />
-                          {service.duration}min
+                          {formatDuration(service.duration)}
                         </div>
                       </TableCell>
                       <TableCell>
                         <div className="space-y-1">
-                          {service.popularTimeSlots
-                            .slice(0, 3)
-                            .map(slot => (
-                              <div key={slot.timeSlot} className="text-xs">
-                                <Badge variant="outline" className="text-xs">
-                                  {slot.timeSlot} ({slot.count})
-                                </Badge>
-                              </div>
-                            ))}
+                          {service.popularTimeSlots.slice(0, 3).map(slot => (
+                            <div key={slot.timeSlot} className="text-xs">
+                              <Badge variant="outline" className="text-xs">
+                                {slot.timeSlot} ({slot.count})
+                              </Badge>
+                            </div>
+                          ))}
                         </div>
                       </TableCell>
                     </TableRow>
@@ -598,8 +598,8 @@ export function ReportsManagement({ isOpen, onClose }: ReportsManagementProps) {
                                   Última visita:{" "}
                                   {client.lastVisit
                                     ? new Date(
-                                      client.lastVisit
-                                    ).toLocaleDateString("pt-BR")
+                                        client.lastVisit
+                                      ).toLocaleDateString("pt-BR")
                                     : "Nunca"}
                                 </p>
                               </div>
@@ -631,50 +631,48 @@ export function ReportsManagement({ isOpen, onClose }: ReportsManagementProps) {
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    {clientAnalyticsQuery.data.all
-                      .slice(0, 10)
-                      .map(client => (
-                        <TableRow key={client.clientId}>
-                          <TableCell className="font-medium">
-                            {client.clientName}
-                          </TableCell>
-                          <TableCell>{client.totalAppointments}</TableCell>
-                          <TableCell className="text-[var(--primary)]">
-                            {client.completedAppointments}
-                          </TableCell>
-                          <TableCell className="text-[var(--primary)] font-medium">
-                            {formatCurrency(client.totalSpent)}
-                          </TableCell>
-                          <TableCell>
-                            {formatCurrency(client.averageTicket)}
-                          </TableCell>
-                          <TableCell>
-                            {client.frequencyDays > 0
-                              ? `${client.frequencyDays.toFixed(0)} dias`
-                              : "N/A"}
-                          </TableCell>
-                          <TableCell>
-                            {client.lastVisit
-                              ? new Date(client.lastVisit).toLocaleDateString(
+                    {clientAnalyticsQuery.data.all.slice(0, 10).map(client => (
+                      <TableRow key={client.clientId}>
+                        <TableCell className="font-medium">
+                          {client.clientName}
+                        </TableCell>
+                        <TableCell>{client.totalAppointments}</TableCell>
+                        <TableCell className="text-[var(--primary)]">
+                          {client.completedAppointments}
+                        </TableCell>
+                        <TableCell className="text-[var(--primary)] font-medium">
+                          {formatCurrency(client.totalSpent)}
+                        </TableCell>
+                        <TableCell>
+                          {formatCurrency(client.averageTicket)}
+                        </TableCell>
+                        <TableCell>
+                          {client.frequencyDays > 0
+                            ? `${client.frequencyDays.toFixed(0)} dias`
+                            : "N/A"}
+                        </TableCell>
+                        <TableCell>
+                          {client.lastVisit
+                            ? new Date(client.lastVisit).toLocaleDateString(
                                 "pt-BR"
                               )
-                              : "Nunca"}
-                          </TableCell>
-                          <TableCell>
-                            <Badge
-                              variant={
-                                client.riskScore >= 70
-                                  ? "destructive"
-                                  : client.riskScore >= 40
-                                    ? "default"
-                                    : "secondary"
-                              }
-                            >
-                              {client.riskScore.toFixed(0)}%
-                            </Badge>
-                          </TableCell>
-                        </TableRow>
-                      ))}
+                            : "Nunca"}
+                        </TableCell>
+                        <TableCell>
+                          <Badge
+                            variant={
+                              client.riskScore >= 70
+                                ? "destructive"
+                                : client.riskScore >= 40
+                                  ? "default"
+                                  : "secondary"
+                            }
+                          >
+                            {client.riskScore.toFixed(0)}%
+                          </Badge>
+                        </TableCell>
+                      </TableRow>
+                    ))}
                   </TableBody>
                 </Table>
               </>
@@ -788,7 +786,9 @@ export function ReportsManagement({ isOpen, onClose }: ReportsManagementProps) {
                     <div className="space-y-2">
                       {dailyReportQuery.data.busyHours.map(hour => {
                         const maxCount = Math.max(
-                          ...dailyReportQuery.data.busyHours.map(h => h.appointmentCount)
+                          ...dailyReportQuery.data.busyHours.map(
+                            h => h.appointmentCount
+                          )
                         );
                         const percentage =
                           maxCount > 0

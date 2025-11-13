@@ -311,18 +311,7 @@ export function AppointmentModal({
                         <div className="flex flex-col">
                           <span>{service.name}</span>
                           <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                            <span>
-                              ⏱️{" "}
-                              {(() => {
-                                const mins = service.duration ?? 0;
-                                const hours = Math.floor(mins / 60);
-                                const remaining = mins % 60;
-                                if (hours > 0 && remaining > 0)
-                                  return `${hours}h ${remaining}m`;
-                                if (hours > 0) return `${hours}h`;
-                                return `${remaining}m`;
-                              })()}
-                            </span>
+                            <span>⏱️ {formatDuration(service.duration)}</span>
                             <span>💰 R$ {service.price}</span>
                           </div>
                         </div>
@@ -392,16 +381,7 @@ export function AppointmentModal({
                 <span className="font-medium">Serviço:</span>
                 <span>
                   {selectedService?.name} (
-                  {(() => {
-                    const mins = selectedService?.duration ?? 0;
-                    const hours = Math.floor(mins / 60);
-                    const remaining = mins % 60;
-                    if (hours > 0 && remaining > 0)
-                      return `${hours}h ${remaining}m`;
-                    if (hours > 0) return `${hours}h`;
-                    return `${remaining}m`;
-                  })()}
-                  )
+                  {formatDuration(selectedService?.duration)})
                 </span>
               </div>
               <div className="flex items-center justify-between text-sm">
@@ -459,21 +439,11 @@ export function AppointmentModal({
                   </Label>
                   <p className="font-medium">{selectedService?.name}</p>
                   <p className="text-sm text-muted-foreground">
-                    {(() => {
-                      const mins = selectedService?.duration ?? 0;
-                      const hours = Math.floor(mins / 60);
-                      const remaining = mins % 60;
-                      if (hours > 0 && remaining > 0)
-                        return `${hours}h ${remaining}m`;
-                      if (hours > 0) return `${hours}h`;
-                      return `${remaining}m`;
-                    })()}{" "}
-                    •{" "}
-                    {(selectedService?.priceFrom ? "A partir de " : "") +
-                      new Intl.NumberFormat("pt-BR", {
-                        style: "currency",
-                        currency: "BRL",
-                      }).format(parseFloat(selectedService?.price || "0"))}
+                    {formatDuration(selectedService?.duration)} •{" "}
+                    {formatServicePrice(
+                      selectedService?.price,
+                      Boolean(selectedService?.priceFrom)
+                    )}
                   </p>
                 </div>
               </div>

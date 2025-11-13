@@ -97,6 +97,7 @@ import {
   scheduleSchema,
 } from "@shared/validations";
 import type { Service, User, InsertUser } from "../drizzle/schema";
+import { uploadBase64Image } from "./cloudinary";
 
 const generateId = () => crypto.randomBytes(16).toString("hex");
 
@@ -1388,6 +1389,7 @@ export const appRouter = router({
               "other",
             ])
             .optional(),
+          amountPaid: z.number().positive().optional(), // novo campo opcional: valor pago real
         })
       )
       .mutation(async ({ ctx: _ctx, input: _input }) => {
@@ -1431,9 +1433,11 @@ export const appRouter = router({
 
         // Registrar transação financeira
         try {
+          // Passar amountPaid quando fornecido para usar valor real pago
           await recordAppointmentRevenue(
             _input.id,
-            _input.paymentMethod || "cash"
+            _input.paymentMethod || "cash",
+            _input.amountPaid
           );
         } catch (error) {
           console.error("Erro ao registrar receita:", error);
@@ -2140,6 +2144,21 @@ export const appRouter = router({
           minimumNoticeHours: z.number().min(0).max(72).optional(),
           autoConfirmBookings: z.boolean().optional(),
           allowOnlineBooking: z.boolean().optional(),
+          // Permitimos enviar todos os workingHours de uma vez
+          workingHours: z
+            .array(
+              z.object({
+                dayOfWeek: z.number().min(0).max(6),
+                isWorking: z.boolean(),
+                startTime: z.string().optional(),
+                endTime: z.string().optional(),
+                breakStartTime: z.string().optional(),
+                breakEndTime: z.string().optional(),
+              })
+            )
+            .optional(),
+          // Datas indisponíveis no formato string ISO
+          customUnavailableDates: z.array(z.string()).optional(),
         })
       )
       .mutation(async ({ ctx, input }) => {
@@ -2287,6 +2306,23 @@ export const appRouter = router({
           input.date,
           input.serviceDuration
         );
+      }),
+  }),
+
+  // Image uploads (server-side proxy to Cloudinary)
+  images: router({
+    upload: protectedProcedure
+      .input(z.object({ base64: z.string(), publicId: z.string().optional() }))
+      .mutation(async ({ input }) => {
+        try {
+          const res = await uploadBase64Image(input.base64, input.publicId);
+          return { success: true, url: res.url, publicId: res.public_id };
+        } catch (e: any) {
+          throw new TRPCError({
+            code: "INTERNAL_SERVER_ERROR",
+            message: e?.message || String(e),
+          });
+        }
       }),
   }),
 

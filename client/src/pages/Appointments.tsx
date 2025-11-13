@@ -29,6 +29,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { CalendarPicker } from "@/components/CalendarPicker";
 import { AppointmentModal } from "@/components/AppointmentModal";
 import { AppointmentStats } from "@/components/AppointmentStats";
+import CompleteAppointmentModal from "@/components/CompleteAppointmentModal";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -72,8 +73,8 @@ export default function Appointments() {
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState<string>("all");
   const [viewMode, setViewMode] = useState<"day" | "week" | "month">("day");
-
-  // Calcular range de datas baseado no modo de visualização
+  const [completeModalAppointment, setCompleteModalAppointment] =
+    useState<AppointmentData | null>(null);
   const getDateRange = () => {
     // Normaliza a data para início do dia para evitar diferenças por hora
     const base = startOfDay(selectedDate);
@@ -135,7 +136,8 @@ export default function Appointments() {
       appointmentsQuery.refetch();
       toast.success("Agendamento concluído com sucesso");
     },
-    onError: error => toast.error(`Erro ao concluir agendamento: ${error.message}`),
+    onError: error =>
+      toast.error(`Erro ao concluir agendamento: ${error.message}`),
   });
 
   const cancelAppointmentMutation = trpc.appointments.cancel.useMutation({
@@ -143,7 +145,8 @@ export default function Appointments() {
       appointmentsQuery.refetch();
       toast.success("Agendamento cancelado com sucesso");
     },
-    onError: error => toast.error(`Erro ao cancelar agendamento: ${error.message}`),
+    onError: error =>
+      toast.error(`Erro ao cancelar agendamento: ${error.message}`),
   });
 
   const deleteAppointmentMutation = trpc.appointments.delete.useMutation({
@@ -151,7 +154,8 @@ export default function Appointments() {
       appointmentsQuery.refetch();
       toast.success("Agendamento removido com sucesso");
     },
-    onError: error => toast.error(`Erro ao excluir agendamento: ${error.message}`),
+    onError: error =>
+      toast.error(`Erro ao excluir agendamento: ${error.message}`),
   });
 
   // Contagem de agendamentos por data para o calendário
@@ -182,6 +186,29 @@ export default function Appointments() {
       return matchesSearch && matchesStatus;
     }) || [];
 
+  // Helper: formata duração em minutos para 'Xh Ym' ou 'Xm'
+  const formatDuration = (mins?: number | null) => {
+    const m = Number(mins ?? 0) || 0;
+    const hours = Math.floor(m / 60);
+    const remaining = m % 60;
+    if (hours > 0 && remaining > 0) return `${hours}h ${remaining}m`;
+    if (hours > 0) return `${hours}h`;
+    return `${remaining}m`;
+  };
+
+  // Helper: formata preço e inclui 'A partir de ' quando priceFrom for verdadeiro
+  const formatServicePrice = (
+    price?: string | number | null,
+    priceFrom?: boolean | null
+  ) => {
+    const value = Number(price ?? 0) || 0;
+    const formatted = new Intl.NumberFormat("pt-BR", {
+      style: "currency",
+      currency: "BRL",
+    }).format(value);
+    return (priceFrom ? "A partir de " : "") + formatted;
+  };
+
   // Handlers
   const handleEditAppointment = (appointment: AppointmentData) => {
     setEditingAppointment(appointment);
@@ -203,17 +230,13 @@ export default function Appointments() {
   };
 
   // Handlers para ações rápidas
-  const handleQuickComplete = (appointmentId: string) => {
-    if (
-      confirm(
-        "Confirma a conclusão deste agendamento? Isso registrará a receita no sistema."
-      )
-    ) {
-      completeAppointmentMutation.mutate({
-        id: appointmentId,
-        paymentMethod: "cash" as const,
-      });
-    }
+  const handleQuickComplete = (appointment: AppointmentData) => {
+    setCompleteModalAppointment(appointment);
+  };
+
+  const closeCompleteModal = () => {
+    setCompleteModalAppointment(null);
+    appointmentsQuery.refetch();
   };
 
   const handleQuickCancel = (appointmentId: string) => {
@@ -484,35 +507,35 @@ export default function Appointments() {
                                 {/* Botões de ação rápida */}
                                 {(appointment.status === "pending" ||
                                   appointment.status === "confirmed") && (
-                                    <>
-                                      <Button
-                                        size="sm"
-                                        variant="outline"
-                                        onClick={() =>
-                                          handleQuickComplete(appointment.id)
-                                        }
-                                        className="text-[var(--primary)] border-[var(--primary)] hover:bg-[var(--primary)]/10"
-                                        disabled={
-                                          completeAppointmentMutation.isPending
-                                        }
-                                      >
-                                        <CheckCircle className="h-4 w-4" />
-                                      </Button>
-                                      <Button
-                                        size="sm"
-                                        variant="outline"
-                                        onClick={() =>
-                                          handleQuickCancel(appointment.id)
-                                        }
-                                        className="text-[var(--destructive)] border-[var(--destructive)] hover:bg-[var(--destructive)]/10"
-                                        disabled={
-                                          cancelAppointmentMutation.isPending
-                                        }
-                                      >
-                                        <X className="h-4 w-4" />
-                                      </Button>
-                                    </>
-                                  )}
+                                  <>
+                                    <Button
+                                      size="sm"
+                                      variant="outline"
+                                      onClick={() =>
+                                        handleQuickComplete(appointment)
+                                      }
+                                      className="text-[var(--primary)] border-[var(--primary)] hover:bg-[var(--primary)]/10"
+                                      disabled={
+                                        completeAppointmentMutation.isPending
+                                      }
+                                    >
+                                      <CheckCircle className="h-4 w-4" />
+                                    </Button>
+                                    <Button
+                                      size="sm"
+                                      variant="outline"
+                                      onClick={() =>
+                                        handleQuickCancel(appointment.id)
+                                      }
+                                      className="text-[var(--destructive)] border-[var(--destructive)] hover:bg-[var(--destructive)]/10"
+                                      disabled={
+                                        cancelAppointmentMutation.isPending
+                                      }
+                                    >
+                                      <X className="h-4 w-4" />
+                                    </Button>
+                                  </>
+                                )}
 
                                 <DropdownMenu>
                                   <DropdownMenuTrigger asChild>
@@ -577,8 +600,14 @@ export default function Appointments() {
                                     {appointment.service?.name}
                                   </p>
                                   <p className="text-muted-foreground">
-                                    {appointment.service?.duration}min • R${" "}
-                                    {appointment.service?.price}
+                                    {formatDuration(
+                                      appointment.service?.duration
+                                    )}{" "}
+                                    •{" "}
+                                    {formatServicePrice(
+                                      appointment.service?.price,
+                                      Boolean(appointment.service?.priceFrom)
+                                    )}
                                   </p>
                                 </div>
                               </div>
@@ -638,13 +667,37 @@ export default function Appointments() {
           appointment={
             editingAppointment
               ? {
-                ...editingAppointment,
-                status: editingAppointment.status || "pending",
-                notes: editingAppointment.notes || undefined,
-              }
+                  ...editingAppointment,
+                  status: editingAppointment.status || "pending",
+                  notes: editingAppointment.notes || undefined,
+                }
               : undefined
           }
           initialDate={selectedDate}
+        />
+
+        {/* Modal de concluir agendamento */}
+        <CompleteAppointmentModal
+          isOpen={!!completeModalAppointment}
+          onClose={closeCompleteModal}
+          appointment={
+            completeModalAppointment
+              ? {
+                  id: completeModalAppointment.id,
+                  service: completeModalAppointment.service
+                    ? {
+                        id: completeModalAppointment.service.id,
+                        name: completeModalAppointment.service.name,
+                        price: completeModalAppointment.service.price,
+                      }
+                    : undefined,
+                }
+              : undefined
+          }
+          onSuccess={() => {
+            closeCompleteModal();
+            appointmentsQuery.refetch();
+          }}
         />
       </div>
     </DashboardLayout>

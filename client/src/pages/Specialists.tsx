@@ -66,7 +66,8 @@ function SpecialistCard({
     <Card className="shadow rounded-xl border border-muted bg-white">
       <CardContent className="p-6">
         {/* Header com foto e informações */}
-        <div className="flex items-start gap-4 mb-4">
+        {/* Em mobile empilhamos; em sm+ mantemos horizontal */}
+        <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4 mb-4">
           <Avatar className="h-20 w-20 border-2 border-white shadow-lg">
             {specialist.photo ? (
               <AvatarImage
@@ -80,21 +81,22 @@ function SpecialistCard({
               </AvatarFallback>
             )}
           </Avatar>
-          <div className="flex-1">
-            <div className="font-bold text-lg text-gray-600 mb-1">
+          <div className="flex-1 text-center sm:text-left">
+            <div className="font-bold text-lg text-gray-600 mb-1 break-words">
               {specialist.name}
             </div>
-            <div className="text-muted-foreground text-sm mb-1">
+            <div className="text-muted-foreground text-sm mb-1 break-words">
               {specialist.specialty}
             </div>
-            <div className="text-muted-foreground text-sm">
+            <div className="text-muted-foreground text-sm break-words">
               {specialist.email}
             </div>
-            <div className="text-muted-foreground text-sm">
+            <div className="text-muted-foreground text-sm break-words">
               {specialist.phone}
             </div>
           </div>
-          <div className="flex gap-2">
+          {/* Ações: em mobile aparecem abaixo (com margin-top) */}
+          <div className="flex gap-2 mt-3 sm:mt-0">
             <Button
               variant="outline"
               size="sm"
@@ -138,17 +140,17 @@ function SpecialistCard({
           ) : (
             <div className="grid grid-cols-1 gap-2">
               {scheduleQuery.data?.workingHours
-                .filter((wh) => wh.isWorking)
-                .map((wh) => (
+                .filter(wh => wh.isWorking)
+                .map(wh => (
                   <div
                     key={wh.dayOfWeek}
-                    className="flex items-center justify-between text-xs py-1.5 px-3 bg-blue-50 dark:bg-blue-950 rounded-md"
+                    className="flex flex-col sm:flex-row items-start sm:items-center justify-between text-xs py-1.5 px-3 bg-blue-50 dark:bg-blue-950 rounded-md"
                   >
-                    <span className="font-medium text-blue-900 dark:text-blue-100 w-12">
+                    <span className="font-medium text-blue-900 dark:text-blue-100 w-full sm:w-12 mb-1 sm:mb-0">
                       {daysOfWeek[wh.dayOfWeek]}
                     </span>
-                    <div className="flex items-center gap-3 text-blue-700 dark:text-blue-300">
-                      <span>
+                    <div className="flex flex-col sm:flex-row sm:items-center gap-2 text-blue-700 dark:text-blue-300 w-full">
+                      <span className="truncate">
                         {wh.startTime} - {wh.endTime}
                       </span>
                       {wh.breakStartTime && wh.breakEndTime && (
@@ -160,12 +162,12 @@ function SpecialistCard({
                   </div>
                 ))}
               {(!scheduleQuery.data?.workingHours ||
-                scheduleQuery.data.workingHours.filter((wh) => wh.isWorking)
+                scheduleQuery.data.workingHours.filter(wh => wh.isWorking)
                   .length === 0) && (
-                  <div className="text-xs text-amber-600 bg-amber-50 dark:bg-amber-950 dark:text-amber-400 py-2 px-3 rounded-md">
-                    ⚠️ Nenhum horário de trabalho configurado
-                  </div>
-                )}
+                <div className="text-xs text-amber-600 bg-amber-50 dark:bg-amber-950 dark:text-amber-400 py-2 px-3 rounded-md">
+                  ⚠️ Nenhum horário de trabalho configurado
+                </div>
+              )}
             </div>
           )}
         </div>
@@ -173,7 +175,7 @@ function SpecialistCard({
         {/* Configurações adicionais */}
         {scheduleQuery.data && (
           <div className="mt-4 pt-4 border-t">
-            <div className="grid grid-cols-2 gap-3 text-xs">
+            <div className="flex flex-wrap gap-3 text-xs">
               <div className="flex items-center gap-2">
                 <div className="w-2 h-2 rounded-full bg-green-500"></div>
                 <span className="text-muted-foreground">
@@ -188,10 +190,11 @@ function SpecialistCard({
               </div>
               <div className="flex items-center gap-2">
                 <div
-                  className={`w-2 h-2 rounded-full ${scheduleQuery.data.autoConfirmBookings
-                    ? "bg-green-500"
-                    : "bg-gray-400"
-                    }`}
+                  className={`w-2 h-2 rounded-full ${
+                    scheduleQuery.data.autoConfirmBookings
+                      ? "bg-green-500"
+                      : "bg-gray-400"
+                  }`}
                 ></div>
                 <span className="text-muted-foreground">
                   {scheduleQuery.data.autoConfirmBookings
@@ -201,10 +204,11 @@ function SpecialistCard({
               </div>
               <div className="flex items-center gap-2">
                 <div
-                  className={`w-2 h-2 rounded-full ${scheduleQuery.data.allowOnlineBooking
-                    ? "bg-green-500"
-                    : "bg-gray-400"
-                    }`}
+                  className={`w-2 h-2 rounded-full ${
+                    scheduleQuery.data.allowOnlineBooking
+                      ? "bg-green-500"
+                      : "bg-gray-400"
+                  }`}
                 ></div>
                 <span className="text-muted-foreground">
                   {scheduleQuery.data.allowOnlineBooking
@@ -685,7 +689,8 @@ export default function Specialists() {
                           Configure os horários de trabalho
                         </div>
                         <div className="text-sm text-blue-700 dark:text-blue-300">
-                          É obrigatório definir os horários ao criar um especialista
+                          É obrigatório definir os horários ao criar um
+                          especialista
                         </div>
                       </div>
 
@@ -694,8 +699,8 @@ export default function Specialists() {
                           <CardHeader>
                             <CardTitle>Configurações Gerais</CardTitle>
                             <CardDescription>
-                              Defina duração de slots, antecedência e opções
-                              de agendamento
+                              Defina duração de slots, antecedência e opções de
+                              agendamento
                             </CardDescription>
                           </CardHeader>
                           <CardContent className="space-y-3">
@@ -843,9 +848,7 @@ export default function Specialists() {
                                 <Button
                                   type="button"
                                   variant="outline"
-                                  onClick={() =>
-                                    copyScheduleToAll(copyFromDay)
-                                  }
+                                  onClick={() => copyScheduleToAll(copyFromDay)}
                                   className="px-3 py-1 text-sm"
                                 >
                                   Aplicar para todos os dias
@@ -980,6 +983,25 @@ export default function Specialists() {
                     <SpecialistScheduleManagement
                       isOpen={showScheduleManagement}
                       specialistId={editingSpecialistId || undefined}
+                      editingSpecialist={
+                        isEditing
+                          ? {
+                              id: formData.id,
+                              name: formData.name,
+                              email: formData.email || undefined,
+                              phone: formData.phone || undefined,
+                              photo: formData.photo || undefined,
+                              specialty: formData.specialty || undefined,
+                              bio: formData.bio || undefined,
+                            }
+                          : undefined
+                      }
+                      onSave={() => {
+                        // fecha modal e finaliza edição no pai
+                        setShowScheduleManagement(false);
+                        setIsEditing(false);
+                        resetForm();
+                      }}
                       onClose={() => setShowScheduleManagement(false)}
                     />
                   )}
@@ -1030,7 +1052,7 @@ export default function Specialists() {
                   Nenhum especialista cadastrado.
                 </div>
               )}
-              {specialistsQuery.data?.map((spec) => (
+              {specialistsQuery.data?.map(spec => (
                 <SpecialistCard
                   key={spec.id}
                   specialist={spec}
