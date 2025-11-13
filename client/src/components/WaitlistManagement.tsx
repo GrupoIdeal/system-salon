@@ -19,12 +19,7 @@ import {
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
-import {
-  Card,
-  CardContent,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
   Table,
   TableBody,
@@ -66,6 +61,7 @@ export function WaitlistManagement({
 
   const waitlistQuery = trpc.waitlist.list.useQuery({});
   const statsQuery = trpc.waitlist.stats.useQuery();
+  const servicesQuery = trpc.services.list.useQuery();
   // clients/services/specialists queries are used inside the Add modal only
 
   const removeFromWaitlistMutation = trpc.waitlist.remove.useMutation({
@@ -98,19 +94,28 @@ export function WaitlistManagement({
     switch (status) {
       case "active":
         return (
-          <Badge variant="default" className="bg-[var(--chart-1)] text-[var(--primary)]">
+          <Badge
+            variant="default"
+            className="bg-[var(--chart-1)] text-[var(--primary)]"
+          >
             Ativo
           </Badge>
         );
       case "notified":
         return (
-          <Badge variant="default" className="bg-[var(--secondary)] text-[var(--primary)]">
+          <Badge
+            variant="default"
+            className="bg-[var(--secondary)] text-[var(--primary)]"
+          >
             Notificado
           </Badge>
         );
       case "confirmed":
         return (
-          <Badge variant="default" className="bg-[var(--chart-1)] text-[var(--primary)]">
+          <Badge
+            variant="default"
+            className="bg-[var(--chart-1)] text-[var(--primary)]"
+          >
             Confirmado
           </Badge>
         );
@@ -129,7 +134,10 @@ export function WaitlistManagement({
         return <Badge variant="destructive">Alta</Badge>;
       case 2:
         return (
-          <Badge variant="default" className="bg-[var(--secondary)] text-[var(--primary)]">
+          <Badge
+            variant="default"
+            className="bg-[var(--secondary)] text-[var(--primary)]"
+          >
             Média
           </Badge>
         );
@@ -232,9 +240,40 @@ export function WaitlistManagement({
                         </div>
                       </TableCell>
                       <TableCell>
-                        <span className="text-sm">
-                          Serviço #{entry.serviceId.slice(0, 8)}
-                        </span>
+                        {(() => {
+                          const service = servicesQuery.data?.find(
+                            s => s.id === entry.serviceId
+                          );
+                          return (
+                            <div className="text-sm">
+                              <div className="font-medium">
+                                {service?.name ??
+                                  `Serviço #${entry.serviceId.slice(0, 8)}`}
+                              </div>
+                              {service && (
+                                <div className="text-xs text-muted-foreground">
+                                  {(() => {
+                                    const mins = service.duration ?? 0;
+                                    const hours = Math.floor(mins / 60);
+                                    const remaining = mins % 60;
+                                    if (hours > 0 && remaining > 0)
+                                      return `${hours}h ${remaining}m`;
+                                    if (hours > 0) return `${hours}h`;
+                                    return `${remaining}m`;
+                                  })()}{" "}
+                                  •{" "}
+                                  {(service.priceFrom ? "A partir de " : "") +
+                                    new Intl.NumberFormat("pt-BR", {
+                                      style: "currency",
+                                      currency: "BRL",
+                                    }).format(
+                                      parseFloat(String(service.price))
+                                    )}
+                                </div>
+                              )}
+                            </div>
+                          );
+                        })()}
                       </TableCell>
                       <TableCell>{getPriorityBadge(entry.priority)}</TableCell>
                       <TableCell>{getStatusBadge(entry.status)}</TableCell>
@@ -248,13 +287,14 @@ export function WaitlistManagement({
                               )}
                             </div>
                           )}
-                          {entry.preferredTimeStart && entry.preferredTimeEnd && (
-                            <div className="flex items-center gap-1">
-                              <Clock className="h-3 w-3" />
-                              {entry.preferredTimeStart} -{" "}
-                              {entry.preferredTimeEnd}
-                            </div>
-                          )}
+                          {entry.preferredTimeStart &&
+                            entry.preferredTimeEnd && (
+                              <div className="flex items-center gap-1">
+                                <Clock className="h-3 w-3" />
+                                {entry.preferredTimeStart} -{" "}
+                                {entry.preferredTimeEnd}
+                              </div>
+                            )}
                         </div>
                       </TableCell>
                       <TableCell>

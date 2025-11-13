@@ -195,6 +195,8 @@ export const serviceSchema = z.object({
   name: z.string().min(2, "Nome do serviço é obrigatório"),
   description: z.string().optional(),
   duration: z.number().int().positive("Duração deve ser positiva"),
+  // Indica se o preço é um valor mínimo ('a partir de')
+  priceFrom: z.boolean().optional().default(false),
   price: z
     .string()
     .or(z.number())

@@ -130,6 +130,7 @@ export const publicBookingRouter = router({
           description: services.description,
           duration: services.duration,
           price: services.price,
+          priceFrom: services.priceFrom,
         })
         .from(services)
         .where(

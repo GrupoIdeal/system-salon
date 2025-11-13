@@ -38,6 +38,7 @@ interface ServiceData {
   description: string | null;
   duration: number;
   price: string;
+  priceFrom?: boolean;
 }
 
 interface SpecialistData {
@@ -79,7 +80,8 @@ function PublicBookingPage() {
   } | null>(null); // Queries tRPC públicas
   const salonQuery = publicTrpc.booking.getSalonInfo.useQuery();
   const salon = salonQuery.data;
-  const instagram = (salon as unknown as { instagram?: string } | undefined)?.instagram;
+  const instagram = (salon as unknown as { instagram?: string } | undefined)
+    ?.instagram;
 
   const specialistsQuery = publicTrpc.booking.getAllSpecialists.useQuery();
 
@@ -108,7 +110,10 @@ function PublicBookingPage() {
         toast.success("Agendamento criado com sucesso");
       },
       onError: error => {
-        toast.error("Erro ao criar agendamento: " + (error?.message || "Erro desconhecido"));
+        toast.error(
+          "Erro ao criar agendamento: " +
+            (error?.message || "Erro desconhecido")
+        );
         setIsSubmitting(false);
       },
     });
@@ -352,12 +357,13 @@ function PublicBookingPage() {
               return (
                 <div key={stepName} className="flex items-center">
                   <div
-                    className={`w-8 h-8 rounded-full flex items-center justify-center text-xs font-medium ${isCompleted
-                      ? "bg-[var(--primary)]"
-                      : isActive
-                        ? "bg-[var(--primary)] text-[var(--primary-foreground)]"
-                        : "bg-gray-200 text-gray-500"
-                      }`}
+                    className={`w-8 h-8 rounded-full flex items-center justify-center text-xs font-medium ${
+                      isCompleted
+                        ? "bg-[var(--primary)]"
+                        : isActive
+                          ? "bg-[var(--primary)] text-[var(--primary-foreground)]"
+                          : "bg-gray-200 text-gray-500"
+                    }`}
                   >
                     {isCompleted ? (
                       <CheckCircle className="h-4 w-4" />
@@ -372,10 +378,11 @@ function PublicBookingPage() {
                   </span>
                   {index < 3 && (
                     <div
-                      className={`w-12 h-px mx-4 ${index < currentStepIndex
-                        ? "bg-[var(--primary)]"
-                        : "bg-gray-200"
-                        }`}
+                      className={`w-12 h-px mx-4 ${
+                        index < currentStepIndex
+                          ? "bg-[var(--primary)]"
+                          : "bg-gray-200"
+                      }`}
                     />
                   )}
                 </div>
@@ -479,10 +486,22 @@ function PublicBookingPage() {
                       </div>
                       <div className="text-right">
                         <div className="text-lg font-bold text-[var(--primary)]">
-                          R$ {Number(service.price).toFixed(2)}
+                          {(service.priceFrom ? "A partir de " : "") +
+                            new Intl.NumberFormat("pt-BR", {
+                              style: "currency",
+                              currency: "BRL",
+                            }).format(parseFloat(service.price))}
                         </div>
                         <div className="text-sm text-gray-500">
-                          {service.duration} min
+                          {(() => {
+                            const mins = service.duration ?? 0;
+                            const hours = Math.floor(mins / 60);
+                            const remaining = mins % 60;
+                            if (hours > 0 && remaining > 0)
+                              return `${hours}h ${remaining}m`;
+                            if (hours > 0) return `${hours}h`;
+                            return `${remaining}m`;
+                          })()}
                         </div>
                       </div>
                     </div>
@@ -514,8 +533,21 @@ function PublicBookingPage() {
               <div className="text-sm text-gray-600">
                 Serviço:{" "}
                 <span className="font-medium">{selectedServiceData.name}</span>•
-                R$ {Number(selectedServiceData.price).toFixed(2)}•{" "}
-                {selectedServiceData.duration} min
+                {(selectedServiceData.priceFrom ? "A partir de " : "") +
+                  new Intl.NumberFormat("pt-BR", {
+                    style: "currency",
+                    currency: "BRL",
+                  }).format(parseFloat(selectedServiceData.price))}{" "}
+                •{" "}
+                {(() => {
+                  const mins = selectedServiceData.duration ?? 0;
+                  const hours = Math.floor(mins / 60);
+                  const remaining = mins % 60;
+                  if (hours > 0 && remaining > 0)
+                    return `${hours}h ${remaining}m`;
+                  if (hours > 0) return `${hours}h`;
+                  return `${remaining}m`;
+                })()}
               </div>
             </CardHeader>
             <CardContent>
@@ -528,7 +560,9 @@ function PublicBookingPage() {
                       {selectedDate
                         ? format(selectedDate, "MMMM yyyy", { locale: ptBR })
                         : availableDates.length > 0
-                          ? format(availableDates[0], "MMMM yyyy", { locale: ptBR })
+                          ? format(availableDates[0], "MMMM yyyy", {
+                              locale: ptBR,
+                            })
                           : format(new Date(), "MMMM yyyy", { locale: ptBR })}
                     </div>
                   </div>
@@ -541,10 +575,11 @@ function PublicBookingPage() {
                       return (
                         <button
                           key={date.toISOString()}
-                          className={`p-1.5 text-xs sm:text-sm rounded-lg border transition-colors flex flex-col items-center ${isSelected
-                            ? "bg-[var(--primary)] text-[var(--primary-foreground)]"
-                            : "bg-white hover:bg-[var(--background)] border-[var(--border)]"
-                            }`}
+                          className={`p-1.5 text-xs sm:text-sm rounded-lg border transition-colors flex flex-col items-center ${
+                            isSelected
+                              ? "bg-[var(--primary)] text-[var(--primary-foreground)]"
+                              : "bg-white hover:bg-[var(--background)] border-[var(--border)]"
+                          }`}
                           onClick={() => handleDateSelect(date)}
                         >
                           <div className="text-xs text-gray-500 hidden sm:block">
@@ -586,10 +621,11 @@ function PublicBookingPage() {
                       {timeSlots.map(time => (
                         <button
                           key={time}
-                          className={`p-3 text-sm rounded-lg border transition-colors ${selectedTime === time
-                            ? "bg-[var(--primary)] text-[var(--primary-foreground)] border-[var(--primary)]"
-                            : "bg-white hover:bg-[var(--background)] border-gray-200"
-                            }`}
+                          className={`p-3 text-sm rounded-lg border transition-colors ${
+                            selectedTime === time
+                              ? "bg-[var(--primary)] text-[var(--primary-foreground)] border-[var(--primary)]"
+                              : "bg-white hover:bg-[var(--background)] border-gray-200"
+                          }`}
                           onClick={() => handleTimeSelect(time)}
                         >
                           <Clock className="h-4 w-4 mx-auto mb-1" />
