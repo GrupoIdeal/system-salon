@@ -10,6 +10,7 @@ import { appRouter, publicRouter } from "../routers";
 import { createContext } from "./context";
 import { serveStatic, setupVite } from "./vite";
 import { ENV } from "./env";
+// Não precisamos de SDK nem helpers de logs neste arquivo agora que usamos tRPC
 
 function isPortAvailable(port: number): Promise<boolean> {
   return new Promise(resolve => {
@@ -73,6 +74,8 @@ async function startServer() {
       createContext,
     })
   );
+
+  // ...existing code... (REST endpoint removed; use tRPC audit.list)
 
   // tRPC API pública com CORS restrito e rate limiting
   const allowedOrigins = ENV.isProduction

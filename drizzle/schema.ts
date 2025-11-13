@@ -376,3 +376,30 @@ export const specialistSchedules = pgTable(
 
 export type SpecialistScheduleRow = typeof specialistSchedules.$inferSelect;
 export type InsertSpecialistSchedule = typeof specialistSchedules.$inferInsert;
+
+// Nova tabela de audit logs para trilha de auditoria
+export const auditLogs = pgTable(
+  "audit_logs",
+  {
+    id: varchar("id", { length: 64 }).primaryKey(),
+    userId: varchar("userId", { length: 64 }), // pode ser null para ações do sistema
+    // Associação opcional ao salão para filtragem eficiente
+    salonId: varchar("salonId", { length: 64 }),
+    action: varchar("action", { length: 64 }).notNull(), // create, update, delete, login, etc
+    entity: varchar("entity", { length: 128 }).notNull(), // users, services, appointments...
+    entityId: varchar("entityId", { length: 128 }),
+    before: jsonb("before").$type<object | null>(),
+    after: jsonb("after").$type<object | null>(),
+    metadata: jsonb("metadata").$type<object | null>(), // ip, userAgent, reason...
+    createdAt: timestamp("createdAt").defaultNow().notNull(),
+  },
+  table => ({
+    userIdIdx: index("audit_logs_userId_idx").on(table.userId),
+    entityIdx: index("audit_logs_entity_idx").on(table.entity, table.entityId),
+    salonIdIdx: index("audit_logs_salonId_idx").on(table.salonId),
+    createdAtIdx: index("audit_logs_createdAt_idx").on(table.createdAt),
+  })
+);
+
+export type AuditLog = typeof auditLogs.$inferSelect;
+export type InsertAuditLog = typeof auditLogs.$inferInsert;

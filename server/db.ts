@@ -21,6 +21,7 @@ import {
   appointments,
   passwordResets,
   transactions,
+  auditLogs,
   InsertUser,
   InsertSalon,
   InsertSpecialist,
@@ -29,6 +30,7 @@ import {
   InsertAppointment,
   InsertPasswordReset,
   InsertTransaction,
+  InsertAuditLog,
   User,
   Salon,
   Specialist,
@@ -37,10 +39,12 @@ import {
   Appointment,
   AppointmentWithDetails,
   PasswordReset,
+  AuditLog,
 } from "../drizzle/schema";
 import * as schema from "../drizzle/schema";
 import * as relations from "../drizzle/relations";
 import { ENV } from "./_core/env";
+import { nanoid } from "nanoid";
 
 let _db: ReturnType<typeof drizzle> | null = null;
 
@@ -59,6 +63,229 @@ export async function getDb() {
     }
   }
   return _db;
+}
+
+// Helper para mascarar campos sensíveis antes de salvar no audit log
+function maskSensitiveFields(value: unknown): unknown {
+  if (value === null || value === undefined) return value;
+  if (Array.isArray(value)) return value.map(v => maskSensitiveFields(v));
+  if (typeof value === "object") {
+    const obj: Record<string, unknown> = {};
+    for (const [k, v] of Object.entries(value as Record<string, unknown>)) {
+      const lower = k.toLowerCase();
+      if (/(password|pass|pwd|secret|token)/.test(lower)) {
+        obj[k] = "[REDACTED]";
+      } else {
+        obj[k] = maskSensitiveFields(v);
+      }
+    }
+    return obj;
+  }
+  return value;
+}
+
+/**
+ * Cria uma entrada de audit log
+ */
+export async function createAuditLog(params: {
+  userId?: string | null;
+  action: string;
+  entity: string;
+  entityId?: string | null;
+  before?: unknown;
+  after?: unknown;
+  metadata?: Record<string, unknown> | null;
+}): Promise<void> {
+  const db = await getDb();
+  if (!db) return;
+  const id = nanoid();
+  try {
+    // Tentar inferir salonId se não fornecido
+    const metadata = { ...(params.metadata ?? {}) } as Record<string, unknown>;
+    try {
+      if (!metadata.salonId && params.userId) {
+        // getSalonByUserId está no mesmo módulo e pode ser usado aqui
+        const salon = await getSalonByUserId(params.userId as string).catch(
+          () => undefined
+        );
+        if (salon && salon.id) metadata.salonId = salon.id;
+      }
+    } catch {
+      // ignore
+    }
+
+    // Extrair salonId separado para persistência eficiente
+    const salonId =
+      typeof metadata.salonId === "string" ? metadata.salonId : undefined;
+
+    // Mascarar campos sensíveis em before/after
+    const safeBefore = params.before
+      ? maskSensitiveFields(params.before)
+      : null;
+    const safeAfter = params.after ? maskSensitiveFields(params.after) : null;
+
+    await db.insert(auditLogs).values({
+      id,
+      userId: params.userId ?? null,
+      salonId: salonId ?? null,
+      action: params.action,
+      entity: params.entity,
+      entityId: params.entityId ?? null,
+      before: safeBefore ?? null,
+      after: safeAfter ?? null,
+      metadata: Object.keys(metadata).length > 0 ? metadata : null,
+      createdAt: new Date(),
+    } as InsertAuditLog);
+  } catch (err) {
+    // Não propagar erro de logging para não quebrar a ação principal
+    console.error("createAuditLog failed", err);
+  }
+}
+
+/**
+ * Lista audit logs com filtros simples
+ */
+export async function listAuditLogs(filter?: {
+  userId?: string;
+  userIds?: string[];
+  entity?: string;
+  entityId?: string;
+  limit?: number;
+  salonId?: string;
+  startDate?: Date;
+  endDate?: Date;
+}): Promise<AuditLog[]> {
+  const db = await getDb();
+  if (!db) return [];
+
+  const limit = filter?.limit ?? 100;
+
+  // Construir WHERE como fragments SQL e combinar em uma única expressão
+  const parts: Array<ReturnType<typeof sql>> = [];
+  if (filter?.userId) parts.push(sql`${auditLogs.userId} = ${filter.userId}`);
+  if (filter?.userIds && filter.userIds.length > 0)
+    parts.push(
+      sql`${auditLogs.userId} IN (${sql.join(
+        filter.userIds.map(u => sql`${u}`),
+        sql`, `
+      )})`
+    );
+  if (filter?.entity) parts.push(sql`${auditLogs.entity} = ${filter.entity}`);
+  if (filter?.entityId)
+    parts.push(sql`${auditLogs.entityId} = ${filter.entityId}`);
+  if (filter?.salonId)
+    parts.push(
+      sql`(COALESCE(${auditLogs.salonId}::text, '') = ${filter.salonId} OR (${auditLogs.metadata} ->> 'salonId') = ${filter.salonId})`
+    );
+  if (filter?.startDate)
+    parts.push(sql`${auditLogs.createdAt} >= ${filter.startDate}`);
+  if (filter?.endDate)
+    parts.push(sql`${auditLogs.createdAt} <= ${filter.endDate}`);
+
+  let whereExpr: ReturnType<typeof sql> | undefined = undefined;
+  if (parts.length === 1) whereExpr = parts[0];
+  else if (parts.length > 1)
+    whereExpr = parts.reduce((acc, cur) => sql`${acc} AND ${cur}`);
+
+  if (whereExpr) {
+    return await db
+      .select()
+      .from(auditLogs)
+      .where(whereExpr)
+      .orderBy(desc(auditLogs.createdAt))
+      .limit(limit);
+  }
+
+  return await db
+    .select()
+    .from(auditLogs)
+    .orderBy(desc(auditLogs.createdAt))
+    .limit(limit);
+}
+
+/**
+ * Lista audit logs com paginação e retorna total para paginação no cliente
+ */
+export async function listAuditLogsWithCount(filter?: {
+  userId?: string;
+  userIds?: string[];
+  entity?: string;
+  entityId?: string;
+  limit?: number;
+  offset?: number;
+  salonId?: string;
+  startDate?: Date;
+  endDate?: Date;
+}): Promise<{ rows: AuditLog[]; total: number }> {
+  const db = await getDb();
+  if (!db) return { rows: [], total: 0 };
+
+  const limit = filter?.limit ?? 100;
+  const offset = filter?.offset ?? 0;
+
+  const parts: Array<ReturnType<typeof sql>> = [];
+  if (filter?.userId) parts.push(sql`${auditLogs.userId} = ${filter.userId}`);
+  if (filter?.userIds && filter.userIds.length > 0)
+    parts.push(
+      sql`${auditLogs.userId} IN (${sql.join(
+        filter.userIds.map(u => sql`${u}`),
+        sql`, `
+      )})`
+    );
+  if (filter?.entity) parts.push(sql`${auditLogs.entity} = ${filter.entity}`);
+  if (filter?.entityId)
+    parts.push(sql`${auditLogs.entityId} = ${filter.entityId}`);
+  if (filter?.salonId)
+    parts.push(
+      sql`(COALESCE(${auditLogs.salonId}::text, '') = ${filter.salonId} OR (${auditLogs.metadata} ->> 'salonId') = ${filter.salonId})`
+    );
+  if (filter?.startDate)
+    parts.push(sql`${auditLogs.createdAt} >= ${filter.startDate}`);
+  if (filter?.endDate)
+    parts.push(sql`${auditLogs.createdAt} <= ${filter.endDate}`);
+
+  let whereExpr: ReturnType<typeof sql> | undefined = undefined;
+  if (parts.length === 1) whereExpr = parts[0];
+  else if (parts.length > 1)
+    whereExpr = parts.reduce((acc, cur) => sql`${acc} AND ${cur}`);
+
+  // total
+  let total = 0;
+  if (whereExpr) {
+    const countRes = await db
+      .select({ total: sql`COUNT(*)` })
+      .from(auditLogs)
+      .where(whereExpr);
+    total = Number(
+      (countRes[0] as unknown as { total?: string | number }).total ?? 0
+    );
+  } else {
+    const countRes = await db.select({ total: sql`COUNT(*)` }).from(auditLogs);
+    total = Number(
+      (countRes[0] as unknown as { total?: string | number }).total ?? 0
+    );
+  }
+
+  // rows
+  let rows: AuditLog[] = [];
+  if (whereExpr) {
+    rows = await db
+      .select()
+      .from(auditLogs)
+      .where(whereExpr)
+      .orderBy(desc(auditLogs.createdAt))
+      .limit(limit)
+      .offset(offset);
+  } else {
+    rows = await db
+      .select()
+      .from(auditLogs)
+      .orderBy(desc(auditLogs.createdAt))
+      .limit(limit)
+      .offset(offset);
+  }
+
+  return { rows, total };
 }
 
 // ============================================================================

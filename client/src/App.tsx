@@ -16,6 +16,7 @@ import Empresa from "./pages/Empresa";
 import Specialists from "./pages/Specialists";
 import PublicBooking from "./pages/PublicBooking";
 import Usuarios from "./pages/Usuarios";
+import Logs from "./pages/Logs";
 import { useAuth } from "@/_core/hooks/useAuth";
 import { useEffect } from "react";
 import Footer from "@/components/Footer";
@@ -96,6 +97,10 @@ function Router() {
       <Route
         path="/empresa"
         component={() => <ProtectedRoute component={Empresa} adminOnly />}
+      />
+      <Route
+        path="/logs"
+        component={() => <ProtectedRoute component={Logs} adminOnly />}
       />
       <Route
         path="/especialistas"

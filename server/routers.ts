@@ -15,6 +15,7 @@ import {
   getUser,
   getUserByEmail,
   getSalonByUserId,
+  getSalonById,
   getSpecialistsBySalonId,
   getSpecialistById,
   createSpecialist,
@@ -49,6 +50,8 @@ import {
   getDashboardMetrics,
   getRevenueChart,
   getMonthlyComparison,
+  createAuditLog,
+  listAuditLogsWithCount,
 } from "./db";
 import {
   scheduleAppointmentNotifications,
@@ -487,6 +490,20 @@ export const appRouter = router({
           });
         }
 
+        // Registro de auditoria: criação do especialista
+        await createAuditLog({
+          userId: _ctx.user?.id ?? null,
+          action: "create",
+          entity: "specialists",
+          entityId: newSpecialist.id,
+          before: null,
+          after: newSpecialist,
+          metadata: {
+            ip: _ctx.req?.ip,
+            userAgent: _ctx.req?.headers["user-agent"],
+          },
+        });
+
         return newSpecialist;
       }),
 
@@ -535,6 +552,21 @@ export const appRouter = router({
             >)
           : null;
         await updateSpecialist(_input.id, { ..._input.data, workingDays });
+
+        // Registro de auditoria: atualização do especialista
+        await createAuditLog({
+          userId: _ctx.user?.id ?? null,
+          action: "update",
+          entity: "specialists",
+          entityId: _input.id,
+          before: specialist,
+          after: _input.data,
+          metadata: {
+            ip: _ctx.req?.ip,
+            userAgent: _ctx.req?.headers["user-agent"],
+          },
+        });
+
         return { success: true };
       }),
 
@@ -558,6 +590,21 @@ export const appRouter = router({
         }
 
         await deleteSpecialist(_input.id);
+
+        // Registro de auditoria: remoção do especialista
+        await createAuditLog({
+          userId: _ctx.user?.id ?? null,
+          action: "delete",
+          entity: "specialists",
+          entityId: _input.id,
+          before: specialist,
+          after: null,
+          metadata: {
+            ip: _ctx.req?.ip,
+            userAgent: _ctx.req?.headers["user-agent"],
+          },
+        });
+
         return { success: true };
       }),
   }),
@@ -631,6 +678,20 @@ export const appRouter = router({
           ..._input,
         });
 
+        // Registro de auditoria: criação do cliente
+        await createAuditLog({
+          userId: _ctx.user?.id ?? null,
+          action: "create",
+          entity: "clients",
+          entityId: client.id,
+          before: null,
+          after: client,
+          metadata: {
+            ip: _ctx.req?.ip,
+            userAgent: _ctx.req?.headers["user-agent"],
+          },
+        });
+
         return client;
       }),
 
@@ -654,6 +715,21 @@ export const appRouter = router({
         }
 
         await updateClient(_input.id, _input.data);
+
+        // Registro de auditoria: atualização do cliente
+        await createAuditLog({
+          userId: _ctx.user?.id ?? null,
+          action: "update",
+          entity: "clients",
+          entityId: _input.id,
+          before: client,
+          after: _input.data,
+          metadata: {
+            ip: _ctx.req?.ip,
+            userAgent: _ctx.req?.headers["user-agent"],
+          },
+        });
+
         return { success: true };
       }),
 
@@ -677,6 +753,21 @@ export const appRouter = router({
         }
 
         await deleteClient(_input.id);
+
+        // Registro de auditoria: remoção do cliente
+        await createAuditLog({
+          userId: _ctx.user?.id ?? null,
+          action: "delete",
+          entity: "clients",
+          entityId: _input.id,
+          before: client,
+          after: null,
+          metadata: {
+            ip: _ctx.req?.ip,
+            userAgent: _ctx.req?.headers["user-agent"],
+          },
+        });
+
         return { success: true };
       }),
   }),
@@ -748,6 +839,20 @@ export const appRouter = router({
           specialistId,
         });
 
+        // Registro de auditoria: criação do serviço
+        await createAuditLog({
+          userId: _ctx.user?.id ?? null,
+          action: "create",
+          entity: "services",
+          entityId: service.id,
+          before: null,
+          after: service,
+          metadata: {
+            ip: _ctx.req?.ip,
+            userAgent: _ctx.req?.headers["user-agent"],
+          },
+        });
+
         return service;
       }),
 
@@ -783,6 +888,21 @@ export const appRouter = router({
         }
 
         await updateService(_input.id, updateData);
+
+        // Registro de auditoria: atualização do serviço
+        await createAuditLog({
+          userId: _ctx.user?.id ?? null,
+          action: "update",
+          entity: "services",
+          entityId: _input.id,
+          before: service,
+          after: _input.data,
+          metadata: {
+            ip: _ctx.req?.ip,
+            userAgent: _ctx.req?.headers["user-agent"],
+          },
+        });
+
         return { success: true };
       }),
 
@@ -828,6 +948,21 @@ export const appRouter = router({
         }
 
         await deleteService(_input.id);
+
+        // Registro de auditoria: remoção do serviço
+        await createAuditLog({
+          userId: _ctx.user?.id ?? null,
+          action: "delete",
+          entity: "services",
+          entityId: _input.id,
+          before: service,
+          after: null,
+          metadata: {
+            ip: _ctx.req?.ip,
+            userAgent: _ctx.req?.headers["user-agent"],
+          },
+        });
+
         return { success: true };
       }),
   }),
@@ -967,6 +1102,20 @@ export const appRouter = router({
           console.error("❌ Erro ao processar lista de espera:", error);
         }
 
+        // Registro de auditoria: criação do agendamento
+        await createAuditLog({
+          userId: _ctx.user?.id ?? null,
+          action: "create",
+          entity: "appointments",
+          entityId: appointment.id,
+          before: null,
+          after: appointment,
+          metadata: {
+            ip: _ctx.req?.ip,
+            userAgent: _ctx.req?.headers["user-agent"],
+          },
+        });
+
         return appointment;
       }),
 
@@ -1031,6 +1180,21 @@ export const appRouter = router({
         }
 
         await updateAppointment(_input.id, _input.data);
+
+        // Registro de auditoria: atualização do agendamento
+        await createAuditLog({
+          userId: _ctx.user?.id ?? null,
+          action: "update",
+          entity: "appointments",
+          entityId: _input.id,
+          before: appointment,
+          after: _input.data,
+          metadata: {
+            ip: _ctx.req?.ip,
+            userAgent: _ctx.req?.headers["user-agent"],
+          },
+        });
+
         return { success: true };
       }),
 
@@ -1054,6 +1218,21 @@ export const appRouter = router({
         }
 
         await deleteAppointment(_input.id);
+
+        // Registro de auditoria: remoção do agendamento
+        await createAuditLog({
+          userId: _ctx.user?.id ?? null,
+          action: "delete",
+          entity: "appointments",
+          entityId: _input.id,
+          before: appointment,
+          after: null,
+          metadata: {
+            ip: _ctx.req?.ip,
+            userAgent: _ctx.req?.headers["user-agent"],
+          },
+        });
+
         return { success: true };
       }),
 
@@ -1451,6 +1630,26 @@ export const appRouter = router({
           salonId: salon.id,
         });
 
+        // Registro de auditoria: criação do usuário
+        await createAuditLog({
+          userId: _ctx.user?.id ?? null,
+          action: "create",
+          entity: "users",
+          entityId: newId,
+          before: null,
+          after: {
+            id: newId,
+            name: _input.name,
+            email: _input.email,
+            role: _input.role,
+            salonId: salon.id,
+          },
+          metadata: {
+            ip: _ctx.req?.ip,
+            userAgent: _ctx.req?.headers["user-agent"],
+          },
+        });
+
         return { success: true, userId: newId } as const;
       }),
 
@@ -1522,6 +1721,21 @@ export const appRouter = router({
         }
 
         await upsertUser(updatePayload);
+
+        // Registro de auditoria: atualização do usuário
+        await createAuditLog({
+          userId: _ctx.user?.id ?? null,
+          action: "update",
+          entity: "users",
+          entityId: _input.id,
+          before: user,
+          after: updatePayload,
+          metadata: {
+            ip: _ctx.req?.ip,
+            userAgent: _ctx.req?.headers["user-agent"],
+          },
+        });
+
         return { success: true };
       }),
     resetPassword: protectedProcedure
@@ -1592,7 +1806,87 @@ export const appRouter = router({
             message: "Database não disponível",
           });
         await db.delete(users).where(eq(users.id, _input.id));
+
+        // Registro de auditoria: remoção do usuário
+        await createAuditLog({
+          userId: _ctx.user?.id ?? null,
+          action: "delete",
+          entity: "users",
+          entityId: _input.id,
+          before: user,
+          after: null,
+          metadata: {
+            ip: _ctx.req?.ip,
+            userAgent: _ctx.req?.headers["user-agent"],
+          },
+        });
+
         return { success: true };
+      }),
+  }),
+
+  // Audit router para admins - listar logs
+  audit: router({
+    list: protectedProcedure
+      .input(
+        z.object({
+          limit: z.number().min(1).max(1000).default(50),
+          offset: z.number().min(0).default(0),
+        })
+      )
+      .query(async ({ ctx: _ctx, input: _input }) => {
+        if (!_ctx.user || _ctx.user.role !== "admin") {
+          throw new TRPCError({ code: "FORBIDDEN", message: "Acesso negado" });
+        }
+
+        const salon = await getSalonByUserId(_ctx.user.id);
+        if (!salon) {
+          throw new TRPCError({
+            code: "NOT_FOUND",
+            message: "Salão não encontrado",
+          });
+        }
+
+        const { rows, total } = await listAuditLogsWithCount({
+          limit: _input.limit,
+          offset: _input.offset,
+          salonId: salon.id,
+        });
+
+        // Enriquecer logs antes de retornar
+        const enriched = await Promise.all(
+          rows.map(async log => {
+            const [u, s] = await Promise.all([
+              log.userId ? getUser(log.userId) : Promise.resolve(undefined),
+              log.salonId
+                ? getSalonById(log.salonId)
+                : Promise.resolve(undefined),
+            ]);
+
+            return {
+              id: log.id,
+              userId: log.userId,
+              userName: u?.name ?? null,
+              action: log.action,
+              entity: log.entity,
+              entityId: log.entityId,
+              salonId: log.salonId ?? null,
+              salonName: s?.name ?? null,
+              createdAt: log.createdAt,
+              createdAtPretty: new Date(log.createdAt).toLocaleString("pt-BR"),
+              metadata: log.metadata,
+              before: log.before,
+              after: log.after,
+            };
+          })
+        );
+
+        return {
+          logs: enriched,
+          total,
+          offset: _input.offset,
+          limit: _input.limit,
+        };
       }),
   }),
 

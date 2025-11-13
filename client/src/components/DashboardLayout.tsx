@@ -23,6 +23,7 @@ import {
   Scissors,
   User,
   Users,
+  FileText,
 } from "lucide-react";
 import { type CSSProperties, useEffect, useRef, useState } from "react";
 import { useLocation } from "wouter";
@@ -222,7 +223,9 @@ function DashboardLayoutContent({
                       tooltip={item.label}
                       className={`h-12 transition-all font-normal ${isActive ? "bg-[var(--primary)] text-[var(--sidebar-foreground)]" : "text-[var(--sidebar-foreground)]/70 hover:bg-[var(--chart-3)] hover:text-[var(--sidebar-foreground)]"}`}
                     >
-                      <item.icon className={`h-6 w-6 mr-2 ${isActive ? "text-[var(--sidebar-foreground)]" : "text-[var(--sidebar-foreground)]/70"}`} />
+                      <item.icon
+                        className={`h-6 w-6 mr-2 ${isActive ? "text-[var(--sidebar-foreground)]" : "text-[var(--sidebar-foreground)]/70"}`}
+                      />
                       <span className="truncate">{item.label}</span>
                     </SidebarMenuButton>
                   </SidebarMenuItem>
@@ -238,7 +241,9 @@ function DashboardLayoutContent({
                       tooltip="Empresa"
                       className={`h-12 transition-all font-normal ${location === "/empresa" ? "bg-[var(--primary)] text-[var(--sidebar-foreground)]" : "text-[var(--sidebar-foreground)]/70 hover:bg-[var(--chart-3)] hover:text-[var(--sidebar-foreground)]"}`}
                     >
-                      <User className={`h-6 w-6 mr-2 ${location === "/empresa" ? "text-[var(--sidebar-foreground)]" : "text-[var(--sidebar-foreground)]/70"}`} />
+                      <User
+                        className={`h-6 w-6 mr-2 ${location === "/empresa" ? "text-[var(--sidebar-foreground)]" : "text-[var(--sidebar-foreground)]/70"}`}
+                      />
                       <span className="truncate">Empresa</span>
                     </SidebarMenuButton>
                   </SidebarMenuItem>
@@ -249,8 +254,23 @@ function DashboardLayoutContent({
                       tooltip="Usuários"
                       className={`h-12 transition-all font-normal ${location === "/usuarios" ? "bg-[var(--primary)] text-[var(--sidebar-foreground)]" : "text-[var(--sidebar-foreground)]/70 hover:bg-[var(--chart-3)] hover:text-[var(--sidebar-foreground)]"}`}
                     >
-                      <Users className={`h-6 w-6 mr-2 ${location === "/usuarios" ? "text-[var(--sidebar-foreground)]" : "text-[var(--sidebar-foreground)]/70"}`} />
+                      <Users
+                        className={`h-6 w-6 mr-2 ${location === "/usuarios" ? "text-[var(--sidebar-foreground)]" : "text-[var(--sidebar-foreground)]/70"}`}
+                      />
                       <span className="truncate">Usuários</span>
+                    </SidebarMenuButton>
+                  </SidebarMenuItem>
+                  <SidebarMenuItem>
+                    <SidebarMenuButton
+                      isActive={location === "/logs"}
+                      onClick={() => setLocation("/logs")}
+                      tooltip="Log sistema"
+                      className={`h-12 transition-all font-normal ${location === "/logs" ? "bg-[var(--primary)] text-[var(--sidebar-foreground)]" : "text-[var(--sidebar-foreground)]/70 hover:bg-[var(--chart-3)] hover:text-[var(--sidebar-foreground)]"}`}
+                    >
+                      <FileText
+                        className={`h-6 w-6 mr-2 ${location === "/logs" ? "text-[var(--sidebar-foreground)]" : "text-[var(--sidebar-foreground)]/70"}`}
+                      />
+                      <span className="truncate">Log sistema</span>
                     </SidebarMenuButton>
                   </SidebarMenuItem>
                 </>
