@@ -1,13 +1,27 @@
 import type { CookieOptions, Request } from "express";
+import { ENV } from "./env";
 
 export function getSessionCookieOptions(
   _req: Request
 ): Pick<CookieOptions, "domain" | "httpOnly" | "path" | "sameSite" | "secure"> {
-  // Em desenvolvimento, usamos configurações menos restritivas para facilitar o debug
+  const isProd = ENV.isProduction;
+
+  const domain = (() => {
+    if (!isProd) return undefined;
+    const frontend = process.env.FRONTEND_URL;
+    if (!frontend) return undefined;
+    try {
+      return new URL(frontend).hostname;
+    } catch {
+      return undefined;
+    }
+  })();
+
   return {
-    httpOnly: false, // Permitir acesso via JavaScript em desenvolvimento
+    httpOnly: isProd ? true : false,
     path: "/",
-    sameSite: "lax",
-    secure: false, // Definido como false para desenvolvimento em localhost
+    sameSite: isProd ? "lax" : "lax",
+    secure: isProd ? true : false,
+    domain,
   };
 }
