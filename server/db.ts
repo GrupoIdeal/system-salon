@@ -2039,6 +2039,7 @@ export function generateId(): string {
 
 /**
  * Métricas do Dashboard - Dados financeiros e de negócios
+ * OTIMIZADO: Todas as queries rodam em paralelo para melhor performance
  */
 export async function getDashboardMetrics(salonId: string) {
   const db = await getDb();
@@ -2048,135 +2049,144 @@ export async function getDashboardMetrics(salonId: string) {
   const startOfMonth = new Date(today.getFullYear(), today.getMonth(), 1);
   const startOfWeek = new Date(today);
   startOfWeek.setDate(today.getDate() - 7);
-
-  // Receita do mês atual
-  const monthlyRevenue = await db
-    .select({
-      total: sum(transactions.amount),
-      count: count(transactions.id),
-    })
-    .from(transactions)
-    .where(
-      and(
-        eq(transactions.salonId, salonId),
-        eq(transactions.type, "income"),
-        eq(transactions.status, "completed"),
-        gte(transactions.transactionDate, startOfMonth)
-      )
-    );
-
-  // Receita semanal
-  const weeklyRevenue = await db
-    .select({
-      total: sum(transactions.amount),
-      count: count(transactions.id),
-    })
-    .from(transactions)
-    .where(
-      and(
-        eq(transactions.salonId, salonId),
-        eq(transactions.type, "income"),
-        eq(transactions.status, "completed"),
-        gte(transactions.transactionDate, startOfWeek)
-      )
-    );
-
-  // Agendamentos de hoje
   const todayStart = new Date(today);
   todayStart.setHours(0, 0, 0, 0);
   const todayEnd = new Date(today);
   todayEnd.setHours(23, 59, 59, 999);
 
-  const todayAppointments = await db
-    .select({
-      total: count(appointments.id),
-      completed: count(
-        sql`CASE WHEN ${appointments.status} = 'completed' THEN 1 END`
+  // Executar TODAS as queries em paralelo para melhor performance
+  const [
+    monthlyRevenue,
+    weeklyRevenue,
+    todayAppointments,
+    topServices,
+    topSpecialists,
+    topClients,
+  ] = await Promise.all([
+    // Receita do mês atual
+    db
+      .select({
+        total: sum(transactions.amount),
+        count: count(transactions.id),
+      })
+      .from(transactions)
+      .where(
+        and(
+          eq(transactions.salonId, salonId),
+          eq(transactions.type, "income"),
+          eq(transactions.status, "completed"),
+          gte(transactions.transactionDate, startOfMonth)
+        )
       ),
-      confirmed: count(
-        sql`CASE WHEN ${appointments.status} = 'confirmed' THEN 1 END`
-      ),
-      pending: count(
-        sql`CASE WHEN ${appointments.status} = 'pending' THEN 1 END`
-      ),
-      cancelled: count(
-        sql`CASE WHEN ${appointments.status} = 'cancelled' THEN 1 END`
-      ),
-    })
-    .from(appointments)
-    .where(
-      and(
-        eq(appointments.salonId, salonId),
-        gte(appointments.appointmentDate, todayStart),
-        lte(appointments.appointmentDate, todayEnd)
-      )
-    );
 
-  // Top 5 serviços mais lucrativos do mês
-  const topServices = await db
-    .select({
-      serviceId: transactions.serviceId,
-      serviceName: services.name,
-      totalRevenue: sum(transactions.amount),
-      totalBookings: count(transactions.id),
-    })
-    .from(transactions)
-    .innerJoin(services, eq(transactions.serviceId, services.id))
-    .where(
-      and(
-        eq(transactions.salonId, salonId),
-        eq(transactions.type, "income"),
-        eq(transactions.status, "completed"),
-        gte(transactions.transactionDate, startOfMonth)
-      )
-    )
-    .groupBy(transactions.serviceId, services.name)
-    .orderBy(desc(sum(transactions.amount)))
-    .limit(5);
+    // Receita semanal
+    db
+      .select({
+        total: sum(transactions.amount),
+        count: count(transactions.id),
+      })
+      .from(transactions)
+      .where(
+        and(
+          eq(transactions.salonId, salonId),
+          eq(transactions.type, "income"),
+          eq(transactions.status, "completed"),
+          gte(transactions.transactionDate, startOfWeek)
+        )
+      ),
 
-  // Top 5 especialistas por receita do mês
-  const topSpecialists = await db
-    .select({
-      specialistId: transactions.specialistId,
-      specialistName: specialists.name,
-      totalRevenue: sum(transactions.amount),
-      totalAppointments: count(transactions.id),
-    })
-    .from(transactions)
-    .innerJoin(specialists, eq(transactions.specialistId, specialists.id))
-    .where(
-      and(
-        eq(transactions.salonId, salonId),
-        eq(transactions.type, "income"),
-        eq(transactions.status, "completed"),
-        gte(transactions.transactionDate, startOfMonth)
-      )
-    )
-    .groupBy(transactions.specialistId, specialists.name)
-    .orderBy(desc(sum(transactions.amount)))
-    .limit(5);
+    // Agendamentos de hoje
+    db
+      .select({
+        total: count(appointments.id),
+        completed: count(
+          sql`CASE WHEN ${appointments.status} = 'completed' THEN 1 END`
+        ),
+        confirmed: count(
+          sql`CASE WHEN ${appointments.status} = 'confirmed' THEN 1 END`
+        ),
+        pending: count(
+          sql`CASE WHEN ${appointments.status} = 'pending' THEN 1 END`
+        ),
+        cancelled: count(
+          sql`CASE WHEN ${appointments.status} = 'cancelled' THEN 1 END`
+        ),
+      })
+      .from(appointments)
+      .where(
+        and(
+          eq(appointments.salonId, salonId),
+          gte(appointments.appointmentDate, todayStart),
+          lte(appointments.appointmentDate, todayEnd)
+        )
+      ),
 
-  // Clientes mais valiosos (por valor total gasto)
-  const topClients = await db
-    .select({
-      clientId: transactions.clientId,
-      clientName: clients.name,
-      totalSpent: sum(transactions.amount),
-      totalVisits: count(transactions.id),
-      lastVisit: sql<Date>`MAX(${transactions.transactionDate})`,
-    })
-    .from(transactions)
-    .innerJoin(clients, eq(transactions.clientId, clients.id))
-    .where(
-      and(
-        eq(transactions.salonId, salonId),
-        eq(transactions.type, "income"),
-        eq(transactions.status, "completed")
+    // Top 5 serviços mais lucrativos do mês
+    db
+      .select({
+        serviceId: transactions.serviceId,
+        serviceName: services.name,
+        totalRevenue: sum(transactions.amount),
+        totalBookings: count(transactions.id),
+      })
+      .from(transactions)
+      .innerJoin(services, eq(transactions.serviceId, services.id))
+      .where(
+        and(
+          eq(transactions.salonId, salonId),
+          eq(transactions.type, "income"),
+          eq(transactions.status, "completed"),
+          gte(transactions.transactionDate, startOfMonth)
+        )
       )
-    )
-    .groupBy(transactions.clientId, clients.name)
-    .orderBy(desc(sum(transactions.amount)))
-    .limit(10);
+      .groupBy(transactions.serviceId, services.name)
+      .orderBy(desc(sum(transactions.amount)))
+      .limit(5),
+
+    // Top 5 especialistas por receita do mês
+    db
+      .select({
+        specialistId: transactions.specialistId,
+        specialistName: specialists.name,
+        totalRevenue: sum(transactions.amount),
+        totalAppointments: count(transactions.id),
+      })
+      .from(transactions)
+      .innerJoin(specialists, eq(transactions.specialistId, specialists.id))
+      .where(
+        and(
+          eq(transactions.salonId, salonId),
+          eq(transactions.type, "income"),
+          eq(transactions.status, "completed"),
+          gte(transactions.transactionDate, startOfMonth)
+        )
+      )
+      .groupBy(transactions.specialistId, specialists.name)
+      .orderBy(desc(sum(transactions.amount)))
+      .limit(5),
+
+    // Clientes mais valiosos (por valor total gasto)
+    db
+      .select({
+        clientId: transactions.clientId,
+        clientName: clients.name,
+        totalSpent: sum(transactions.amount),
+        totalVisits: count(transactions.id),
+        lastVisit: sql<Date>`MAX(${transactions.transactionDate})`,
+      })
+      .from(transactions)
+      .innerJoin(clients, eq(transactions.clientId, clients.id))
+      .where(
+        and(
+          eq(transactions.salonId, salonId),
+          eq(transactions.type, "income"),
+          eq(transactions.status, "completed")
+        )
+      )
+      .groupBy(transactions.clientId, clients.name)
+      .orderBy(desc(sum(transactions.amount)))
+      .limit(10),
+  ]);
 
   // Taxa de ocupação hoje
   const occupationRate = todayAppointments[0]?.completed || 0;
@@ -2320,6 +2330,27 @@ export async function getMonthlyComparison(salonId: string) {
       revenue: revenueGrowth,
       appointments: appointmentGrowth,
     },
+  };
+}
+
+/**
+ * Busca TODOS os dados do dashboard em uma única chamada
+ * OTIMIZADO: Executa métricas, gráfico e comparativo em paralelo
+ */
+export async function getAllDashboardData(
+  salonId: string,
+  chartDays: number = 30
+) {
+  const [metrics, revenueChart, monthlyComparison] = await Promise.all([
+    getDashboardMetrics(salonId),
+    getRevenueChart(salonId, chartDays),
+    getMonthlyComparison(salonId),
+  ]);
+
+  return {
+    metrics,
+    revenueChart,
+    monthlyComparison,
   };
 }
 
