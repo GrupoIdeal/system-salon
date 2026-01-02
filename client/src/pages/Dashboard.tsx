@@ -32,11 +32,8 @@ import { format, parseISO } from "date-fns";
 import { ptBR } from "date-fns/locale";
 
 export default function Dashboard() {
-  // Buscar métricas do dashboard
-  const metricsQuery = trpc.dashboard.metrics.useQuery();
-  const revenueChartQuery = trpc.dashboard.revenueChart.useQuery({ days: 30 });
-  const upcomingAppointmentsQuery =
-    trpc.dashboard.upcomingAppointments.useQuery();
+  // OTIMIZADO: Busca TODOS os dados do dashboard em uma única chamada
+  const dashboardQuery = trpc.dashboard.all.useQuery({ chartDays: 30 });
 
   const formatCurrency = (value: number) => {
     return new Intl.NumberFormat("pt-BR", {
@@ -45,13 +42,30 @@ export default function Dashboard() {
     }).format(value);
   };
 
+  // Extrair dados da query unificada
+  const metrics = dashboardQuery.data?.metrics;
+  const revenueChart = dashboardQuery.data?.revenueChart;
+  const upcomingAppointments = dashboardQuery.data?.upcomingAppointments;
+
   // Preparar dados do gráfico de receita
   const revenueChartData =
-    revenueChartQuery.data?.map(item => ({
-      date: format(parseISO(item.date), "dd/MM", { locale: ptBR }),
-      receita: item.revenue,
-      transacoes: item.transactions,
-    })) || [];
+    revenueChart?.map(item => {
+      try {
+        return {
+          date: item.date
+            ? format(parseISO(item.date), "dd/MM", { locale: ptBR })
+            : "",
+          receita: item.revenue ?? 0,
+          transacoes: item.transactions ?? 0,
+        };
+      } catch {
+        return {
+          date: item.date ?? "",
+          receita: item.revenue ?? 0,
+          transacoes: item.transactions ?? 0,
+        };
+      }
+    }) || [];
 
   return (
     <DashboardLayout>
@@ -74,16 +88,15 @@ export default function Dashboard() {
               <DollarSign className="h-4 w-4 text-[var(--primary)]" />
             </CardHeader>
             <CardContent>
-              {metricsQuery.isLoading ? (
+              {dashboardQuery.isLoading ? (
                 <Skeleton className="h-8 w-20" />
               ) : (
                 <>
                   <div className="text-2xl font-bold text-[var(--primary)]">
-                    {formatCurrency(metricsQuery.data?.revenue.monthly || 0)}
+                    {formatCurrency(metrics?.revenue.monthly || 0)}
                   </div>
                   <p className="text-xs text-muted-foreground">
-                    {metricsQuery.data?.revenue.monthlyTransactions || 0}{" "}
-                    transações
+                    {metrics?.revenue.monthlyTransactions || 0} transações
                   </p>
                 </>
               )}
@@ -99,12 +112,12 @@ export default function Dashboard() {
               <TrendingUp className="h-4 w-4 text-[var(--primary)]" />
             </CardHeader>
             <CardContent>
-              {metricsQuery.isLoading ? (
+              {dashboardQuery.isLoading ? (
                 <Skeleton className="h-8 w-20" />
               ) : (
                 <>
                   <div className="text-2xl font-bold text-[var(--primary)]">
-                    {formatCurrency(metricsQuery.data?.revenue.weekly || 0)}
+                    {formatCurrency(metrics?.revenue.weekly || 0)}
                   </div>
                   <p className="text-xs text-muted-foreground">
                     Últimos 7 dias
@@ -121,16 +134,15 @@ export default function Dashboard() {
               <Calendar className="h-4 w-4 text-[var(--primary)]" />
             </CardHeader>
             <CardContent>
-              {metricsQuery.isLoading ? (
+              {dashboardQuery.isLoading ? (
                 <Skeleton className="h-8 w-12" />
               ) : (
                 <>
                   <div className="text-2xl font-bold">
-                    {metricsQuery.data?.appointments.today.total || 0}
+                    {metrics?.appointments.today.total || 0}
                   </div>
                   <p className="text-xs text-muted-foreground">
-                    {metricsQuery.data?.appointments.today.completed || 0}{" "}
-                    concluídos
+                    {metrics?.appointments.today.completed || 0} concluídos
                   </p>
                 </>
               )}
@@ -146,12 +158,12 @@ export default function Dashboard() {
               <BarChart3 className="h-4 w-4 text-[var(--primary)]" />
             </CardHeader>
             <CardContent>
-              {metricsQuery.isLoading ? (
+              {dashboardQuery.isLoading ? (
                 <Skeleton className="h-8 w-12" />
               ) : (
                 <>
                   <div className="text-2xl font-bold text-[var(--primary)]">
-                    {metricsQuery.data?.appointments.occupationRate || 0}%
+                    {metrics?.appointments.occupationRate || 0}%
                   </div>
                   <p className="text-xs text-muted-foreground">Ocupação hoje</p>
                 </>
@@ -169,7 +181,7 @@ export default function Dashboard() {
             </CardDescription>
           </CardHeader>
           <CardContent className="pt-2">
-            {revenueChartQuery.isLoading ? (
+            {dashboardQuery.isLoading ? (
               <Skeleton className="h-[300px] w-full" />
             ) : (
               <ResponsiveContainer width="100%" height={300}>
@@ -210,16 +222,15 @@ export default function Dashboard() {
               <CardDescription>Serviços que mais geram receita</CardDescription>
             </CardHeader>
             <CardContent>
-              {metricsQuery.isLoading ? (
+              {dashboardQuery.isLoading ? (
                 <div className="space-y-3">
                   {[1, 2, 3, 4, 5].map(i => (
                     <Skeleton key={i} className="h-12 w-full" />
                   ))}
                 </div>
-              ) : metricsQuery.data?.topServices &&
-                metricsQuery.data.topServices.length > 0 ? (
+              ) : metrics?.topServices && metrics.topServices.length > 0 ? (
                 <div className="space-y-3">
-                  {metricsQuery.data.topServices.map((service, index) => (
+                  {metrics.topServices.map((service, index) => (
                     <div
                       key={service.serviceId}
                       className="flex items-center justify-between p-3 border rounded-lg"
@@ -263,16 +274,16 @@ export default function Dashboard() {
               </CardDescription>
             </CardHeader>
             <CardContent>
-              {metricsQuery.isLoading ? (
+              {dashboardQuery.isLoading ? (
                 <div className="space-y-3">
                   {[1, 2, 3, 4, 5].map(i => (
                     <Skeleton key={i} className="h-12 w-full" />
                   ))}
                 </div>
-              ) : metricsQuery.data?.topSpecialists &&
-                metricsQuery.data.topSpecialists.length > 0 ? (
+              ) : metrics?.topSpecialists &&
+                metrics.topSpecialists.length > 0 ? (
                 <div className="space-y-3">
-                  {metricsQuery.data.topSpecialists.map((specialist, index) => (
+                  {metrics.topSpecialists.map((specialist, index) => (
                     <div
                       key={specialist.specialistId}
                       className="flex items-center justify-between p-3 border rounded-lg"
@@ -321,46 +332,43 @@ export default function Dashboard() {
               </CardDescription>
             </CardHeader>
             <CardContent>
-              {metricsQuery.isLoading ? (
+              {dashboardQuery.isLoading ? (
                 <div className="space-y-3">
                   {[1, 2, 3, 4, 5].map(i => (
                     <Skeleton key={i} className="h-16 w-full" />
                   ))}
                 </div>
-              ) : metricsQuery.data?.topClients &&
-                metricsQuery.data.topClients.length > 0 ? (
+              ) : metrics?.topClients && metrics.topClients.length > 0 ? (
                 <div className="space-y-3 max-h-80 overflow-y-auto">
-                  {metricsQuery.data.topClients
-                    .slice(0, 5)
-                    .map((client, index) => (
-                      <div
-                        key={client.clientId}
-                        className="flex items-center justify-between p-3 border rounded-lg hover:bg-[var(--background)]"
-                      >
-                        <div className="flex items-center gap-3">
-                          <div className="flex items-center justify-center w-8 h-8 rounded-full bg-[var(--secondary)] text-[var(--primary)] font-semibold text-sm">
-                            {index + 1}
-                          </div>
-                          <div>
-                            <p className="font-medium">{client.clientName}</p>
-                            <p className="text-sm text-muted-foreground">
-                              {Number(client.totalVisits)} visitas
-                            </p>
-                            <p className="text-xs text-muted-foreground">
-                              Última:{" "}
-                              {new Date(client.lastVisit).toLocaleDateString(
-                                "pt-BR"
-                              )}
-                            </p>
-                          </div>
+                  {metrics.topClients.slice(0, 5).map((client, index) => (
+                    <div
+                      key={client.clientId}
+                      className="flex items-center justify-between p-3 border rounded-lg hover:bg-[var(--background)]"
+                    >
+                      <div className="flex items-center gap-3">
+                        <div className="flex items-center justify-center w-8 h-8 rounded-full bg-[var(--secondary)] text-[var(--primary)] font-semibold text-sm">
+                          {index + 1}
                         </div>
-                        <div className="text-right">
-                          <p className="font-semibold text-[var(--primary)]">
-                            {formatCurrency(Number(client.totalSpent))}
+                        <div>
+                          <p className="font-medium">{client.clientName}</p>
+                          <p className="text-sm text-muted-foreground">
+                            {Number(client.totalVisits)} visitas
+                          </p>
+                          <p className="text-xs text-muted-foreground">
+                            Última:{" "}
+                            {new Date(client.lastVisit).toLocaleDateString(
+                              "pt-BR"
+                            )}
                           </p>
                         </div>
                       </div>
-                    ))}
+                      <div className="text-right">
+                        <p className="font-semibold text-[var(--primary)]">
+                          {formatCurrency(Number(client.totalSpent))}
+                        </p>
+                      </div>
+                    </div>
+                  ))}
                 </div>
               ) : (
                 <p className="text-center text-muted-foreground py-8">
@@ -382,16 +390,15 @@ export default function Dashboard() {
               </CardDescription>
             </CardHeader>
             <CardContent>
-              {upcomingAppointmentsQuery.isLoading ? (
+              {dashboardQuery.isLoading ? (
                 <div className="space-y-3">
                   {[1, 2, 3, 4, 5].map(i => (
                     <Skeleton key={i} className="h-16 w-full" />
                   ))}
                 </div>
-              ) : upcomingAppointmentsQuery.data &&
-                upcomingAppointmentsQuery.data.length > 0 ? (
+              ) : upcomingAppointments && upcomingAppointments.length > 0 ? (
                 <div className="space-y-3 max-h-80 overflow-y-auto">
-                  {upcomingAppointmentsQuery.data.map((apt) => (
+                  {upcomingAppointments.map(apt => (
                     <div
                       key={apt.id}
                       className="flex items-center justify-between p-3 border rounded-lg hover:bg-[var(--background)]"
@@ -403,7 +410,7 @@ export default function Dashboard() {
                         <p className="text-xs text-muted-foreground">
                           {new Date(apt.appointmentDate).toLocaleDateString(
                             "pt-BR"
-                          )} {" "}
+                          )}{" "}
                           às {apt.appointmentTime}
                         </p>
                         <p className="text-xs text-muted-foreground">
@@ -431,7 +438,7 @@ export default function Dashboard() {
                             ? "Confirmado"
                             : apt.status === "pending"
                               ? "Pendente"
-                              : apt.status ?? "—"}
+                              : (apt.status ?? "—")}
                         </Badge>
                       </div>
                     </div>

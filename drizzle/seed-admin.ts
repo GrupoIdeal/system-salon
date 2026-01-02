@@ -24,7 +24,7 @@ async function main() {
   const existingUser = await db
     .select()
     .from(users)
-    .where(eq(users.email, "adm@admin.com"));
+    .where(eq(users.email, "adm@adm.com"));
 
   let userId: string;
   if (existingUser.length > 0) {

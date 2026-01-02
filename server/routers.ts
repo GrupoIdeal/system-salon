@@ -50,6 +50,7 @@ import {
   getDashboardMetrics,
   getRevenueChart,
   getMonthlyComparison,
+  getAllDashboardData,
   createAuditLog,
   listAuditLogsWithCount,
 } from "./db";
@@ -102,6 +103,41 @@ import { uploadBase64Image } from "./cloudinary";
 const generateId = () => crypto.randomBytes(16).toString("hex");
 
 const dashboardRouter = router({
+  // ROTA OTIMIZADA: Busca TODOS os dados do dashboard em uma única chamada
+  all: protectedProcedure
+    .input(
+      z
+        .object({
+          chartDays: z.number().min(7).max(365).default(30),
+        })
+        .optional()
+    )
+    .query(async ({ ctx, input }) => {
+      const salon = await getSalonByUserId(ctx.user.id);
+      if (!salon) {
+        throw new TRPCError({
+          code: "NOT_FOUND",
+          message: "Salão não encontrado",
+        });
+      }
+
+      const chartDays = input?.chartDays ?? 30;
+
+      // Busca tudo em paralelo: métricas, gráfico, comparativo e próximos agendamentos
+      const now = new Date();
+      const in30Days = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000);
+
+      const [dashboardData, upcomingAppointments] = await Promise.all([
+        getAllDashboardData(salon.id, chartDays),
+        getAppointmentsWithDetailsBySalonId(salon.id, now, in30Days),
+      ]);
+
+      return {
+        ...dashboardData,
+        upcomingAppointments,
+      };
+    }),
+
   // Métricas principais do dashboard
   metrics: protectedProcedure.query(async ({ ctx }) => {
     const salon = await getSalonByUserId(ctx.user.id);
