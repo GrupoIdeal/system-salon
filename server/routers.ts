@@ -1537,6 +1537,69 @@ export const appRouter = router({
 
         return { success: true, message: "Agendamento cancelado com sucesso" };
       }),
+
+    // Ação rápida: Confirmar agendamento
+    confirm: protectedProcedure
+      .input(z.object({ id: z.string() }))
+      .mutation(async ({ ctx: _ctx, input: _input }) => {
+        const salon = await getSalonByUserId(_ctx.user.id);
+        if (!salon) {
+          throw new TRPCError({
+            code: "NOT_FOUND",
+            message: "Salão não encontrado",
+          });
+        }
+
+        const appointment = await getAppointmentById(_input.id);
+        if (!appointment || appointment.salonId !== salon.id) {
+          throw new TRPCError({
+            code: "NOT_FOUND",
+            message: "Agendamento não encontrado",
+          });
+        }
+
+        if (appointment.status === "confirmed") {
+          throw new TRPCError({
+            code: "BAD_REQUEST",
+            message: "Agendamento já está confirmado",
+          });
+        }
+
+        if (appointment.status === "completed") {
+          throw new TRPCError({
+            code: "BAD_REQUEST",
+            message: "Agendamento concluído não pode ser confirmado",
+          });
+        }
+
+        if (appointment.status === "cancelled") {
+          throw new TRPCError({
+            code: "BAD_REQUEST",
+            message: "Agendamento cancelado não pode ser confirmado",
+          });
+        }
+
+        await updateAppointment(_input.id, {
+          status: "confirmed",
+          updatedAt: new Date(),
+        });
+
+        // Registro de auditoria
+        await createAuditLog({
+          userId: _ctx.user?.id ?? null,
+          action: "update",
+          entity: "appointments",
+          entityId: _input.id,
+          before: appointment,
+          after: { ...appointment, status: "confirmed" },
+          metadata: {
+            ip: _ctx.req?.ip,
+            userAgent: _ctx.req?.headers["user-agent"],
+          },
+        });
+
+        return { success: true, message: "Agendamento confirmado com sucesso" };
+      }),
   }),
 
   // ============================================================================

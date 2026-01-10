@@ -67,7 +67,7 @@ export default function Footer() {
       <div className="max-w-7xl mx-auto text-center px-4">
         <div className="mt-2 flex items-center justify-center gap-3">
           <div className="text-xs text-slate-500 dark:text-slate-400 flex items-center gap-3">
-            <span>Desenvolvido por Ronny Senna</span>
+            <span>Desenvolvido por Ideal Soluções Tecnológicas</span>
 
             <span className="inline-flex items-center gap-2">
               <a

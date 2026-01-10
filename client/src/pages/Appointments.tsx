@@ -22,6 +22,7 @@ import {
   User,
   Scissors,
   CheckCircle,
+  Check,
   X,
 } from "lucide-react";
 import { Label } from "@/components/ui/label";
@@ -140,6 +141,15 @@ export default function Appointments() {
       toast.error(`Erro ao concluir agendamento: ${error.message}`),
   });
 
+  const confirmAppointmentMutation = trpc.appointments.confirm.useMutation({
+    onSuccess: () => {
+      appointmentsQuery.refetch();
+      toast.success("Agendamento confirmado com sucesso");
+    },
+    onError: error =>
+      toast.error(`Erro ao confirmar agendamento: ${error.message}`),
+  });
+
   const cancelAppointmentMutation = trpc.appointments.cancel.useMutation({
     onSuccess: () => {
       appointmentsQuery.refetch();
@@ -232,6 +242,10 @@ export default function Appointments() {
   // Handlers para ações rápidas
   const handleQuickComplete = (appointment: AppointmentData) => {
     setCompleteModalAppointment(appointment);
+  };
+
+  const handleQuickConfirm = (appointment: AppointmentData) => {
+    confirmAppointmentMutation.mutate({ id: appointment.id });
   };
 
   const closeCompleteModal = () => {
@@ -508,6 +522,23 @@ export default function Appointments() {
                                 {(appointment.status === "pending" ||
                                   appointment.status === "confirmed") && (
                                   <>
+                                    {/* Botão rápido: Confirmar */}
+                                    {appointment.status !== "confirmed" && (
+                                      <Button
+                                        size="sm"
+                                        variant="outline"
+                                        onClick={() =>
+                                          handleQuickConfirm(appointment)
+                                        }
+                                        className="text-[var(--success)] border-[var(--success)] hover:bg-[var(--success)]/10"
+                                        disabled={
+                                          confirmAppointmentMutation.isPending
+                                        }
+                                        title="Confirmar"
+                                      >
+                                        <Check className="h-4 w-4" />
+                                      </Button>
+                                    )}
                                     <Button
                                       size="sm"
                                       variant="outline"
