@@ -53,8 +53,8 @@ export default function Logs() {
 
   return (
     <DashboardLayout>
-      <div className="max-w-6xl mx-auto">
-        <div className="flex items-center justify-between mb-4">
+      <div className="max-w-6xl mx-auto min-w-0">
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-4">
           <h1 className="text-2xl font-semibold">Log do sistema</h1>
           <div className="flex gap-2 items-center">
             <div className="text-sm text-muted">offset: {offset}</div>
@@ -72,7 +72,7 @@ export default function Logs() {
         ) : error ? (
           <div className="bg-card p-4 rounded text-red-600">{error}</div>
         ) : (
-          <div className="bg-card p-4 rounded">
+          <div className="bg-card p-4 rounded overflow-x-auto">
             {logs.length === 0 ? (
               <div>Nenhum registro encontrado.</div>
             ) : (

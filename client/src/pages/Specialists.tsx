@@ -472,7 +472,7 @@ export default function Specialists() {
     <DashboardLayout>
       <div className="flex flex-col md:flex-row items-start md:items-center justify-between mb-6 gap-4">
         <div className="flex-1">
-          <h1 className="text-3xl font-bold tracking-tight">Especialistas</h1>
+          <h1 className="text-2xl sm:text-3xl font-bold tracking-tight">Especialistas</h1>
           <p className="text-muted-foreground">
             Gerencie os profissionais do salão
           </p>

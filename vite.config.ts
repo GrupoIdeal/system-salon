@@ -36,13 +36,7 @@ const plugins = [
           purpose: "any maskable",
         },
         {
-          src: "/image/Logo.png",
-          sizes: "180x180",
-          type: "image/png",
-          purpose: "any",
-        },
-        {
-          src: "/image/Logo.png",
+          src: "/image/favicon.png",
           sizes: "512x512",
           type: "image/png",
           purpose: "any maskable",
