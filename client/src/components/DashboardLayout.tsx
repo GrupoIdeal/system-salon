@@ -318,7 +318,7 @@ function DashboardLayoutContent({
             </div>
           </div>
         )}
-        <main className="flex-1 p-4 bg-[var(--background)] dark:bg-[var(--card)]">
+        <main className="flex-1 p-4 sm:p-6 lg:p-8 bg-[var(--background)] dark:bg-[var(--card)] overflow-x-hidden">
           {children}
         </main>
       </SidebarInset>

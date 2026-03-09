@@ -237,11 +237,11 @@ function PublicBookingPage() {
                 <img
                   src={APP_LOGO}
                   alt="Logo"
-                  className="w-56 h-auto object-contain mx-0"
+                  className="w-40 sm:w-48 lg:w-56 h-auto object-contain"
                 />
               </div>
             )}
-            <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-2">
+            <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 dark:text-white mb-2">
               Agendar Horário
             </h1>
             <p className="text-sm text-gray-600 dark:text-gray-300">

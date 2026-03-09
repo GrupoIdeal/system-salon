@@ -74,7 +74,7 @@ export default function Empresa() {
     <DashboardLayout>
       <div className="flex items-center justify-between mb-8">
         <div>
-          <h1 className="text-3xl font-bold tracking-tight">Empresa</h1>
+          <h1 className="text-2xl sm:text-3xl font-bold tracking-tight">Empresa</h1>
           <p className="text-muted-foreground">
             Gerencie os dados básicos da empresa
           </p>

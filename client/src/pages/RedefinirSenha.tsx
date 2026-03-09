@@ -70,8 +70,8 @@ export default function RedefinirSenha() {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-slate-900 to-slate-800 p-4">
-      <Card className="w-full max-w-md shadow-xl">
+    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-slate-900 to-slate-800 p-4 sm:p-6">
+      <Card className="w-full max-w-md shadow-xl mx-auto">
         <CardHeader className="space-y-4">
           <div className="flex justify-center">
             {APP_LOGO && (

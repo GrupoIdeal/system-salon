@@ -45,7 +45,7 @@ export default function Login() {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center relative">
+    <div className="min-h-screen flex items-center justify-center relative px-4 sm:px-6 md:px-8 py-6 sm:py-8">
       {/* Overlay no fundo azul com efeito manchado/borrado */}
       <div className="absolute inset-0 pointer-events-none z-0">
         <div
@@ -58,21 +58,21 @@ export default function Login() {
           }}
         ></div>
       </div>
-      <div className="flex w-full max-w-4xl shadow-2xl rounded-2xl overflow-hidden bg-white/90 backdrop-blur-lg z-10">
+      <div className="flex w-full max-w-4xl shadow-2xl rounded-2xl overflow-hidden bg-white/90 backdrop-blur-lg z-10 mx-auto">
         {/* Lado esquerdo: Login */}
-        <div className="flex-1 flex flex-col justify-center px-10 py-16">
+        <div className="flex-1 flex flex-col justify-center px-6 sm:px-8 md:px-10 py-10 sm:py-12 md:py-16">
           <div className="mb-8 text-center">
             {APP_LOGO && (
               <img
                 src={APP_LOGO}
                 alt="Logo"
-                className="mx-auto mb-6 w-132 h-32 object-contain"
+                className="mx-auto mb-4 sm:mb-6 w-24 h-24 sm:w-32 sm:h-32 object-contain"
               />
             )}
-            <h1 className="text-4xl font-extrabold tracking-tight text-[var(--primary)] drop-shadow">
+            <h1 className="text-2xl sm:text-3xl md:text-4xl font-extrabold tracking-tight text-[var(--primary)] drop-shadow">
               Bem-vindo
             </h1>
-            <p className="text-[var(--primary)] mt-2 text-lg">
+            <p className="text-[var(--primary)] mt-2 text-base sm:text-lg">
               Acesse o sistema com seu usuário e senha
             </p>
           </div>
