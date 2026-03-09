@@ -29,6 +29,7 @@ import {
   Clock,
 } from "lucide-react";
 import { trpc } from "@/lib/trpc";
+import { formatDuration, formatServicePrice } from "@/lib/format";
 import { CalendarPicker } from "./CalendarPicker";
 import { TimeSlotPicker } from "./TimeSlotPicker";
 
