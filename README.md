@@ -1,13 +1,15 @@
-# 💄 Sistema de Gestão para Salões de Beleza
+# 💄 BeautySalon Access — Sistema de Gestão para Salões de Beleza
 
-**system-salon** — Plataforma completa para gestão de salão com agendamento público, controle financeiro, relatórios e automações.
+**system-salon** — Plataforma completa para gestão de salão com agendamento público, controle financeiro, relatórios e acessibilidade para usuários com deficiência auditiva.
 
 [![Security](https://img.shields.io/badge/security-8.5%2F10-brightgreen)](https://github.com)
-[![Node](https://img.shields.io/badge/node-%3E%3D18-blue)](https://nodejs.org)
-[![TypeScript](https://img.shields.io/badge/typescript-5.0-blue)](https://www.typescriptlang.org)
+[![Node](https://img.shields.io/badge/node-%3E%3D20-blue)](https://nodejs.org)
+[![TypeScript](https://img.shields.io/badge/typescript-5.9-blue)](https://www.typescriptlang.org)
+[![PWA](https://img.shields.io/badge/PWA-instalável-purple)](https://web.dev/pwa)
 [![License](https://img.shields.io/badge/license-MIT-green)](LICENSE)
 
-> 🔒 **Nota de Segurança:** Este projeto implementa as melhores práticas de segurança incluindo rate limiting, Helmet.js, CORS restrito, validações fortalecidas e proteção contra ataques comuns (XSS, CSRF, SQL Injection, etc). **Score de segurança: 8.5/10 (BOM)**
+> Projeto desenvolvido para a disciplina **Projeto Integrado IV (2026.1)** — BeautySalon Access.  
+> PWA instalável em Android e iOS sem necessidade de loja de aplicativos.
 
 ---
 
@@ -16,7 +18,7 @@
 - [Visão Geral](#visão-geral)
 - [Funcionalidades](#funcionalidades-principais)
 - [Tecnologias](#tecnologias-utilizadas)
-- [Setup Rápido](#setup-rápido-desenvolvimento)
+- [Setup — Passo a Passo](#-setup--passo-a-passo-do-zero)
 - [Rodando com Docker](#rodando-com-docker)
 - [Segurança](#segurança)
 - [Deploy em Produção](#deploy-em-produção)
@@ -111,73 +113,119 @@ O projeto foi projetado para suportar tanto uso administrativo (dashboard intern
 
 ---
 
-## Setup Rápido (Desenvolvimento)
+## 🚀 Setup — Passo a Passo (do zero)
+
+> Guia para qualquer membro do grupo configurar o projeto pela primeira vez.
 
 ### Pré-requisitos
-- Node.js 18+
-- pnpm (gerenciador de pacotes)
-- PostgreSQL 14+
-- Docker (opcional)
 
-### Instalação Local
+| Ferramenta | Versão mínima | Download |
+|-----------|--------------|---------|
+| **Node.js** | 20+ | https://nodejs.org |
+| **pnpm** | 9+ | `npm install -g pnpm` |
+| **Docker Desktop** | Qualquer | https://docker.com/products/docker-desktop |
+| **Git** | Qualquer | https://git-scm.com |
 
-\`\`\`bash
-# Clonar repositório
-git clone <repo-url>
+### Passo 1 — Clonar o repositório
+
+```bash
+git clone https://github.com/ronnysenna/system-salon.git
 cd system-salon
+```
 
-# Instalar dependências
+### Passo 2 — Instalar dependências
+
+```bash
 pnpm install
+```
 
-# Copiar arquivo de ambiente
+### Passo 3 — Configurar variáveis de ambiente
+
+```bash
+# Copiar o arquivo de exemplo
 cp .env.example .env
-# Editar .env conforme necessário
-\`\`\`
+```
 
-### Executar Migrações e Seeds
+Abra o `.env` e configure as variáveis obrigatórias:
 
-\`\`\`bash
-# Aplicar migrações do banco
+```env
+# Conexão com o banco (se usar Docker, deixar assim mesmo)
+DATABASE_URL=postgres://postgres:postgres@localhost:5432/salon
+
+# Chave JWT — troque por uma string longa e aleatória
+JWT_SECRET=troque-isso-por-uma-chave-secreta-bem-longa-aqui
+
+# Ambiente de execução
+NODE_ENV=development
+```
+
+> ⚠️ **NUNCA** commite o arquivo `.env` com credenciais reais. Ele já está no `.gitignore`.
+
+### Passo 4 — Subir o banco de dados com Docker
+
+```bash
+# Sobe apenas o container do PostgreSQL
+docker-compose up -d db
+```
+
+Verifique se está rodando:
+```bash
+docker ps
+# Deve aparecer: system-salon-db-1   Up   0.0.0.0:5432->5432/tcp
+```
+
+### Passo 5 — Criar as tabelas no banco
+
+```bash
 pnpm db:push
+```
 
-# Criar usuário admin inicial (opcional)
-pnpm db:seed
-\`\`\`
+### Passo 6 — Popular o banco com dados de demonstração
 
-### Iniciar em Modo Desenvolvimento
+```bash
+NODE_ENV=development pnpm tsx drizzle/seed-admin.ts
+```
 
-\`\`\`bash
-pnpm dev
-\`\`\`
+Este comando cria:
+- 1 usuário admin: `teste@teste.com` / `123123`
+- 1 salão: "Graciosa Studio de Beleza"
+- 3 especialistas, 8 serviços, 15 clientes
+- 145 agendamentos (últimos 60 dias + próximos 30 dias)
 
-Acesso:
-- **Frontend:** http://localhost:5173
-- **Backend:** http://localhost:3000
+### Passo 7 — Iniciar o servidor
+
+```bash
+NODE_ENV=development pnpm dev
+```
+
+Acesse: **http://localhost:3000**  
+Login: `teste@teste.com` | Senha: `123123`
 
 ---
 
-## Rodando com Docker
+## Rodando com Docker (tudo junto)
 
-### Desenvolvimento com Containers
+Para subir tanto o servidor quanto o banco de uma vez:
 
-\`\`\`bash
-# Subir containers
+```bash
+# Subir todos os containers
 docker-compose up -d
 
-# Aplicar migrações dentro do container
-docker exec -it system-salon-app-1 pnpm db:push
-docker exec -it system-salon-app-1 pnpm db:seed
-\`\`\`
+# Acompanhar logs
+docker-compose logs -f app
+```
 
-### Build e Execução para Produção
+Acesse: **http://localhost:3000**
 
-\`\`\`bash
-# Build da imagem
+### Build e Deploy para Produção
+
+```bash
+# Build da imagem de produção
 docker build -t salon-system .
 
-# Executar container
+# Executar com arquivo .env
 docker run -p 3000:3000 --env-file .env salon-system
-\`\`\`
+```
 
 ---
 
