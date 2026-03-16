@@ -52,13 +52,15 @@ async function startServer() {
     legacyHeaders: false,
   });
 
-  // Rate limiting para autenticação (pode ser usado futuramente em rota específica de login)
-  // const authLimiter = rateLimit({
-  //   windowMs: 15 * 60 * 1000,
-  //   max: 5,
-  //   message: "Muitas tentativas de login, tente novamente em 15 minutos",
-  //   skipSuccessfulRequests: true,
-  // });
+  // Rate limiting específico para autenticação (mais restritivo)
+  const authLimiter = rateLimit({
+    windowMs: 15 * 60 * 1000,
+    max: 10, // 10 tentativas por 15 min por IP
+    message: "Muitas tentativas de autenticação, tente novamente em 15 minutos",
+    standardHeaders: true,
+    legacyHeaders: false,
+    skipSuccessfulRequests: true,
+  });
 
   // Configure body parser with larger size limit for file uploads
   app.use(express.json({ limit: "10mb" })); // Reduzido de 50mb para 10mb
@@ -69,6 +71,14 @@ async function startServer() {
   // tRPC API protegida
   app.use(
     "/api/trpc",
+    (req, _res, next) => {
+      // Aplicar rate limiter mais restritivo para rotas de autenticação
+      const url = req.url || "";
+      if (url.includes("auth.login") || url.includes("auth.register")) {
+        return authLimiter(req, _res, next);
+      }
+      return next();
+    },
     createExpressMiddleware({
       router: appRouter,
       createContext,
@@ -123,12 +133,14 @@ async function startServer() {
   const preferredPort = parseInt(process.env.PORT || "3000");
   const port = await findAvailablePort(preferredPort);
 
-  if (port !== preferredPort) {
+  if (port !== preferredPort && !ENV.isProduction) {
     console.log(`Port ${preferredPort} is busy, using port ${port} instead`);
   }
 
   server.listen(port, () => {
-    console.log(`Servidor em execução: http://localhost:${port}/`);
+    if (!ENV.isProduction) {
+      console.log(`Servidor em execução: http://localhost:${port}/`);
+    }
   });
 }
 

@@ -1,7 +1,6 @@
 import { z } from "zod";
 
-// Função helper para sanitizar strings (remove HTML e scripts)
-// Disponível para uso futuro em transformações
+// Sanitiza strings removendo tags HTML e scripts — proteção contra XSS/injection
 const sanitizeString = (str: string) => {
   return str
     .replace(/<script\b[^<]*(?:(?!<\/script>)<[^<]*)*<\/script>/gi, "")
@@ -9,8 +8,9 @@ const sanitizeString = (str: string) => {
     .trim();
 };
 
-// Previne warning de variável não utilizada
-void sanitizeString;
+// Campo de texto sanitizado padrão
+const safeText = (max: number, label: string) =>
+  z.string().max(max, `${label} muito longo`).transform(sanitizeString);
 
 // ============================================================================
 // AUTH VALIDATIONS
@@ -38,16 +38,17 @@ export const registerSchema = z.object({
     .trim(),
   password: z
     .string()
-    .min(6, "Senha deve ter no mínimo 6 caracteres")
+    .min(8, "Senha deve ter no mínimo 8 caracteres")
     .max(100, "Senha muito longa")
     .regex(
-      /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)/,
-      "Senha deve conter letras maiúsculas, minúsculas e números"
+      /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[!@#$%^&*()_+\-=\[\]{}|;:,.<>?])/,
+      "Senha deve conter maiúsculas, minúsculas, números e um caractere especial"
     ),
   name: z
     .string()
     .min(2, "Nome deve ter no mínimo 2 caracteres")
-    .max(100, "Nome muito longo"),
+    .max(100, "Nome muito longo")
+    .transform(sanitizeString),
 });
 
 export const passwordResetRequestSchema = z.object({
@@ -60,10 +61,11 @@ export const passwordResetRequestSchema = z.object({
 });
 
 export const passwordResetSchema = z.object({
-  token: z.string().max(500, "Token inválido"),
+  // Tokens são hashes (hex/base64) — máximo razoável de 128 chars
+  token: z.string().min(10, "Token inválido").max(128, "Token inválido"),
   password: z
     .string()
-    .min(6, "Senha deve ter no mínimo 6 caracteres")
+    .min(8, "Senha deve ter no mínimo 8 caracteres")
     .max(100, "Senha muito longa"),
 });
 
@@ -75,9 +77,10 @@ export const salonSchema = z.object({
   name: z
     .string()
     .min(2, "Nome do salão é obrigatório")
-    .max(200, "Nome muito longo"),
+    .max(200, "Nome muito longo")
+    .transform(sanitizeString),
   cnpj: z.string().max(20, "CNPJ inválido").optional(),
-  address: z.string().max(500, "Endereço muito longo").optional(),
+  address: safeText(500, "Endereço").optional(),
   phone: z.string().max(20, "Telefone inválido").optional(),
   email: z
     .string()
@@ -118,8 +121,9 @@ export const specialistSchema = z.object({
   name: z
     .string()
     .min(2, "Nome do especialista é obrigatório")
-    .max(200, "Nome muito longo"),
-  specialty: z.string().max(255, "Especialidade muito longa").optional(),
+    .max(200, "Nome muito longo")
+    .transform(sanitizeString),
+  specialty: safeText(255, "Especialidade").optional(),
   photo: z.string().url("URL inválida").max(1000, "URL muito longa").optional(),
   email: z
     .string()
@@ -127,7 +131,7 @@ export const specialistSchema = z.object({
     .max(320, "Email muito longo")
     .optional(),
   phone: z.string().max(20, "Telefone inválido").optional(),
-  bio: z.string().max(1000, "Biografia muito longa").optional(),
+  bio: safeText(1000, "Biografia").optional(),
   workingDays: z
     .record(
       z.string(),
@@ -180,11 +184,14 @@ export const scheduleSchema = z.object({
 // ============================================================================
 
 export const clientSchema = z.object({
-  name: z.string().min(2, "Nome do cliente é obrigatório"),
+  name: z
+    .string()
+    .min(2, "Nome do cliente é obrigatório")
+    .transform(sanitizeString),
   email: z.string().email().optional(),
   phone: z.string().optional(),
   birthDate: z.date().optional(),
-  notes: z.string().optional(),
+  notes: safeText(1000, "Notas").optional(),
 });
 
 // ============================================================================
@@ -192,8 +199,11 @@ export const clientSchema = z.object({
 // ============================================================================
 
 export const serviceSchema = z.object({
-  name: z.string().min(2, "Nome do serviço é obrigatório"),
-  description: z.string().optional(),
+  name: z
+    .string()
+    .min(2, "Nome do serviço é obrigatório")
+    .transform(sanitizeString),
+  description: safeText(500, "Descrição").optional(),
   duration: z.number().int().positive("Duração deve ser positiva"),
   // Indica se o preço é um valor mínimo ('a partir de')
   priceFrom: z.boolean().optional().default(false),
@@ -223,7 +233,7 @@ export const appointmentSchema = z.object({
   status: z
     .enum(["pending", "confirmed", "completed", "cancelled"])
     .default("pending"),
-  notes: z.string().optional(),
+  notes: safeText(1000, "Notas").optional(),
 });
 
 export const appointmentPublicSchema = z.object({
@@ -233,7 +243,7 @@ export const appointmentPublicSchema = z.object({
   appointmentTime: z
     .string()
     .regex(/^\d{2}:\d{2}$/, "Formato de hora inválido (HH:MM)"),
-  clientName: z.string().min(2, "Nome é obrigatório"),
+  clientName: z.string().min(2, "Nome é obrigatório").transform(sanitizeString),
   clientEmail: z.string().email("Email inválido"),
   clientPhone: z.string().min(10, "Telefone inválido"),
 });

@@ -506,21 +506,15 @@ export const appRouter = router({
             allowOnlineBooking: _input.schedule.allowOnlineBooking,
             workingHours: _input.schedule.workingHours,
           });
-        } catch (err) {
+        } catch {
           // Rollback: remover especialista criado para manter consistência
           try {
             await deleteSpecialist(newSpecialist.id);
-          } catch (rollbackErr) {
-            console.error(
-              "Rollback falhou ao remover especialista:",
-              rollbackErr
-            );
+          } catch {
+            // Rollback falhou — estado pode estar inconsistente, monitorar via audit log
           }
 
-          console.error(
-            "Erro ao criar schedule durante criação do especialista:",
-            err
-          );
+          // Falha ao criar schedule inicial
           throw new TRPCError({
             code: "INTERNAL_SERVER_ERROR",
             message: "Falha ao criar agenda inicial. Operação revertida.",
@@ -976,12 +970,8 @@ export const appRouter = router({
                 "Não é possível remover serviço com agendamentos futuros",
             });
           }
-        } catch (err) {
-          // Se falhar ao checar agendamentos, não bloquear sem razão — log e continuar
-          console.error(
-            "Erro ao verificar agendamentos antes de deletar serviço:",
-            err
-          );
+        } catch {
+          // Se falhar ao checar agendamentos, não bloquear sem razão — continuar
         }
 
         await deleteService(_input.id);
@@ -1115,11 +1105,7 @@ export const appRouter = router({
         // Agendar notificações automáticas
         try {
           await scheduleAppointmentNotifications(appointmentId);
-          console.log(
-            `📅 Notificações agendadas para agendamento: ${appointmentId}`
-          );
-        } catch (error) {
-          console.error("❌ Erro ao agendar notificações:", error);
+        } catch {
           // Não falhar o agendamento por causa das notificações
         }
 
@@ -1133,10 +1119,10 @@ export const appRouter = router({
           );
 
           if (waitlistEntry) {
-            console.log(`📋 Processando lista de espera para horário liberado`);
+            // Notificar cliente da lista de espera via serviço de notificação
           }
-        } catch (error) {
-          console.error("❌ Erro ao processar lista de espera:", error);
+        } catch {
+          // Lista de espera não deve bloquear o agendamento
         }
 
         // Registro de auditoria: criação do agendamento
@@ -1475,8 +1461,7 @@ export const appRouter = router({
             _input.paymentMethod || "cash",
             _input.amountPaid
           );
-        } catch (error) {
-          console.error("Erro ao registrar receita:", error);
+        } catch {
           // Não falha a operação se não conseguir registrar a receita
         }
 
@@ -1688,7 +1673,7 @@ export const appRouter = router({
 
       // Buscar todos e filtrar apenas usuários do mesmo salão
       const allUsers = await listUsers();
-      return allUsers.filter((u: User) => u.salonId === salon.id);
+      return allUsers.filter(u => u.salonId === salon.id);
     }),
 
     // Criar novo usuário (apenas admin) — sempre atribuir ao salão do admin
@@ -2416,10 +2401,10 @@ export const appRouter = router({
         try {
           const res = await uploadBase64Image(input.base64, input.publicId);
           return { success: true, url: res.url, publicId: res.public_id };
-        } catch (e: any) {
+        } catch (e) {
           throw new TRPCError({
             code: "INTERNAL_SERVER_ERROR",
-            message: e?.message || String(e),
+            message: e instanceof Error ? e.message : "Erro ao fazer upload",
           });
         }
       }),

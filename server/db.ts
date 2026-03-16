@@ -73,7 +73,11 @@ function maskSensitiveFields(value: unknown): unknown {
     const obj: Record<string, unknown> = {};
     for (const [k, v] of Object.entries(value as Record<string, unknown>)) {
       const lower = k.toLowerCase();
-      if (/(password|pass|pwd|secret|token)/.test(lower)) {
+      if (
+        /(password|pass|pwd|secret|token|apikey|api_key|private_key|authorization|bearer)/.test(
+          lower
+        )
+      ) {
         obj[k] = "[REDACTED]";
       } else {
         obj[k] = maskSensitiveFields(v);
@@ -422,10 +426,14 @@ export async function getUserByEmail(email: string): Promise<User | undefined> {
   return result.length > 0 ? result[0] : undefined;
 }
 
-export async function listUsers(): Promise<User[]> {
+export async function listUsers(): Promise<Omit<User, "password">[]> {
   const db = await getDb();
   if (!db) return [];
-  return await db.select().from(users);
+  const result = await db.select().from(users);
+  // Nunca retornar o hash de senha na listagem de usuários
+  return result.map(
+    ({ password: _p, ...rest }) => rest as Omit<User, "password">
+  );
 }
 
 // ============================================================================
