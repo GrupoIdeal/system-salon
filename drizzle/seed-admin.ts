@@ -103,12 +103,41 @@ async function main() {
     }
   }
 
+  // Criar usuário adicional teste@teste.com — senha: 123123
+  const testeEmail = "teste@teste.com";
+  const testePassword = "123123";
+
+  const existingTeste = await db
+    .select()
+    .from(users)
+    .where(eq(users.email, testeEmail));
+  if (existingTeste.length > 0) {
+    if (process.env.NODE_ENV !== "production") {
+      console.log(`👤 Usuário ${testeEmail} já existe, pulando criação...`);
+    }
+  } else {
+    const testeHash = await bcrypt.hash(testePassword, 10);
+    const testeId = nanoid();
+    await db.insert(users).values({
+      id: testeId,
+      email: testeEmail,
+      password: testeHash,
+      name: "Administrador",
+      role: "admin",
+    });
+    if (process.env.NODE_ENV !== "production") {
+      console.log(`✅ Usuário ${testeEmail} criado com sucesso!`);
+    }
+  }
+
   if (process.env.NODE_ENV !== "production") {
     console.log("✅ Horários de funcionamento configurados!");
     console.log("\n📧 Email: adm@admin.com");
     console.log("🔑 Senha: 123123");
     console.log("📧 Email extra: adm@adm.com");
     console.log("🔑 Senha extra: 277897");
+    console.log("📧 Email teste: teste@teste.com");
+    console.log("🔑 Senha teste: 123123");
   }
 
   process.exit(0);

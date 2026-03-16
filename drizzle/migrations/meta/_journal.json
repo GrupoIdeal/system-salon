@@ -99,6 +99,13 @@
       "when": 1763068684814,
       "tag": "0013_luxuriant_guardian",
       "breakpoints": true
+    },
+    {
+      "idx": 14,
+      "version": "7",
+      "when": 1773663687884,
+      "tag": "0014_add_composite_indexes",
+      "breakpoints": true
     }
   ]
 }

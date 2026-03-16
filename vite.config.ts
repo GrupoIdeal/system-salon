@@ -5,8 +5,7 @@ import { defineConfig } from "vite";
 import { VitePWA } from "vite-plugin-pwa";
 import { vitePluginManusRuntime } from "vite-plugin-manus-runtime";
 
-const appTitle =
-  process.env.VITE_APP_TITLE || "Graciosa Studio de Beleza";
+const appTitle = process.env.VITE_APP_TITLE || "Graciosa Studio de Beleza";
 
 const plugins = [
   react(),
@@ -64,6 +63,22 @@ export default defineConfig({
   build: {
     outDir: path.resolve(import.meta.dirname, "dist/public"),
     emptyOutDir: true,
+    // Avisa no console se algum chunk ficar maior que 500KB
+    chunkSizeWarningLimit: 500,
+    rollupOptions: {
+      output: {
+        // Separa bibliotecas grandes em chunks próprios para melhor cache do browser.
+        // Ex: ao atualizar só o código da aplicação, o chunk 'vendor' permanece em cache.
+        manualChunks: {
+          // React e React DOM separados — quase nunca mudam
+          vendor: ["react", "react-dom"],
+          // Biblioteca de gráficos (recharts é pesada ~400KB)
+          charts: ["recharts"],
+          // Validação de schemas
+          zod: ["zod"],
+        },
+      },
+    },
   },
   server: {
     host: true,

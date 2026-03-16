@@ -216,6 +216,16 @@ export const appointments = pgTable(
     appointmentDateIdx: index("appointments_appointmentDate_idx").on(
       table.appointmentDate
     ),
+    // Índices compostos: aceleram as queries mais comuns do sistema
+    // (listagem por salão em período e busca de horários por especialista+data)
+    salonDateIdx: index("appointments_salonId_date_idx").on(
+      table.salonId,
+      table.appointmentDate
+    ),
+    specialistDateIdx: index("appointments_specialistId_date_idx").on(
+      table.specialistId,
+      table.appointmentDate
+    ),
   })
 );
 
@@ -336,6 +346,12 @@ export const transactions = pgTable(
     typeIdx: index("transactions_type_idx").on(table.type),
     statusIdx: index("transactions_status_idx").on(table.status),
     dateIdx: index("transactions_date_idx").on(table.transactionDate),
+    // Índice composto: acelera as 6 queries de agregação do dashboard
+    // (filtra por salonId + data ao mesmo tempo, sem varrer a tabela inteira)
+    salonDateIdx: index("transactions_salonId_date_idx").on(
+      table.salonId,
+      table.transactionDate
+    ),
   })
 );
 

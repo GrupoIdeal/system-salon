@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useMemo, useEffect } from "react";
 import {
   startOfDay,
   endOfDay,
@@ -76,6 +76,17 @@ export default function Appointments() {
   const [viewMode, setViewMode] = useState<"day" | "week" | "month">("day");
   const [completeModalAppointment, setCompleteModalAppointment] =
     useState<AppointmentData | null>(null);
+
+  // Paginação: máximo de 20 itens por página para não sobrecarregar o DOM
+  const PAGE_SIZE = 20;
+  const [currentPage, setCurrentPage] = useState(1);
+
+  // Reseta para a página 1 sempre que o usuário mudar filtros ou período
+  // biome-ignore lint/correctness/useExhaustiveDependencies: deps são os gatilhos do reset, não variáveis usadas no corpo
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [searchTerm, statusFilter, viewMode, selectedDate]);
+
   const getDateRange = () => {
     // Normaliza a data para início do dia para evitar diferenças por hora
     const base = startOfDay(selectedDate);
@@ -169,32 +180,64 @@ export default function Appointments() {
   });
 
   // Contagem de agendamentos por data para o calendário
-  const appointmentCounts =
-    appointmentsQuery.data?.reduce(
-      (acc, apt) => {
-        const dateKey = new Date(apt.appointmentDate)
-          .toISOString()
-          .split("T")[0];
-        acc[dateKey] = (acc[dateKey] || 0) + 1;
-        return acc;
-      },
-      {} as Record<string, number>
-    ) || {};
+  // useMemo: só recalcula quando os dados mudam, não a cada render
+  const appointmentCounts = useMemo(
+    () =>
+      appointmentsQuery.data?.reduce(
+        (acc, apt) => {
+          const dateKey = new Date(apt.appointmentDate)
+            .toISOString()
+            .split("T")[0];
+          acc[dateKey] = (acc[dateKey] || 0) + 1;
+          return acc;
+        },
+        {} as Record<string, number>
+      ) ?? {},
+    [appointmentsQuery.data]
+  );
 
   // Filtrar agendamentos
-  const filteredAppointments =
-    appointmentsQuery.data?.filter(apt => {
-      const matchesSearch =
-        searchTerm === "" ||
-        apt.client?.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        apt.service?.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        apt.specialist?.name.toLowerCase().includes(searchTerm.toLowerCase());
+  // useMemo: só recalcula quando os dados ou filtros mudam
+  const filteredAppointments = useMemo(
+    () =>
+      appointmentsQuery.data?.filter(apt => {
+        const matchesSearch =
+          searchTerm === "" ||
+          apt.client?.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+          apt.service?.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+          apt.specialist?.name.toLowerCase().includes(searchTerm.toLowerCase());
 
-      const matchesStatus =
-        statusFilter === "all" || apt.status === statusFilter;
+        const matchesStatus =
+          statusFilter === "all" || apt.status === statusFilter;
 
-      return matchesSearch && matchesStatus;
-    }) || [];
+        return matchesSearch && matchesStatus;
+      }) ?? [],
+    [appointmentsQuery.data, searchTerm, statusFilter]
+  );
+
+  // Ordenação separada do filtro — também memoizada
+  const sortedAppointments = useMemo(
+    () =>
+      [...filteredAppointments].sort((a, b) => {
+        const dateA = new Date(a.appointmentDate).getTime();
+        const dateB = new Date(b.appointmentDate).getTime();
+        if (dateA !== dateB) return dateA - dateB;
+        return a.appointmentTime.localeCompare(b.appointmentTime);
+      }),
+    [filteredAppointments]
+  );
+
+  // Fatia da página atual — limita os nós DOM renderizados
+  const paginatedAppointments = useMemo(
+    () =>
+      sortedAppointments.slice(
+        (currentPage - 1) * PAGE_SIZE,
+        currentPage * PAGE_SIZE
+      ),
+    [sortedAppointments, currentPage]
+  );
+
+  const totalPages = Math.ceil(filteredAppointments.length / PAGE_SIZE);
 
   // Helper: formata duração em minutos para 'Xh Ym' ou 'Xm'
   const formatDuration = (mins?: number | null) => {
@@ -484,207 +527,231 @@ export default function Appointments() {
               </Card>
             ) : (
               <div className="space-y-4">
-                {filteredAppointments
-                  .sort((a, b) => {
-                    // Ordenar por data e horário
-                    const dateA = new Date(a.appointmentDate).getTime();
-                    const dateB = new Date(b.appointmentDate).getTime();
-                    if (dateA !== dateB) return dateA - dateB;
-                    return a.appointmentTime.localeCompare(b.appointmentTime);
-                  })
-                  .map(appointment => (
-                    <Card
-                      key={appointment.id}
-                      className="hover:shadow-md transition-shadow"
-                    >
-                      <CardContent className="p-4">
-                        <div className="flex items-start justify-between">
-                          <div className="flex-1 space-y-3">
-                            {/* Header do agendamento */}
-                            <div className="flex items-center justify-between">
-                              <div className="flex items-center gap-2">
-                                <Badge
-                                  className={getStatusColor(
-                                    appointment.status || "pending"
-                                  )}
-                                >
-                                  {getStatusLabel(
-                                    appointment.status || "pending"
-                                  )}
-                                </Badge>
-                                <span className="text-lg font-semibold">
-                                  {appointment.appointmentTime}
-                                </span>
-                              </div>
-
-                              <div className="flex items-center gap-2">
-                                {/* Botões de ação rápida */}
-                                {(appointment.status === "pending" ||
-                                  appointment.status === "confirmed") && (
-                                  <>
-                                    {/* Botão rápido: Confirmar */}
-                                    {appointment.status !== "confirmed" && (
-                                      <Button
-                                        size="sm"
-                                        variant="outline"
-                                        onClick={() =>
-                                          handleQuickConfirm(appointment)
-                                        }
-                                        className="text-[var(--success)] border-[var(--success)] hover:bg-[var(--success)]/10"
-                                        disabled={
-                                          confirmAppointmentMutation.isPending
-                                        }
-                                        title="Confirmar"
-                                      >
-                                        <Check className="h-4 w-4" />
-                                      </Button>
-                                    )}
-                                    <Button
-                                      size="sm"
-                                      variant="outline"
-                                      onClick={() =>
-                                        handleQuickComplete(appointment)
-                                      }
-                                      className="text-[var(--primary)] border-[var(--primary)] hover:bg-[var(--primary)]/10"
-                                      disabled={
-                                        completeAppointmentMutation.isPending
-                                      }
-                                    >
-                                      <CheckCircle className="h-4 w-4" />
-                                    </Button>
-                                    <Button
-                                      size="sm"
-                                      variant="outline"
-                                      onClick={() =>
-                                        handleQuickCancel(appointment.id)
-                                      }
-                                      className="text-[var(--destructive)] border-[var(--destructive)] hover:bg-[var(--destructive)]/10"
-                                      disabled={
-                                        cancelAppointmentMutation.isPending
-                                      }
-                                    >
-                                      <X className="h-4 w-4" />
-                                    </Button>
-                                  </>
+                {paginatedAppointments.map(appointment => (
+                  <Card
+                    key={appointment.id}
+                    className="hover:shadow-md transition-shadow"
+                  >
+                    <CardContent className="p-4">
+                      <div className="flex items-start justify-between">
+                        <div className="flex-1 space-y-3">
+                          {/* Header do agendamento */}
+                          <div className="flex items-center justify-between">
+                            <div className="flex items-center gap-2">
+                              <Badge
+                                className={getStatusColor(
+                                  appointment.status || "pending"
                                 )}
+                              >
+                                {getStatusLabel(
+                                  appointment.status || "pending"
+                                )}
+                              </Badge>
+                              <span className="text-lg font-semibold">
+                                {appointment.appointmentTime}
+                              </span>
+                            </div>
 
-                                <DropdownMenu>
-                                  <DropdownMenuTrigger asChild>
-                                    <Button variant="ghost" size="sm">
-                                      <svg
-                                        className="h-4 w-4"
-                                        viewBox="0 0 24 24"
-                                        fill="currentColor"
-                                        aria-label="Menu de opções"
-                                      >
-                                        <title>Menu de opções</title>
-                                        <circle cx="12" cy="12" r="2" />
-                                        <circle cx="12" cy="5" r="2" />
-                                        <circle cx="12" cy="19" r="2" />
-                                      </svg>
+                            <div className="flex items-center gap-2">
+                              {/* Botões de ação rápida */}
+                              {(appointment.status === "pending" ||
+                                appointment.status === "confirmed") && (
+                                <>
+                                  {/* Botão rápido: Confirmar */}
+                                  {appointment.status !== "confirmed" && (
+                                    <Button
+                                      size="sm"
+                                      variant="outline"
+                                      onClick={() =>
+                                        handleQuickConfirm(appointment)
+                                      }
+                                      className="text-[var(--success)] border-[var(--success)] hover:bg-[var(--success)]/10"
+                                      disabled={
+                                        confirmAppointmentMutation.isPending
+                                      }
+                                      title="Confirmar"
+                                    >
+                                      <Check className="h-4 w-4" />
                                     </Button>
-                                  </DropdownMenuTrigger>
-                                  <DropdownMenuContent align="end">
-                                    <DropdownMenuItem
-                                      onClick={() =>
-                                        handleEditAppointment(appointment)
-                                      }
-                                    >
-                                      <Edit className="mr-2 h-4 w-4" />
-                                      Editar
-                                    </DropdownMenuItem>
-                                    <DropdownMenuSeparator />
-                                    <DropdownMenuItem
-                                      onClick={() =>
-                                        handleDeleteAppointment(appointment.id)
-                                      }
-                                      className="text-destructive"
-                                    >
-                                      <Trash2 className="mr-2 h-4 w-4" />
-                                      Excluir
-                                    </DropdownMenuItem>
-                                  </DropdownMenuContent>
-                                </DropdownMenu>
-                              </div>
-                            </div>
-
-                            {/* Informações do agendamento */}
-                            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm">
-                              <div className="flex items-center gap-2">
-                                <User className="h-4 w-4 text-muted-foreground" />
-                                <div>
-                                  <p className="font-medium">
-                                    {appointment.client?.name}
-                                  </p>
-                                  {appointment.client?.phone && (
-                                    <p className="text-muted-foreground">
-                                      {appointment.client.phone}
-                                    </p>
                                   )}
-                                </div>
-                              </div>
+                                  <Button
+                                    size="sm"
+                                    variant="outline"
+                                    onClick={() =>
+                                      handleQuickComplete(appointment)
+                                    }
+                                    className="text-[var(--primary)] border-[var(--primary)] hover:bg-[var(--primary)]/10"
+                                    disabled={
+                                      completeAppointmentMutation.isPending
+                                    }
+                                  >
+                                    <CheckCircle className="h-4 w-4" />
+                                  </Button>
+                                  <Button
+                                    size="sm"
+                                    variant="outline"
+                                    onClick={() =>
+                                      handleQuickCancel(appointment.id)
+                                    }
+                                    className="text-[var(--destructive)] border-[var(--destructive)] hover:bg-[var(--destructive)]/10"
+                                    disabled={
+                                      cancelAppointmentMutation.isPending
+                                    }
+                                  >
+                                    <X className="h-4 w-4" />
+                                  </Button>
+                                </>
+                              )}
 
-                              <div className="flex items-center gap-2">
-                                <Scissors className="h-4 w-4 text-muted-foreground" />
-                                <div>
-                                  <p className="font-medium">
-                                    {appointment.service?.name}
-                                  </p>
-                                  <p className="text-muted-foreground">
-                                    {formatDuration(
-                                      appointment.service?.duration
-                                    )}{" "}
-                                    •{" "}
-                                    {formatServicePrice(
-                                      appointment.service?.price,
-                                      Boolean(appointment.service?.priceFrom)
-                                    )}
-                                  </p>
-                                </div>
-                              </div>
-
-                              <div className="flex items-center gap-2">
-                                <User className="h-4 w-4 text-muted-foreground" />
-                                <div>
-                                  <p className="font-medium">
-                                    {appointment.specialist?.name}
-                                  </p>
-                                  {appointment.specialist?.specialty && (
-                                    <p className="text-muted-foreground">
-                                      {appointment.specialist.specialty}
-                                    </p>
-                                  )}
-                                </div>
-                              </div>
+                              <DropdownMenu>
+                                <DropdownMenuTrigger asChild>
+                                  <Button variant="ghost" size="sm">
+                                    <svg
+                                      className="h-4 w-4"
+                                      viewBox="0 0 24 24"
+                                      fill="currentColor"
+                                      aria-label="Menu de opções"
+                                    >
+                                      <title>Menu de opções</title>
+                                      <circle cx="12" cy="12" r="2" />
+                                      <circle cx="12" cy="5" r="2" />
+                                      <circle cx="12" cy="19" r="2" />
+                                    </svg>
+                                  </Button>
+                                </DropdownMenuTrigger>
+                                <DropdownMenuContent align="end">
+                                  <DropdownMenuItem
+                                    onClick={() =>
+                                      handleEditAppointment(appointment)
+                                    }
+                                  >
+                                    <Edit className="mr-2 h-4 w-4" />
+                                    Editar
+                                  </DropdownMenuItem>
+                                  <DropdownMenuSeparator />
+                                  <DropdownMenuItem
+                                    onClick={() =>
+                                      handleDeleteAppointment(appointment.id)
+                                    }
+                                    className="text-destructive"
+                                  >
+                                    <Trash2 className="mr-2 h-4 w-4" />
+                                    Excluir
+                                  </DropdownMenuItem>
+                                </DropdownMenuContent>
+                              </DropdownMenu>
                             </div>
-
-                            {/* Data (apenas se não for vista diária) */}
-                            {viewMode !== "day" && (
-                              <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                                <Calendar className="h-4 w-4" />
-                                <span>
-                                  {new Date(
-                                    appointment.appointmentDate
-                                  ).toLocaleDateString("pt-BR", {
-                                    weekday: "short",
-                                    day: "numeric",
-                                    month: "short",
-                                  })}
-                                </span>
-                              </div>
-                            )}
-
-                            {/* Observações */}
-                            {appointment.notes && (
-                              <div className="text-sm text-muted-foreground bg-muted/30 p-2 rounded">
-                                <strong>Obs:</strong> {appointment.notes}
-                              </div>
-                            )}
                           </div>
+
+                          {/* Informações do agendamento */}
+                          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm">
+                            <div className="flex items-center gap-2">
+                              <User className="h-4 w-4 text-muted-foreground" />
+                              <div>
+                                <p className="font-medium">
+                                  {appointment.client?.name}
+                                </p>
+                                {appointment.client?.phone && (
+                                  <p className="text-muted-foreground">
+                                    {appointment.client.phone}
+                                  </p>
+                                )}
+                              </div>
+                            </div>
+
+                            <div className="flex items-center gap-2">
+                              <Scissors className="h-4 w-4 text-muted-foreground" />
+                              <div>
+                                <p className="font-medium">
+                                  {appointment.service?.name}
+                                </p>
+                                <p className="text-muted-foreground">
+                                  {formatDuration(
+                                    appointment.service?.duration
+                                  )}{" "}
+                                  •{" "}
+                                  {formatServicePrice(
+                                    appointment.service?.price,
+                                    Boolean(appointment.service?.priceFrom)
+                                  )}
+                                </p>
+                              </div>
+                            </div>
+
+                            <div className="flex items-center gap-2">
+                              <User className="h-4 w-4 text-muted-foreground" />
+                              <div>
+                                <p className="font-medium">
+                                  {appointment.specialist?.name}
+                                </p>
+                                {appointment.specialist?.specialty && (
+                                  <p className="text-muted-foreground">
+                                    {appointment.specialist.specialty}
+                                  </p>
+                                )}
+                              </div>
+                            </div>
+                          </div>
+
+                          {/* Data (apenas se não for vista diária) */}
+                          {viewMode !== "day" && (
+                            <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                              <Calendar className="h-4 w-4" />
+                              <span>
+                                {new Date(
+                                  appointment.appointmentDate
+                                ).toLocaleDateString("pt-BR", {
+                                  weekday: "short",
+                                  day: "numeric",
+                                  month: "short",
+                                })}
+                              </span>
+                            </div>
+                          )}
+
+                          {/* Observações */}
+                          {appointment.notes && (
+                            <div className="text-sm text-muted-foreground bg-muted/30 p-2 rounded">
+                              <strong>Obs:</strong> {appointment.notes}
+                            </div>
+                          )}
                         </div>
-                      </CardContent>
-                    </Card>
-                  ))}
+                      </div>
+                    </CardContent>
+                  </Card>
+                ))}
+
+                {/* Paginação: só aparece quando há mais de PAGE_SIZE agendamentos */}
+                {totalPages > 1 && (
+                  <div className="flex items-center justify-between pt-2">
+                    <p className="text-sm text-muted-foreground">
+                      Mostrando {(currentPage - 1) * PAGE_SIZE + 1}–
+                      {Math.min(
+                        currentPage * PAGE_SIZE,
+                        filteredAppointments.length
+                      )}{" "}
+                      de {filteredAppointments.length}
+                    </p>
+                    <div className="flex gap-2">
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => setCurrentPage(p => p - 1)}
+                        disabled={currentPage === 1}
+                      >
+                        Anterior
+                      </Button>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => setCurrentPage(p => p + 1)}
+                        disabled={currentPage === totalPages}
+                      >
+                        Próxima
+                      </Button>
+                    </div>
+                  </div>
+                )}
               </div>
             )}
           </div>

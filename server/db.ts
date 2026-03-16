@@ -1571,11 +1571,13 @@ export async function getAvailableTimeSlots(
     return [];
   }
 
-  // Busca dados do especialista e serviço
-  const specialist = await getSpecialistById(specialistId);
-  const service = await getServiceById(serviceId);
+  // Busca especialista e serviço em paralelo (eram sequenciais antes — 2 round-trips → 1)
+  const [specialist, service] = await Promise.all([
+    getSpecialistById(specialistId),
+    getServiceById(serviceId),
+  ]);
 
-  // Busca dados do salão
+  // Busca dados do salão (depende do specialist, então não pode ser em paralelo)
   const salon = specialist ? await getSalonById(specialist.salonId) : null;
 
   console.log("📊 Specialist data:", {
@@ -2041,9 +2043,71 @@ export function generateId(): string {
  * Métricas do Dashboard - Dados financeiros e de negócios
  * OTIMIZADO: Todas as queries rodam em paralelo para melhor performance
  */
-export async function getDashboardMetrics(salonId: string) {
+/**
+ * Cache simples em memória para as métricas do Dashboard.
+ * Evita executar 6 queries pesadas toda vez que a página abre.
+ * TTL: 10 minutos por salão. Invalidado automaticamente ao expirar.
+ *
+ * Troca: dados podem ter até 10 min de atraso. Para forçar refresh,
+ * chame getDashboardMetrics(salonId, true).
+ */
+type DashboardMetricsResult = {
+  revenue: {
+    monthly: number;
+    weekly: number;
+    monthlyTransactions: number;
+    weeklyTransactions: number;
+  };
+  appointments: {
+    today: {
+      total: number;
+      completed: number;
+      confirmed: number;
+      pending: number;
+      cancelled: number;
+    };
+    occupationRate: number;
+  };
+  topServices: {
+    serviceId: string | null;
+    serviceName: string;
+    totalRevenue: string | null;
+    totalBookings: number;
+  }[];
+  topSpecialists: {
+    specialistId: string | null;
+    specialistName: string;
+    totalRevenue: string | null;
+    totalAppointments: number;
+  }[];
+  topClients: {
+    clientId: string | null;
+    clientName: string;
+    totalSpent: string | null;
+    totalVisits: number;
+    lastVisit: Date;
+  }[];
+};
+const dashboardMetricsCache = new Map<
+  string,
+  { data: DashboardMetricsResult; expiresAt: number }
+>();
+const DASHBOARD_CACHE_TTL_MS = 10 * 60 * 1000; // 10 minutos
+
+export async function getDashboardMetrics(
+  salonId: string,
+  forceRefresh = false
+) {
   const db = await getDb();
   if (!db) return null;
+
+  // Verifica cache antes de executar as 6 queries pesadas
+  if (!forceRefresh) {
+    const cached = dashboardMetricsCache.get(salonId);
+    if (cached && Date.now() < cached.expiresAt) {
+      return cached.data;
+    }
+  }
 
   const today = new Date();
   const startOfMonth = new Date(today.getFullYear(), today.getMonth(), 1);
@@ -2192,7 +2256,7 @@ export async function getDashboardMetrics(salonId: string) {
   const occupationRate = todayAppointments[0]?.completed || 0;
   const totalSlotsToday = 24; // Assumindo horário comercial de 8h às 20h (12 horas) com slots de 30min
 
-  return {
+  const result = {
     revenue: {
       monthly: Number(monthlyRevenue[0]?.total || 0),
       weekly: Number(weeklyRevenue[0]?.total || 0),
@@ -2213,6 +2277,14 @@ export async function getDashboardMetrics(salonId: string) {
     topSpecialists,
     topClients,
   };
+
+  // Salva resultado no cache por 10 minutos
+  dashboardMetricsCache.set(salonId, {
+    data: result,
+    expiresAt: Date.now() + DASHBOARD_CACHE_TTL_MS,
+  });
+
+  return result;
 }
 
 /**

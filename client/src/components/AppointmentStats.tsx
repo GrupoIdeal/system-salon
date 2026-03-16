@@ -1,3 +1,4 @@
+import { memo, useMemo } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Calendar, Clock, TrendingUp, Users } from "lucide-react";
@@ -12,7 +13,9 @@ interface AppointmentStatsProps {
   viewMode: "day" | "week" | "month";
 }
 
-export function AppointmentStats({
+// memo: evita re-render quando as props não mudam
+// (esse componente é chamado toda vez que o pai re-renderiza)
+export const AppointmentStats = memo(function AppointmentStats({
   totalAppointments,
   pendingAppointments,
   confirmedAppointments,
@@ -21,7 +24,8 @@ export function AppointmentStats({
   selectedDate,
   viewMode,
 }: AppointmentStatsProps) {
-  const getViewModeLabel = () => {
+  // useMemo: só recalcula rótulo e taxas quando as props relevantes mudarem
+  const viewModeLabel = useMemo(() => {
     switch (viewMode) {
       case "day":
         return `hoje (${selectedDate.toLocaleDateString("pt-BR")})`;
@@ -35,17 +39,21 @@ export function AppointmentStats({
       default:
         return "período";
     }
-  };
+  }, [viewMode, selectedDate]);
 
-  const completionRate =
-    totalAppointments > 0
-      ? Math.round((completedAppointments / totalAppointments) * 100)
-      : 0;
-
-  const cancellationRate =
-    totalAppointments > 0
-      ? Math.round((cancelledAppointments / totalAppointments) * 100)
-      : 0;
+  const { completionRate, cancellationRate } = useMemo(
+    () => ({
+      completionRate:
+        totalAppointments > 0
+          ? Math.round((completedAppointments / totalAppointments) * 100)
+          : 0,
+      cancellationRate:
+        totalAppointments > 0
+          ? Math.round((cancelledAppointments / totalAppointments) * 100)
+          : 0,
+    }),
+    [totalAppointments, completedAppointments, cancelledAppointments]
+  );
 
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
@@ -58,7 +66,7 @@ export function AppointmentStats({
         <CardContent>
           <div className="text-2xl font-bold">{totalAppointments}</div>
           <p className="text-xs text-[var(--muted-foreground)]">
-            agendamentos {getViewModeLabel()}
+            agendamentos {viewModeLabel}
           </p>
         </CardContent>
       </Card>
@@ -117,4 +125,4 @@ export function AppointmentStats({
       </Card>
     </div>
   );
-}
+});
