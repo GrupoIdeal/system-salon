@@ -65,6 +65,7 @@ import {
   getAppointmentProducts,
   // Pontos de fidelidade
   addLoyaltyPoints,
+  updateSalon,
 } from "./db";
 import {
   scheduleAppointmentNotifications,
@@ -388,7 +389,7 @@ export const appRouter = router({
 
     update: protectedProcedure
       .input(salonSchema)
-      .mutation(async ({ ctx: _ctx, input: _input }) => {
+      .mutation(async ({ ctx: _ctx, input }) => {
         const salon = await getSalonByUserId(_ctx.user.id);
         if (!salon) {
           throw new TRPCError({
@@ -396,7 +397,15 @@ export const appRouter = router({
             message: "Salão não encontrado",
           });
         }
-        // Removido updateSalon, pois não está importado nem implementado
+        await updateSalon(salon.id, {
+          name: input.name,
+          cnpj: input.cnpj ?? null,
+          address: input.address ?? null,
+          phone: input.phone ?? null,
+          email: input.email ?? null,
+          logo: input.logo ?? null,
+          pixKey: input.pixKey ?? null,
+        });
         return { success: true };
       }),
 
