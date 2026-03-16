@@ -318,6 +318,14 @@ export default function Clients() {
                             </span>
                           </div>
                         )}
+                        {/* Pontos de fidelidade do cliente (R$1 = 1 ponto) */}
+                        {(client as any).loyaltyPoints > 0 && (
+                          <div className="mt-1">
+                            <span className="text-xs bg-amber-100 text-amber-700 px-2 py-0.5 rounded-full">
+                              ⭐ {(client as any).loyaltyPoints} pontos
+                            </span>
+                          </div>
+                        )}
                       </div>
                     </div>
                     <div className="flex gap-2">

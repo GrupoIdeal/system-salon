@@ -63,6 +63,8 @@ import {
   // Funções de produtos no atendimento (checkout)
   saveAppointmentProducts,
   getAppointmentProducts,
+  // Pontos de fidelidade
+  addLoyaltyPoints,
 } from "./db";
 import {
   scheduleAppointmentNotifications,
@@ -1490,6 +1492,21 @@ export const appRouter = router({
           );
         } catch {
           // Não falha a operação se não conseguir registrar a receita
+        }
+
+        // Acumular pontos de fidelidade para o cliente
+        // Regra: R$1 pago = 1 ponto. Usa amountPaid se fornecido, senão price do serviço.
+        try {
+          let valorBase = _input.amountPaid ?? 0;
+          if (!valorBase && appointment.serviceId) {
+            const svc = await getServiceById(appointment.serviceId);
+            valorBase = parseFloat(svc?.price ?? "0") || 0;
+          }
+          if (appointment.clientId && valorBase > 0) {
+            await addLoyaltyPoints(appointment.clientId, valorBase);
+          }
+        } catch {
+          // Não falha o fluxo principal se pontos não puderem ser adicionados
         }
 
         return { success: true, message: "Agendamento concluído com sucesso" };

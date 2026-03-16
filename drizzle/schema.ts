@@ -52,6 +52,8 @@ export const salons = pgTable(
     phone: varchar("phone", { length: 20 }),
     email: varchar("email", { length: 320 }),
     logo: text("logo"),
+    // Chave PIX do salão (CPF, CNPJ, email, telefone ou aleatória)
+    pixKey: text("pixKey"),
     // Removed workingHours - now using only specialist schedules
     createdAt: timestamp("createdAt").defaultNow(),
     updatedAt: timestamp("updatedAt").defaultNow(),

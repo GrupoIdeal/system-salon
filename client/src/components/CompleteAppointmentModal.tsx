@@ -22,6 +22,7 @@ import {
 import { trpc } from "@/lib/trpc";
 import { toast } from "sonner";
 import { Loader2, Plus, Trash2, Package, ShoppingCart } from "lucide-react";
+import { PixQRCode } from "@/components/PixQRCode";
 
 interface AppointmentForComplete {
   id: string;
@@ -74,6 +75,9 @@ export default function CompleteAppointmentModal({
   const productsQuery = trpc.products.list.useQuery(undefined, {
     enabled: isOpen,
   });
+
+  // Busca dados do salão para PIX (chave + nome)
+  const salonQuery = trpc.salon.get.useQuery(undefined, { enabled: isOpen });
 
   // Reset ao abrir o modal
   useEffect(() => {
@@ -235,9 +239,7 @@ export default function CompleteAppointmentModal({
               />
             </div>
           </div>
-
           <Separator />
-
           {/* ── Adicionar produtos ───────────────────────────────────────── */}
           <div className="space-y-3">
             <Label className="flex items-center gap-1">
@@ -331,9 +333,7 @@ export default function CompleteAppointmentModal({
               </div>
             )}
           </div>
-
           <Separator />
-
           {/* ── Resumo do total ──────────────────────────────────────────── */}
           <div className="space-y-1 text-sm">
             <div className="flex justify-between">
@@ -353,7 +353,6 @@ export default function CompleteAppointmentModal({
               <span>R$ {grandTotal.toFixed(2)}</span>
             </div>
           </div>
-
           {/* ── Método de pagamento ──────────────────────────────────────── */}
           <div>
             <Label>Método de pagamento</Label>
@@ -374,6 +373,19 @@ export default function CompleteAppointmentModal({
               </SelectContent>
             </Select>
           </div>
+          {/* QR Code PIX — exibido somente quando PIX é selecionado */}
+          {paymentMethod === "pix" && (salonQuery.data as any)?.pixKey ? (
+            <PixQRCode
+              pixKey={(salonQuery.data as any).pixKey}
+              amount={grandTotal}
+              salonName={salonQuery.data?.name ?? "Salão"}
+            />
+          ) : paymentMethod === "pix" ? (
+            <p className="text-xs text-amber-600 bg-amber-50 rounded-md px-3 py-2">
+              ⚠️ Chave PIX não cadastrada. Vá em <strong>Empresa</strong> e
+              adicione sua chave PIX.
+            </p>
+          ) : null}{" "}
         </div>
 
         <DialogFooter className="pt-2">

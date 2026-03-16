@@ -25,6 +25,7 @@ import { ptBR } from "date-fns/locale";
 import { APP_LOGO } from "@/const";
 import { toast } from "sonner";
 import { formatDuration, formatServicePrice } from "@/lib/format";
+import { AccessibilityBar } from "@/components/AccessibilityBar";
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -287,6 +288,10 @@ function PublicBookingPage() {
 
   return (
     <div className="min-h-screen bg-[var(--background)] py-8 px-4 sm:px-6 lg:px-8">
+      {/* Barra de acessibilidade — fixa no topo da página pública */}
+      <div className="fixed top-2 right-2 z-50 bg-[var(--background)]/90 backdrop-blur rounded-lg px-2 py-1 shadow border border-[var(--border)]">
+        <AccessibilityBar />
+      </div>
       <div className="max-w-4xl mx-auto w-full">
         {/* Header com título à esquerda e card escuro do salão à direita */}
         <div className="mb-6 w-full flex flex-col lg:flex-row items-start lg:items-center gap-4">
@@ -408,8 +413,7 @@ function PublicBookingPage() {
                   {/* Distância calculada */}
                   {userDistance !== null && (
                     <span className="text-xs font-medium bg-green-100 text-green-700 dark:bg-green-900 dark:text-green-300 px-2 py-1 rounded-full flex items-center gap-1">
-                      <Navigation2 className="h-3 w-3" />
-                      ~{userDistance} km
+                      <Navigation2 className="h-3 w-3" />~{userDistance} km
                     </span>
                   )}
                   {/* Botão: calcular distância */}

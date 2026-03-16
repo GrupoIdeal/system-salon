@@ -641,6 +641,30 @@ export async function deleteClient(clientId: string): Promise<void> {
   await db.delete(clients).where(eq(clients.id, clientId));
 }
 
+/**
+ * Incrementa os pontos de fidelidade de um cliente.
+ * Regra: cada R$ 1,00 pago = 1 ponto.
+ * ⚙️ Ponto de troca: ajuste a regra de conversão aqui se necessário.
+ */
+export async function addLoyaltyPoints(
+  clientId: string,
+  amountPaid: number
+): Promise<void> {
+  const db = await getDb();
+  if (!db) return;
+
+  const pointsToAdd = Math.floor(amountPaid); // R$1 = 1 ponto
+  if (pointsToAdd <= 0) return;
+
+  await db
+    .update(clients)
+    .set({
+      loyaltyPoints: sql`${clients.loyaltyPoints} + ${pointsToAdd}`,
+      updatedAt: new Date(),
+    })
+    .where(eq(clients.id, clientId));
+}
+
 // ============================================================================
 // SERVICE QUERIES
 // ============================================================================

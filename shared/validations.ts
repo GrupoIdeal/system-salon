@@ -88,6 +88,8 @@ export const salonSchema = z.object({
     .max(320, "Email muito longo")
     .optional(),
   logo: z.string().url("URL inválida").max(1000, "URL muito longa").optional(),
+  // Chave PIX: aceita qualquer formato (CPF, CNPJ, email, telefone, chave aleatória)
+  pixKey: z.string().max(200, "Chave PIX muito longa").optional(),
   workingHours: z
     .record(
       z.string(),
