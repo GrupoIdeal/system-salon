@@ -38,7 +38,9 @@ function RatingBadge({ stars }: { stars: number | null }) {
         ? "bg-yellow-100 text-yellow-800"
         : "bg-red-100 text-red-800";
   return (
-    <span className={`inline-flex items-center gap-1 text-xs font-semibold rounded-full px-2 py-0.5 ${color}`}>
+    <span
+      className={`inline-flex items-center gap-1 text-xs font-semibold rounded-full px-2 py-0.5 ${color}`}
+    >
       <Star className="h-3 w-3" />
       {stars}
     </span>
@@ -112,7 +114,9 @@ export default function Avaliacoes() {
                 <>
                   <div className="text-2xl font-bold text-amber-500">
                     {avg}
-                    {avg !== "—" && <span className="text-base ml-1">&#9733;</span>}
+                    {avg !== "—" && (
+                      <span className="text-base ml-1">&#9733;</span>
+                    )}
                   </div>
                   <p className="text-xs text-muted-foreground">de 5 estrelas</p>
                 </>
@@ -123,7 +127,9 @@ export default function Avaliacoes() {
           {/* Distribuição resumida */}
           <Card className="col-span-2">
             <CardHeader className="pb-2">
-              <CardTitle className="text-sm font-medium">Distribuição</CardTitle>
+              <CardTitle className="text-sm font-medium">
+                Distribuição
+              </CardTitle>
             </CardHeader>
             <CardContent>
               {ratingsQuery.isLoading ? (
@@ -131,8 +137,13 @@ export default function Avaliacoes() {
               ) : (
                 <div className="flex gap-2 flex-wrap">
                   {dist.map(d => (
-                    <div key={d.stars} className="flex items-center gap-1 text-sm">
-                      <span className="text-amber-400">{"★".repeat(d.stars)}</span>
+                    <div
+                      key={d.stars}
+                      className="flex items-center gap-1 text-sm"
+                    >
+                      <span className="text-amber-400">
+                        {"★".repeat(d.stars)}
+                      </span>
                       <Badge variant="secondary">{d.count}</Badge>
                     </div>
                   ))}

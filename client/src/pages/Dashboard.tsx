@@ -60,8 +60,7 @@ export default function Dashboard() {
   const totalRatings = ratingValues.reduce((s, r) => s + r.count, 0);
   const overallAvg =
     totalRatings > 0
-      ? ratingValues.reduce((s, r) => s + r.average * r.count, 0) /
-        totalRatings
+      ? ratingValues.reduce((s, r) => s + r.average * r.count, 0) / totalRatings
       : 0;
 
   // Preparar dados do gráfico de receita
@@ -218,7 +217,9 @@ export default function Dashboard() {
           {/* KPI: Média de Avaliações */}
           <Card className="lg:col-span-1">
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Média Avaliações</CardTitle>
+              <CardTitle className="text-sm font-medium">
+                Média Avaliações
+              </CardTitle>
               <Star className="h-4 w-4 text-amber-400" />
             </CardHeader>
             <CardContent>
@@ -243,7 +244,9 @@ export default function Dashboard() {
           {/* KPI: Especialistas avaliados */}
           <Card className="lg:col-span-1">
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Especialistas</CardTitle>
+              <CardTitle className="text-sm font-medium">
+                Especialistas
+              </CardTitle>
               <Users className="h-4 w-4 text-[var(--primary)]" />
             </CardHeader>
             <CardContent>
@@ -254,7 +257,9 @@ export default function Dashboard() {
                   <div className="text-2xl font-bold">
                     {ratingValues.length}
                   </div>
-                  <p className="text-xs text-muted-foreground">com avaliações</p>
+                  <p className="text-xs text-muted-foreground">
+                    com avaliações
+                  </p>
                 </>
               )}
             </CardContent>
@@ -390,14 +395,17 @@ export default function Dashboard() {
                           </p>
                           {/* Estrelas do especialista */}
                           {specialist.specialistId &&
-                            specRatings?.[specialist.specialistId] && (() => {
+                            specRatings?.[specialist.specialistId] &&
+                            (() => {
                               const sid = specialist.specialistId!;
                               const r = specRatings[sid];
                               return (
                                 <p className="text-xs text-amber-500">
                                   {Array.from({ length: 5 }, (_, i) => (
                                     <span key={i}>
-                                      {i < Math.round(r.average) ? "\u2605" : "\u2606"}
+                                      {i < Math.round(r.average)
+                                        ? "\u2605"
+                                        : "\u2606"}
                                     </span>
                                   ))}{" "}
                                   {r.average.toFixed(1)} ({r.count})
