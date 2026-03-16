@@ -60,6 +60,9 @@ import {
   updateProduct,
   deleteProduct,
   getLowStockProducts,
+  // Funções de produtos no atendimento (checkout)
+  saveAppointmentProducts,
+  getAppointmentProducts,
 } from "./db";
 import {
   scheduleAppointmentNotifications,
@@ -1418,9 +1421,16 @@ export const appRouter = router({
               "pix",
               "bank_transfer",
               "other",
-            ])
+          // Produtos vendidos durante o atendimento (opcional)
+          products: z
+            .array(
+              z.object({
+                productId: z.string(),
+                quantity: z.number().int().positive(),
+                unitPrice: z.number().nonnegative(),
+              })
+            )
             .optional(),
-          amountPaid: z.number().positive().optional(), // novo campo opcional: valor pago real
         })
       )
       .mutation(async ({ ctx: _ctx, input: _input }) => {
@@ -1456,12 +1466,24 @@ export const appRouter = router({
           });
         }
 
+        // Registrar produtos vendidos e descontar estoque
+        if (_input.products && _input.products.length > 0) {
+          await saveAppointmentProducts(
+            _input.id,
+            salon.id,
+            _input.products
+          );
+        }
+
         // Atualizar status do agendamento
         await updateAppointment(_input.id, {
           status: "completed",
           updatedAt: new Date(),
         });
 
+        // Registrar transação financeira
+        try {
+          // Passar amountPaid quando fornecido para usar valor real pago (já inclui produtos)
         // Registrar transação financeira
         try {
           // Passar amountPaid quando fornecido para usar valor real pago

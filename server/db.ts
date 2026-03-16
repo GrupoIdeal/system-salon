@@ -23,6 +23,7 @@ import {
   transactions,
   auditLogs,
   products,
+  appointmentProducts,
   InsertUser,
   InsertSalon,
   InsertSpecialist,
@@ -43,6 +44,7 @@ import {
   PasswordReset,
   AuditLog,
   Product,
+  AppointmentProduct,
 } from "../drizzle/schema";
 import * as schema from "../drizzle/schema";
 import * as relations from "../drizzle/relations";
@@ -2536,4 +2538,67 @@ export async function getLowStockProducts(salonId: string): Promise<Product[]> {
       )
     )
     .orderBy(asc(products.stock));
+}
+
+// ============================================================================
+// APPOINTMENT PRODUCTS (produtos vendidos durante o atendimento)
+// ============================================================================
+
+/**
+ * Retorna os produtos registrados em um agendamento
+ */
+export async function getAppointmentProducts(
+  appointmentId: string
+): Promise<(AppointmentProduct & { product: Product })[]> {
+  const db = await getDb();
+  if (!db) return [];
+  const rows = await db
+    .select({
+      ap: appointmentProducts,
+      product: products,
+    })
+    .from(appointmentProducts)
+    .leftJoin(products, eq(appointmentProducts.productId, products.id))
+    .where(eq(appointmentProducts.appointmentId, appointmentId));
+  return rows
+    .filter(r => r.product !== null)
+    .map(r => ({ ...r.ap, product: r.product! }));
+}
+
+/**
+ * Registra os produtos vendidos em um atendimento e desconta o estoque.
+ * Chamado durante o checkout (conclusão) do agendamento.
+ *
+ * @param appointmentId - ID do agendamento
+ * @param salonId - ID do salão
+ * @param items - Lista de { productId, quantity, unitPrice }
+ */
+export async function saveAppointmentProducts(
+  appointmentId: string,
+  salonId: string,
+  items: { productId: string; quantity: number; unitPrice: number }[]
+): Promise<void> {
+  const db = await getDb();
+  if (!db || items.length === 0) return;
+
+  for (const item of items) {
+    // 1. Inserir linha de produto no atendimento
+    await db.insert(appointmentProducts).values({
+      id: nanoid(),
+      appointmentId,
+      productId: item.productId,
+      salonId,
+      quantity: item.quantity,
+      unitPrice: item.unitPrice.toString(),
+    });
+
+    // 2. Descontar do estoque (não deixa ficar negativo)
+    await db
+      .update(products)
+      .set({
+        stock: sql`GREATEST(0, ${products.stock} - ${item.quantity})`,
+        updatedAt: new Date(),
+      })
+      .where(eq(products.id, item.productId));
+  }
 }

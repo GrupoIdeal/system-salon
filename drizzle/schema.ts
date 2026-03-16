@@ -453,3 +453,36 @@ export const products = pgTable(
 
 export type Product = typeof products.$inferSelect;
 export type InsertProduct = typeof products.$inferInsert;
+
+/**
+ * Produtos vendidos em um atendimento (linha de item do checkout)
+ */
+export const appointmentProducts = pgTable(
+  "appointment_products",
+  {
+    id: varchar("id", { length: 64 }).primaryKey(),
+    appointmentId: varchar("appointmentId", { length: 64 })
+      .notNull()
+      .references(() => appointments.id, { onDelete: "cascade" }),
+    productId: varchar("productId", { length: 64 })
+      .notNull()
+      .references(() => products.id),
+    salonId: varchar("salonId", { length: 64 })
+      .notNull()
+      .references(() => salons.id, { onDelete: "cascade" }),
+    // Quantidade vendida
+    quantity: integer("quantity").default(1).notNull(),
+    // Preço unitário no momento da venda (snapshot)
+    unitPrice: decimal("unitPrice", { precision: 10, scale: 2 }).notNull(),
+    createdAt: timestamp("createdAt").defaultNow(),
+  },
+  table => ({
+    appointmentIdIdx: index("apt_products_appointmentId_idx").on(
+      table.appointmentId
+    ),
+    salonIdIdx: index("apt_products_salonId_idx").on(table.salonId),
+  })
+);
+
+export type AppointmentProduct = typeof appointmentProducts.$inferSelect;
+export type InsertAppointmentProduct = typeof appointmentProducts.$inferInsert;
