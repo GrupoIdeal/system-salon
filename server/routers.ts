@@ -53,6 +53,13 @@ import {
   getAllDashboardData,
   createAuditLog,
   listAuditLogsWithCount,
+  // Funções de produtos (Sprint 3)
+  getProductsBySalonId,
+  getProductById,
+  createProduct,
+  updateProduct,
+  deleteProduct,
+  getLowStockProducts,
 } from "./db";
 import {
   scheduleAppointmentNotifications,
@@ -96,6 +103,8 @@ import {
   passwordResetRequestSchema,
   passwordResetSchema,
   scheduleSchema,
+  // Schema de produtos (Sprint 3)
+  productSchema,
 } from "@shared/validations";
 import type { Service, User, InsertUser } from "../drizzle/schema";
 import { uploadBase64Image } from "./cloudinary";
@@ -2411,6 +2420,85 @@ export const appRouter = router({
   }),
 
   dashboard: dashboardRouter,
+
+  // ============================================================
+  // MÓDULO DE PRODUTOS (Sprint 3)
+  // ============================================================
+  products: router({
+    /** Lista todos os produtos do salão */
+    list: protectedProcedure.query(async ({ ctx }) => {
+      const salon = await getSalonByUserId(ctx.user.id);
+      if (!salon)
+        throw new TRPCError({
+          code: "NOT_FOUND",
+          message: "Salão não encontrado",
+        });
+      return getProductsBySalonId(salon.id);
+    }),
+
+    /** Lista produtos com estoque baixo (stock <= minStock) */
+    lowStock: protectedProcedure.query(async ({ ctx }) => {
+      const salon = await getSalonByUserId(ctx.user.id);
+      if (!salon)
+        throw new TRPCError({
+          code: "NOT_FOUND",
+          message: "Salão não encontrado",
+        });
+      return getLowStockProducts(salon.id);
+    }),
+
+    /** Cria um novo produto */
+    create: protectedProcedure
+      .input(productSchema)
+      .mutation(async ({ ctx, input }) => {
+        const salon = await getSalonByUserId(ctx.user.id);
+        if (!salon)
+          throw new TRPCError({
+            code: "NOT_FOUND",
+            message: "Salão não encontrado",
+          });
+        return createProduct({ ...input, salonId: salon.id });
+      }),
+
+    /** Atualiza um produto existente */
+    update: protectedProcedure
+      .input(productSchema.extend({ id: z.string() }))
+      .mutation(async ({ ctx, input }) => {
+        const salon = await getSalonByUserId(ctx.user.id);
+        if (!salon)
+          throw new TRPCError({
+            code: "NOT_FOUND",
+            message: "Salão não encontrado",
+          });
+        const { id, ...data } = input;
+        const updated = await updateProduct(id, salon.id, data);
+        if (!updated)
+          throw new TRPCError({
+            code: "NOT_FOUND",
+            message: "Produto não encontrado",
+          });
+        return updated;
+      }),
+
+    /** Remove um produto */
+    delete: protectedProcedure
+      .input(z.object({ id: z.string() }))
+      .mutation(async ({ ctx, input }) => {
+        const salon = await getSalonByUserId(ctx.user.id);
+        if (!salon)
+          throw new TRPCError({
+            code: "NOT_FOUND",
+            message: "Salão não encontrado",
+          });
+        const ok = await deleteProduct(input.id, salon.id);
+        if (!ok)
+          throw new TRPCError({
+            code: "NOT_FOUND",
+            message: "Produto não encontrado",
+          });
+        return { success: true };
+      }),
+  }),
 });
 
 // Importar o roteador de agendamento público

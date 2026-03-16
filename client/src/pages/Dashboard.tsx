@@ -16,7 +16,10 @@ import {
   Star,
   Target,
   BarChart3,
+  AlertTriangle,
+  Package,
 } from "lucide-react";
+import { Link } from "wouter";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Badge } from "@/components/ui/badge";
 import {
@@ -34,6 +37,8 @@ import { ptBR } from "date-fns/locale";
 export default function Dashboard() {
   // OTIMIZADO: Busca TODOS os dados do dashboard em uma única chamada
   const dashboardQuery = trpc.dashboard.all.useQuery({ chartDays: 30 });
+  // Produtos com estoque baixo (stock <= minStock) — Sprint 3
+  const lowStockQuery = trpc.products.lowStock.useQuery();
 
   const formatCurrency = (value: number) => {
     return new Intl.NumberFormat("pt-BR", {
@@ -71,11 +76,38 @@ export default function Dashboard() {
     <DashboardLayout>
       <div className="space-y-6 min-w-0">
         <div>
-          <h1 className="text-2xl sm:text-3xl font-bold tracking-tight">Dashboard</h1>
+          <h1 className="text-2xl sm:text-3xl font-bold tracking-tight">
+            Dashboard
+          </h1>
           <p className="text-muted-foreground mt-2 text-sm sm:text-base">
             Visão geral do seu negócio em tempo real
           </p>
         </div>
+
+        {/* ---- Alerta de Estoque Baixo (Sprint 3) ---- */}
+        {lowStockQuery.data && lowStockQuery.data.length > 0 && (
+          <Link href="/produtos">
+            <Card className="cursor-pointer border-destructive/60 bg-destructive/5 hover:bg-destructive/10 transition-colors">
+              <CardHeader className="flex flex-row items-center gap-3 pb-2">
+                <AlertTriangle className="h-5 w-5 text-destructive shrink-0" />
+                <div>
+                  <CardTitle className="text-sm font-semibold text-destructive">
+                    Estoque Baixo — {lowStockQuery.data.length}{" "}
+                    {lowStockQuery.data.length === 1 ? "produto" : "produtos"}
+                  </CardTitle>
+                  <CardDescription className="text-xs">
+                    {lowStockQuery.data
+                      .slice(0, 3)
+                      .map(p => p.name)
+                      .join(", ")}
+                    {lowStockQuery.data.length > 3 && " e mais..."}
+                  </CardDescription>
+                </div>
+                <Package className="h-4 w-4 text-muted-foreground ml-auto" />
+              </CardHeader>
+            </Card>
+          </Link>
+        )}
 
         {/* Métricas Principais */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">

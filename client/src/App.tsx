@@ -19,6 +19,7 @@ const RecuperarSenha = lazy(() => import("./pages/RecuperarSenha"));
 const RedefinirSenha = lazy(() => import("./pages/RedefinirSenha"));
 const Empresa = lazy(() => import("./pages/Empresa"));
 const Specialists = lazy(() => import("./pages/Specialists"));
+const Products = lazy(() => import("./pages/Products"));
 const PublicBooking = lazy(() => import("./pages/PublicBooking"));
 const Usuarios = lazy(() => import("./pages/Usuarios"));
 const Logs = lazy(() => import("./pages/Logs"));
@@ -117,6 +118,10 @@ function Router() {
       <Route
         path="/especialistas"
         component={() => <ProtectedRoute component={Specialists} />}
+      />
+      <Route
+        path="/produtos"
+        component={() => <ProtectedRoute component={Products} />}
       />
       <Route
         path="/usuarios"

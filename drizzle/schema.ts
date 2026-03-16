@@ -125,6 +125,8 @@ export const clients = pgTable(
     email: varchar("email", { length: 320 }),
     phone: varchar("phone", { length: 20 }),
     notes: text("notes"),
+    // Pontos de fidelidade acumulados pelo cliente
+    loyaltyPoints: integer("loyaltyPoints").default(0).notNull(),
     createdAt: timestamp("createdAt").defaultNow(),
     updatedAt: timestamp("updatedAt").defaultNow(),
   },
@@ -423,3 +425,31 @@ export const auditLogs = pgTable(
 
 export type AuditLog = typeof auditLogs.$inferSelect;
 export type InsertAuditLog = typeof auditLogs.$inferInsert;
+
+/**
+ * Tabela de produtos do salão (estoque e venda)
+ */
+export const products = pgTable(
+  "products",
+  {
+    id: varchar("id", { length: 64 }).primaryKey(),
+    salonId: varchar("salonId", { length: 64 })
+      .notNull()
+      .references(() => salons.id, { onDelete: "cascade" }),
+    name: text("name").notNull(),
+    description: text("description"),
+    stock: integer("stock").default(0).notNull(),
+    // Quantidade mínima antes de acionar alerta de estoque baixo
+    minStock: integer("minStock").default(5).notNull(),
+    costPrice: decimal("costPrice", { precision: 10, scale: 2 }),
+    sellPrice: decimal("sellPrice", { precision: 10, scale: 2 }),
+    createdAt: timestamp("createdAt").defaultNow(),
+    updatedAt: timestamp("updatedAt").defaultNow(),
+  },
+  table => ({
+    salonIdIdx: index("products_salonId_idx").on(table.salonId),
+  })
+);
+
+export type Product = typeof products.$inferSelect;
+export type InsertProduct = typeof products.$inferInsert;

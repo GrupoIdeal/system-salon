@@ -19,6 +19,7 @@ import {
   Calendar,
   LayoutDashboard,
   LogOut,
+  Package,
   PanelLeft,
   Scissors,
   User,
@@ -34,6 +35,7 @@ const menuItems = [
   { icon: LayoutDashboard, label: "Dashboard", path: "/dashboard" },
   { icon: Users, label: "Clientes", path: "/clientes" },
   { icon: Scissors, label: "Serviços", path: "/servicos" },
+  { icon: Package, label: "Produtos", path: "/produtos" },
   { icon: User, label: "Especialistas", path: "/especialistas" },
   { icon: Calendar, label: "Agendamentos", path: "/agendamentos" },
 ];

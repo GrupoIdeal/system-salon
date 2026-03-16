@@ -22,6 +22,7 @@ import {
   passwordResets,
   transactions,
   auditLogs,
+  products,
   InsertUser,
   InsertSalon,
   InsertSpecialist,
@@ -31,6 +32,7 @@ import {
   InsertPasswordReset,
   InsertTransaction,
   InsertAuditLog,
+  InsertProduct,
   User,
   Salon,
   Specialist,
@@ -40,6 +42,7 @@ import {
   AppointmentWithDetails,
   PasswordReset,
   AuditLog,
+  Product,
 } from "../drizzle/schema";
 import * as schema from "../drizzle/schema";
 import * as relations from "../drizzle/relations";
@@ -2436,3 +2439,97 @@ export async function getAllDashboardData(
 
 export { users };
 export { eq } from "drizzle-orm";
+
+// ============================================================
+// MÓDULO DE PRODUTOS (Sprint 3)
+// ============================================================
+
+/** Retorna todos os produtos de um salão ordenados por nome */
+export async function getProductsBySalonId(
+  salonId: string
+): Promise<Product[]> {
+  const db = await getDb();
+  if (!db) return [];
+  return db
+    .select()
+    .from(products)
+    .where(eq(products.salonId, salonId))
+    .orderBy(asc(products.name));
+}
+
+/** Retorna um produto pelo id (garante que pertence ao salão certo) */
+export async function getProductById(
+  id: string,
+  salonId: string
+): Promise<Product | null> {
+  const db = await getDb();
+  if (!db) return null;
+  const rows = await db
+    .select()
+    .from(products)
+    .where(and(eq(products.id, id), eq(products.salonId, salonId)))
+    .limit(1);
+  return rows[0] ?? null;
+}
+
+/** Cria um novo produto */
+export async function createProduct(
+  data: Omit<InsertProduct, "id">
+): Promise<Product> {
+  const db = await getDb();
+  if (!db) throw new Error("Banco de dados não disponível");
+  const rows = await db
+    .insert(products)
+    .values({ ...data, id: nanoid() })
+    .returning();
+  return rows[0];
+}
+
+/** Atualiza campos de um produto existente */
+export async function updateProduct(
+  id: string,
+  salonId: string,
+  data: Partial<InsertProduct>
+): Promise<Product | null> {
+  const db = await getDb();
+  if (!db) return null;
+  const rows = await db
+    .update(products)
+    .set({ ...data, updatedAt: new Date() })
+    .where(and(eq(products.id, id), eq(products.salonId, salonId)))
+    .returning();
+  return rows[0] ?? null;
+}
+
+/** Remove um produto */
+export async function deleteProduct(
+  id: string,
+  salonId: string
+): Promise<boolean> {
+  const db = await getDb();
+  if (!db) return false;
+  const rows = await db
+    .delete(products)
+    .where(and(eq(products.id, id), eq(products.salonId, salonId)))
+    .returning({ id: products.id });
+  return rows.length > 0;
+}
+
+/**
+ * Retorna produtos com estoque baixo (stock <= minStock)
+ * Usado para exibir alertas no Dashboard
+ */
+export async function getLowStockProducts(salonId: string): Promise<Product[]> {
+  const db = await getDb();
+  if (!db) return [];
+  return db
+    .select()
+    .from(products)
+    .where(
+      and(
+        eq(products.salonId, salonId),
+        sql`${products.stock} <= ${products.minStock}`
+      )
+    )
+    .orderBy(asc(products.stock));
+}
