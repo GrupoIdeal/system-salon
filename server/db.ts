@@ -45,6 +45,9 @@ import {
   AuditLog,
   Product,
   AppointmentProduct,
+  ratings,
+  Rating,
+  InsertRating,
 } from "../drizzle/schema";
 import * as schema from "../drizzle/schema";
 import * as relations from "../drizzle/relations";
@@ -2626,4 +2629,127 @@ export async function saveAppointmentProducts(
       })
       .where(eq(products.id, item.productId));
   }
+}
+
+// ============================================================================
+// RATINGS FUNCTIONS
+// ============================================================================
+
+export type { Rating, InsertRating } from "../drizzle/schema";
+
+/**
+ * Cria um registro de avaliação pendente (token ainda não utilizado).
+ * Chamado ao concluir o atendimento.
+ */
+export async function createRating(data: InsertRating): Promise<Rating | null> {
+  const db = await getDb();
+  if (!db) return null;
+  const result = await db.insert(ratings).values(data).returning();
+  return result[0] ?? null;
+}
+
+/**
+ * Busca uma avaliação pelo token único.
+ * Usada na página pública /avaliar?token=xxx
+ */
+export async function getRatingByToken(token: string): Promise<Rating | null> {
+  const db = await getDb();
+  if (!db) return null;
+  const result = await db
+    .select()
+    .from(ratings)
+    .where(eq(ratings.token, token))
+    .limit(1);
+  return result[0] ?? null;
+}
+
+/**
+ * Submete a avaliação do cliente (stars + comment).
+ * Marca o token como usado e registra o timestamp.
+ */
+export async function submitRating(
+  token: string,
+  stars: number,
+  comment?: string
+): Promise<boolean> {
+  const db = await getDb();
+  if (!db) return false;
+  const result = await db
+    .update(ratings)
+    .set({
+      stars,
+      comment: comment ?? null,
+      used: true,
+      submittedAt: new Date(),
+    })
+    .where(eq(ratings.token, token))
+    .returning();
+  return result.length > 0;
+}
+
+/**
+ * Retorna todas as avaliações enviadas de um especialista.
+ * Usado na tela de especialistas do dashboard.
+ */
+export async function getRatingsBySpecialist(
+  specialistId: string
+): Promise<Rating[]> {
+  const db = await getDb();
+  if (!db) return [];
+  return await db
+    .select()
+    .from(ratings)
+    .where(eq(ratings.specialistId, specialistId));
+}
+
+/**
+ * Calcula a média de estrelas de um especialista.
+ * Retorna null se não houver nenhuma avaliação.
+ */
+export async function getAverageRating(
+  specialistId: string
+): Promise<{ average: number; count: number } | null> {
+  const db = await getDb();
+  if (!db) return null;
+  const result = await db
+    .select({
+      average: sql<number>`ROUND(AVG(${ratings.stars})::numeric, 1)`,
+      count: sql<number>`COUNT(*)`,
+    })
+    .from(ratings)
+    .where(eq(ratings.specialistId, specialistId));
+  const row = result[0];
+  if (!row || Number(row.count) === 0) return null;
+  return { average: Number(row.average), count: Number(row.count) };
+}
+
+/**
+ * Retorna a média de avaliações de todos os especialistas de um salão.
+ * Mapa: specialistId -> { average, count }
+ */
+export async function getAllSpecialistRatings(
+  salonId: string
+): Promise<Record<string, { average: number; count: number }>> {
+  const db = await getDb();
+  if (!db) return {};
+  const rows = await db
+    .select({
+      specialistId: ratings.specialistId,
+      average: sql<number>`ROUND(AVG(${ratings.stars})::numeric, 1)`,
+      count: sql<number>`COUNT(*)`,
+    })
+    .from(ratings)
+    .where(eq(ratings.salonId, salonId))
+    .groupBy(ratings.specialistId);
+
+  const map: Record<string, { average: number; count: number }> = {};
+  for (const row of rows) {
+    if (row.specialistId && Number(row.count) > 0) {
+      map[row.specialistId] = {
+        average: Number(row.average),
+        count: Number(row.count),
+      };
+    }
+  }
+  return map;
 }

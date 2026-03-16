@@ -66,6 +66,12 @@ import {
   // Pontos de fidelidade
   addLoyaltyPoints,
   updateSalon,
+  // Avaliações (Sprint 6)
+  createRating,
+  getRatingByToken,
+  submitRating,
+  getRatingsBySpecialist,
+  getAllSpecialistRatings,
 } from "./db";
 import {
   scheduleAppointmentNotifications,
@@ -1518,7 +1524,35 @@ export const appRouter = router({
           // Não falha o fluxo principal se pontos não puderem ser adicionados
         }
 
-        return { success: true, message: "Agendamento concluído com sucesso" };
+        // Gerar token único de avaliação e criar registro pendente
+        let ratingToken: string | null = null;
+        try {
+          const token = crypto.randomUUID();
+          // Busca nome do cliente para snapshot (não-fatal)
+          let clientName: string | null = null;
+          if (appointment.clientId) {
+            const client = await getClientById(appointment.clientId);
+            clientName = client?.name ?? null;
+          }
+          await createRating({
+            id: generateId(),
+            salonId: salon.id,
+            specialistId: appointment.specialistId ?? "",
+            appointmentId: appointment.id,
+            token,
+            used: false,
+            clientName,
+          });
+          ratingToken = token;
+        } catch {
+          // Não falha o fluxo principal se o token não puder ser gerado
+        }
+
+        return {
+          success: true,
+          message: "Agendamento concluído com sucesso",
+          ratingToken,
+        };
       }),
 
     // Ação rápida: Cancelar agendamento
@@ -2559,14 +2593,88 @@ export const appRouter = router({
         return { success: true };
       }),
   }),
+
+  // ==========================================================================
+  // RATINGS — Avaliações pós-atendimento
+  // ==========================================================================
+  ratings: router({
+    /** Lista todas as avaliações enviadas de um especialista */
+    getBySpecialist: protectedProcedure
+      .input(z.object({ specialistId: z.string() }))
+      .query(async ({ ctx, input }) => {
+        const salon = await getSalonByUserId(ctx.user.id);
+        if (!salon)
+          throw new TRPCError({
+            code: "NOT_FOUND",
+            message: "Salão não encontrado",
+          });
+        return await getRatingsBySpecialist(input.specialistId);
+      }),
+
+    /** Retorna mapa specialistId -> { average, count } para o salão inteiro */
+    getAllAverages: protectedProcedure.query(async ({ ctx }) => {
+      const salon = await getSalonByUserId(ctx.user.id);
+      if (!salon)
+        throw new TRPCError({
+          code: "NOT_FOUND",
+          message: "Salão não encontrado",
+        });
+      return await getAllSpecialistRatings(salon.id);
+    }),
+  }),
 });
 
 // Importar o roteador de agendamento público
 import { publicBookingRouter } from "./public-booking";
 
-// Roteador público (sem autenticação) para agendamentos
+// Roteador público (sem autenticação) para agendamentos e avaliações
+// ⚙️ ratings.submit e ratings.getByToken são públicos (acesso via token único)
 export const publicRouter = router({
   booking: publicBookingRouter,
+  ratings: router({
+    /** Busca a avaliação pelo token — retorna info do serviço para exibir na tela pública */
+    getByToken: publicProcedure
+      .input(z.object({ token: z.string() }))
+      .query(async ({ input }) => {
+        const rating = await getRatingByToken(input.token);
+        if (!rating)
+          throw new TRPCError({
+            code: "NOT_FOUND",
+            message: "Avaliação não encontrada",
+          });
+        return rating;
+      }),
+
+    /** Submete a avaliação do cliente (1-5 estrelas + comentário opcional) */
+    submit: publicProcedure
+      .input(
+        z.object({
+          token: z.string(),
+          stars: z.number().int().min(1).max(5),
+          comment: z.string().max(500).optional(),
+        })
+      )
+      .mutation(async ({ input }) => {
+        const rating = await getRatingByToken(input.token);
+        if (!rating)
+          throw new TRPCError({
+            code: "NOT_FOUND",
+            message: "Avaliação não encontrada",
+          });
+        if (rating.used)
+          throw new TRPCError({
+            code: "BAD_REQUEST",
+            message: "Esta avaliação já foi enviada",
+          });
+        const ok = await submitRating(input.token, input.stars, input.comment);
+        if (!ok)
+          throw new TRPCError({
+            code: "INTERNAL_SERVER_ERROR",
+            message: "Erro ao salvar avaliação",
+          });
+        return { success: true };
+      }),
+  }),
 });
 
 export type AppRouter = typeof appRouter;

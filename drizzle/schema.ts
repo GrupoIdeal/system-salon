@@ -490,3 +490,44 @@ export const appointmentProducts = pgTable(
 
 export type AppointmentProduct = typeof appointmentProducts.$inferSelect;
 export type InsertAppointmentProduct = typeof appointmentProducts.$inferInsert;
+
+/**
+ * Avaliações pós-atendimento
+ * Um token único é gerado ao concluir o atendimento.
+ * O cliente acessa /avaliar?token=xxx e submete 1–5 estrelas + comentário.
+ */
+export const ratings = pgTable(
+  "ratings",
+  {
+    id: varchar("id", { length: 64 }).primaryKey(),
+    salonId: varchar("salonId", { length: 64 })
+      .notNull()
+      .references(() => salons.id, { onDelete: "cascade" }),
+    specialistId: varchar("specialistId", { length: 64 })
+      .notNull()
+      .references(() => specialists.id, { onDelete: "cascade" }),
+    appointmentId: varchar("appointmentId", { length: 64 })
+      .notNull()
+      .references(() => appointments.id, { onDelete: "cascade" }),
+    // Token único enviado ao cliente (UUID v4)
+    token: varchar("token", { length: 128 }).notNull().unique(),
+    // true após o cliente enviar a avaliação
+    used: boolean("used").notNull().default(false),
+    // Estrelas de 1 a 5 (null enquanto não avaliado)
+    stars: integer("stars"),
+    // Comentário opcional do cliente
+    comment: text("comment"),
+    // Nome do cliente no momento do atendimento (snapshot)
+    clientName: text("clientName"),
+    createdAt: timestamp("createdAt").defaultNow(),
+    submittedAt: timestamp("submittedAt"),
+  },
+  table => ({
+    salonIdIdx: index("ratings_salonId_idx").on(table.salonId),
+    specialistIdIdx: index("ratings_specialistId_idx").on(table.specialistId),
+    tokenIdx: index("ratings_token_idx").on(table.token),
+  })
+);
+
+export type Rating = typeof ratings.$inferSelect;
+export type InsertRating = typeof ratings.$inferInsert;

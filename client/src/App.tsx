@@ -21,6 +21,7 @@ const Empresa = lazy(() => import("./pages/Empresa"));
 const Specialists = lazy(() => import("./pages/Specialists"));
 const Products = lazy(() => import("./pages/Products"));
 const PublicBooking = lazy(() => import("./pages/PublicBooking"));
+const Rating = lazy(() => import("./pages/Rating"));
 const Usuarios = lazy(() => import("./pages/Usuarios"));
 const Logs = lazy(() => import("./pages/Logs"));
 const NotFound = lazy(() => import("@/pages/NotFound"));
@@ -91,6 +92,8 @@ function Router() {
       <Route path="/recuperar-senha" component={RecuperarSenha} />
       <Route path="/redefinir-senha" component={RedefinirSenha} />
       <Route path="/agendar" component={PublicBooking} />
+      {/* Página pública de avaliação pós-atendimento: /avaliar?token=xxx */}
+      <Route path="/avaliar" component={Rating} />
       <Route
         path="/dashboard"
         component={() => <ProtectedRoute component={Dashboard} />}

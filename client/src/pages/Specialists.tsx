@@ -31,9 +31,33 @@ import {
 
 // SyncStatusIndicator removed - sync functionality no longer needed
 
-// Componente para exibir card de especialista com horários
+/**
+ * Mini componente de estrelas (somente leitura).
+ * Exibe estrelas cheias/vazias baseado na média e o contador de avaliações.
+ */
+function StarDisplay({ average, count }: { average: number; count: number }) {
+  return (
+    <div
+      className="flex items-center gap-1 mt-1"
+      aria-label={`Média: ${average} de 5 estrelas, ${count} avaliaões`}
+    >
+      {[1, 2, 3, 4, 5].map(n => (
+        <span
+          key={n}
+          className={`text-sm ${n <= Math.round(average) ? "text-amber-400" : "text-gray-300"}`}
+        >
+          &#9733;
+        </span>
+      ))}
+      <span className="text-xs text-muted-foreground ml-1">
+        {average.toFixed(1)} ({count})
+      </span>
+    </div>
+  );
+}
 function SpecialistCard({
   specialist,
+  rating,
   onEdit,
   onDelete,
 }: {
@@ -46,6 +70,8 @@ function SpecialistCard({
     specialty?: string | null;
     bio?: string | null;
   };
+  // Média de avaliações do especialista (pode ser null se sem avaliações)
+  rating?: { average: number; count: number } | null;
   onEdit: (specialist: {
     id: string;
     name: string;
@@ -89,6 +115,10 @@ function SpecialistCard({
             <div className="text-muted-foreground text-sm mb-1 break-words">
               {specialist.specialty}
             </div>
+            {/* Avaliações média — exibida se houver ao menos uma */}
+            {rating && rating.count > 0 && (
+              <StarDisplay average={rating.average} count={rating.count} />
+            )}
             <div className="text-muted-foreground text-sm break-words">
               {specialist.email}
             </div>
@@ -272,6 +302,8 @@ export default function Specialists() {
   const [copiedLinks, setCopiedLinks] = useState<Set<string>>(new Set());
 
   const specialistsQuery = trpc.specialists.list.useQuery();
+  // Busca médias de avaliações de todos os especialistas do salão
+  const ratingsQuery = trpc.ratings.getAllAverages.useQuery();
   const createMutation = trpc.specialists.create.useMutation({
     onSuccess: () => {
       // Backend aplica schedule de forma atômica quando enviado no payload
@@ -1034,6 +1066,7 @@ export default function Specialists() {
                 <SpecialistCard
                   key={spec.id}
                   specialist={spec}
+                  rating={ratingsQuery.data?.[spec.id] ?? null}
                   onEdit={handleEditSpecialist}
                   onDelete={confirmDelete}
                 />
