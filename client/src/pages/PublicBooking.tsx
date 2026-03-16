@@ -17,6 +17,8 @@ import {
   Phone,
   Instagram,
   MessageSquare,
+  Navigation2,
+  Locate,
 } from "lucide-react";
 import { format, addDays, startOfDay, isSameDay } from "date-fns";
 import { ptBR } from "date-fns/locale";
@@ -63,6 +65,10 @@ function PublicBookingPage() {
   const [step, setStep] = useState<
     "specialist" | "service" | "datetime" | "client" | "confirmation"
   >("specialist");
+
+  // Estado de geolocalização — distância até o salão
+  const [userDistance, setUserDistance] = useState<number | null>(null);
+  const [geoLoading, setGeoLoading] = useState(false);
   const [selectedSpecialist, setSelectedSpecialist] = useState<string>("");
   const [selectedService, setSelectedService] = useState<string>("");
   const [selectedDate, setSelectedDate] = useState<Date | null>(null);
@@ -226,6 +232,59 @@ function PublicBookingPage() {
     (s: ServiceData) => s.id === selectedService
   );
 
+  /**
+   * Calcula a distância aproximada em km entre o usuário e o endereço do salão.
+   * Usa a fórmula de Haversine com geolocalização do navegador.
+   * ⚙️ Ponto de troca: para distância precisa, usar Google Maps Distance Matrix API.
+   */
+  const handleGetDistance = () => {
+    if (!navigator.geolocation) {
+      toast.error("Seu navegador não suporta geolocalização.");
+      return;
+    }
+    setGeoLoading(true);
+    navigator.geolocation.getCurrentPosition(
+      async position => {
+        const { latitude: userLat, longitude: userLng } = position.coords;
+        // Geocodificar o endereço do salão usando o serviço gratuito nominatim
+        const address = salon?.address || "";
+        try {
+          const resp = await fetch(
+            `https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(address)}&format=json&limit=1`,
+            { headers: { "Accept-Language": "pt-BR" } }
+          );
+          const data = await resp.json();
+          if (!data || data.length === 0) {
+            toast.error("Não foi possível encontrar a localização do salão.");
+            setGeoLoading(false);
+            return;
+          }
+          const salonLat = parseFloat(data[0].lat);
+          const salonLng = parseFloat(data[0].lon);
+          // Haversine
+          const R = 6371; // raio da terra em km
+          const dLat = ((salonLat - userLat) * Math.PI) / 180;
+          const dLng = ((salonLng - userLng) * Math.PI) / 180;
+          const a =
+            Math.sin(dLat / 2) ** 2 +
+            Math.cos((userLat * Math.PI) / 180) *
+              Math.cos((salonLat * Math.PI) / 180) *
+              Math.sin(dLng / 2) ** 2;
+          const dist = R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+          setUserDistance(Math.round(dist * 10) / 10); // 1 casa decimal
+        } catch {
+          toast.error("Erro ao calcular a distância.");
+        } finally {
+          setGeoLoading(false);
+        }
+      },
+      () => {
+        toast.error("Permissão de localização negada.");
+        setGeoLoading(false);
+      }
+    );
+  };
+
   return (
     <div className="min-h-screen bg-[var(--background)] py-8 px-4 sm:px-6 lg:px-8">
       <div className="max-w-4xl mx-auto w-full">
@@ -333,6 +392,55 @@ function PublicBookingPage() {
             </Card>
           </div>
         </div>
+
+        {/* Como chegar — seção de geolocalização */}
+        {salon?.address && (
+          <div className="mb-6 px-2 sm:px-0">
+            <Card className="rounded-xl border border-slate-200 dark:border-slate-700 bg-white/80 dark:bg-slate-900/80">
+              <CardContent className="px-4 py-3 flex flex-col sm:flex-row sm:items-center gap-3">
+                <div className="flex items-center gap-2 flex-1 min-w-0">
+                  <MapPin className="h-4 w-4 text-[var(--primary)] shrink-0" />
+                  <span className="text-sm text-slate-700 dark:text-slate-300 truncate">
+                    {salon.address}
+                  </span>
+                </div>
+                <div className="flex items-center gap-2 shrink-0">
+                  {/* Distância calculada */}
+                  {userDistance !== null && (
+                    <span className="text-xs font-medium bg-green-100 text-green-700 dark:bg-green-900 dark:text-green-300 px-2 py-1 rounded-full flex items-center gap-1">
+                      <Navigation2 className="h-3 w-3" />
+                      ~{userDistance} km
+                    </span>
+                  )}
+                  {/* Botão: calcular distância */}
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={handleGetDistance}
+                    disabled={geoLoading}
+                    className="text-xs"
+                    title="Calcular distância até o salão"
+                  >
+                    <Locate className="h-3.5 w-3.5 mr-1" />
+                    {geoLoading ? "Calculando..." : "Minha distância"}
+                  </Button>
+                  {/* Botão: abrir no Google Maps */}
+                  <a
+                    href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(salon.address)}`}
+                    target="_blank"
+                    rel="noreferrer"
+                    aria-label="Abrir no Google Maps"
+                  >
+                    <Button variant="default" size="sm" className="text-xs">
+                      <MapPin className="h-3.5 w-3.5 mr-1" />
+                      Como chegar
+                    </Button>
+                  </a>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+        )}
 
         {/* Stepper visual */}
         <div className="mb-6 px-2 sm:px-0">

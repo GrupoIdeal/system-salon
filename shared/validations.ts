@@ -192,6 +192,8 @@ export const clientSchema = z.object({
   phone: z.string().optional(),
   birthDate: z.date().optional(),
   notes: safeText(1000, "Notas").optional(),
+  // URL da foto do cliente (salva no Cloudinary)
+  photo: z.string().url().optional().or(z.literal("")),
 });
 
 // ============================================================================

@@ -3,6 +3,7 @@ import DashboardLayout from "@/components/DashboardLayout";
 import { useState, useId } from "react";
 import { Input } from "@/components/ui/input";
 import { Switch } from "@/components/ui/switch";
+import { PhotoUpload } from "@/components/PhotoUpload";
 import {
   Card,
   CardContent,
@@ -328,17 +329,6 @@ export default function Specialists() {
     // workingDays reset removed - handled by SpecialistScheduleManagement
   };
 
-  // Função para lidar com upload de imagem (simples, base64)
-  const handlePhotoChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-    const reader = new FileReader();
-    reader.onload = ev => {
-      setFormData({ ...formData, photo: ev.target?.result as string });
-    };
-    reader.readAsDataURL(file);
-  };
-
   // Função para editar um especialista
   const handleEditSpecialist = (specialist: {
     id: string;
@@ -472,7 +462,9 @@ export default function Specialists() {
     <DashboardLayout>
       <div className="flex flex-col md:flex-row items-start md:items-center justify-between mb-6 gap-4">
         <div className="flex-1">
-          <h1 className="text-2xl sm:text-3xl font-bold tracking-tight">Especialistas</h1>
+          <h1 className="text-2xl sm:text-3xl font-bold tracking-tight">
+            Especialistas
+          </h1>
           <p className="text-muted-foreground">
             Gerencie os profissionais do salão
           </p>
@@ -557,30 +549,16 @@ export default function Specialists() {
           <Card className="flex-1 shadow-xl border-none rounded-2xl bg-white/90 backdrop-blur-lg">
             <CardHeader className="flex flex-col items-center gap-2 pb-0">
               <div className="flex flex-col items-center gap-2">
-                <div className="relative group cursor-pointer">
-                  <label className="block">
-                    <input
-                      type="file"
-                      accept="image/*"
-                      onChange={handlePhotoChange}
-                      className="hidden"
-                    />
-                    <div className="w-36 h-36 rounded-full bg-gradient-to-tr from-blue-100 to-slate-100 flex items-center justify-center border-4 border-white shadow-lg overflow-hidden">
-                      {formData.photo ? (
-                        <img
-                          src={formData.photo}
-                          alt="Foto do especialista"
-                          className="w-full h-full object-cover"
-                        />
-                      ) : (
-                        <User2 className="h-16 w-16 text-slate-400" />
-                      )}
-                      <span className="absolute bottom-2 right-2 bg-[var(--primary)] text-[var(--primary-foreground)] text-xs px-2 py-1 rounded shadow opacity-0 group-hover:opacity-100 transition">
-                        Alterar foto
-                      </span>
-                    </div>
-                  </label>
-                </div>
+                {/*
+                 * PhotoUpload: abre câmera traseira no celular (capture="environment").
+                 * Ao selecionar, faz upload no Cloudinary e salva a URL em formData.photo.
+                 */}
+                <PhotoUpload
+                  currentPhoto={formData.photo || null}
+                  onUpload={url => setFormData(f => ({ ...f, photo: url }))}
+                  label="Alterar foto"
+                  size={144}
+                />
               </div>
               <CardTitle className="text-2xl text-gray-600 font-bold mt-2">
                 {isEditing ? "Editar Especialista" : "Novo Especialista"}

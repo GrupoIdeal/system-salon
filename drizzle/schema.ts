@@ -125,6 +125,8 @@ export const clients = pgTable(
     email: varchar("email", { length: 320 }),
     phone: varchar("phone", { length: 20 }),
     notes: text("notes"),
+    // Foto do cliente (URL do Cloudinary)
+    photo: text("photo"),
     // Pontos de fidelidade acumulados pelo cliente
     loyaltyPoints: integer("loyaltyPoints").default(0).notNull(),
     createdAt: timestamp("createdAt").defaultNow(),

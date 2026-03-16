@@ -762,6 +762,7 @@ export async function getAppointmentsWithDetailsBySalonId(
         email: clients.email,
         phone: clients.phone,
         notes: clients.notes,
+        photo: clients.photo,
         salonId: clients.salonId,
         createdAt: clients.createdAt,
         updatedAt: clients.updatedAt,
