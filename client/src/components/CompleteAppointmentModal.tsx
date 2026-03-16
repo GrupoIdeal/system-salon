@@ -292,7 +292,14 @@ export default function CompleteAppointmentModal({
           </div>
 
           <DialogFooter>
-            <Button variant="outline" className="w-full" onClick={() => { onSuccess?.(); onClose(); }}>
+            <Button
+              variant="outline"
+              className="w-full"
+              onClick={() => {
+                onSuccess?.();
+                onClose();
+              }}
+            >
               Fechar
             </Button>
           </DialogFooter>

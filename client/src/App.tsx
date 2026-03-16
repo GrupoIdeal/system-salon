@@ -24,6 +24,7 @@ const PublicBooking = lazy(() => import("./pages/PublicBooking"));
 const Rating = lazy(() => import("./pages/Rating"));
 const Usuarios = lazy(() => import("./pages/Usuarios"));
 const Logs = lazy(() => import("./pages/Logs"));
+const Avaliacoes = lazy(() => import("./pages/Avaliacoes"));
 const NotFound = lazy(() => import("@/pages/NotFound"));
 
 // Tela genérica exibida enquanto o chunk da página está sendo baixado
@@ -129,6 +130,10 @@ function Router() {
       <Route
         path="/usuarios"
         component={() => <ProtectedRoute component={Usuarios} adminOnly />}
+      />
+      <Route
+        path="/avaliacoes"
+        component={() => <ProtectedRoute component={Avaliacoes} />}
       />
       <Route path="/404" component={NotFound} />
       {/* Final fallback route */}

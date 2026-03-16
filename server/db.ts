@@ -2458,16 +2458,19 @@ export async function getAllDashboardData(
   salonId: string,
   chartDays: number = 30
 ) {
-  const [metrics, revenueChart, monthlyComparison] = await Promise.all([
-    getDashboardMetrics(salonId),
-    getRevenueChart(salonId, chartDays),
-    getMonthlyComparison(salonId),
-  ]);
+  const [metrics, revenueChart, monthlyComparison, specRatings] =
+    await Promise.all([
+      getDashboardMetrics(salonId),
+      getRevenueChart(salonId, chartDays),
+      getMonthlyComparison(salonId),
+      getAllSpecialistRatings(salonId),
+    ]);
 
   return {
     metrics,
     revenueChart,
     monthlyComparison,
+    specRatings,
   };
 }
 
@@ -2700,6 +2703,29 @@ export async function getRatingsBySpecialist(
     .select()
     .from(ratings)
     .where(eq(ratings.specialistId, specialistId));
+}
+
+/**
+ * Retorna TODAS as avaliações submetidas de um salão, com join de especialista.
+ * Usada na página /avaliacoes do admin.
+ */
+export async function getAllRatingsBySalon(salonId: string) {
+  const db = await getDb();
+  if (!db) return [];
+  return await db
+    .select({
+      id: ratings.id,
+      stars: ratings.stars,
+      comment: ratings.comment,
+      clientName: ratings.clientName,
+      submittedAt: ratings.submittedAt,
+      specialistId: ratings.specialistId,
+      specialistName: specialists.name,
+    })
+    .from(ratings)
+    .leftJoin(specialists, eq(ratings.specialistId, specialists.id))
+    .where(and(eq(ratings.salonId, salonId), eq(ratings.used, true)))
+    .orderBy(sql`${ratings.submittedAt} DESC NULLS LAST`);
 }
 
 /**

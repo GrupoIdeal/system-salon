@@ -51,6 +51,18 @@ export default function Dashboard() {
   const metrics = dashboardQuery.data?.metrics;
   const revenueChart = dashboardQuery.data?.revenueChart;
   const upcomingAppointments = dashboardQuery.data?.upcomingAppointments;
+  const specRatings = (dashboardQuery.data as any)?.specRatings as
+    | Record<string, { average: number; count: number }>
+    | undefined;
+
+  // Calcular média geral e total de avaliações do salão
+  const ratingValues = specRatings ? Object.values(specRatings) : [];
+  const totalRatings = ratingValues.reduce((s, r) => s + r.count, 0);
+  const overallAvg =
+    totalRatings > 0
+      ? ratingValues.reduce((s, r) => s + r.average * r.count, 0) /
+        totalRatings
+      : 0;
 
   // Preparar dados do gráfico de receita
   const revenueChartData =
@@ -110,9 +122,9 @@ export default function Dashboard() {
         )}
 
         {/* Métricas Principais */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
           {/* Receita do Mês */}
-          <Card>
+          <Card className="lg:col-span-2">
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
               <CardTitle className="text-sm font-medium">
                 Receita do Mês
@@ -136,7 +148,7 @@ export default function Dashboard() {
           </Card>
 
           {/* Receita da Semana */}
-          <Card>
+          <Card className="lg:col-span-2">
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
               <CardTitle className="text-sm font-medium">
                 Receita Semanal
@@ -160,7 +172,7 @@ export default function Dashboard() {
           </Card>
 
           {/* Agendamentos Hoje */}
-          <Card>
+          <Card className="lg:col-span-1">
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
               <CardTitle className="text-sm font-medium">Hoje</CardTitle>
               <Calendar className="h-4 w-4 text-[var(--primary)]" />
@@ -182,7 +194,7 @@ export default function Dashboard() {
           </Card>
 
           {/* Taxa de Ocupação */}
-          <Card>
+          <Card className="lg:col-span-1">
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
               <CardTitle className="text-sm font-medium">
                 Taxa de Ocupação
@@ -198,6 +210,51 @@ export default function Dashboard() {
                     {metrics?.appointments.occupationRate || 0}%
                   </div>
                   <p className="text-xs text-muted-foreground">Ocupação hoje</p>
+                </>
+              )}
+            </CardContent>
+          </Card>
+
+          {/* KPI: Média de Avaliações */}
+          <Card className="lg:col-span-1">
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">Média Avaliações</CardTitle>
+              <Star className="h-4 w-4 text-amber-400" />
+            </CardHeader>
+            <CardContent>
+              {dashboardQuery.isLoading ? (
+                <Skeleton className="h-8 w-16" />
+              ) : (
+                <>
+                  <div className="text-2xl font-bold text-amber-500">
+                    {totalRatings > 0 ? overallAvg.toFixed(1) : "—"}
+                    {totalRatings > 0 && (
+                      <span className="text-base ml-1">&#9733;</span>
+                    )}
+                  </div>
+                  <p className="text-xs text-muted-foreground">
+                    {totalRatings} avaliações
+                  </p>
+                </>
+              )}
+            </CardContent>
+          </Card>
+
+          {/* KPI: Especialistas avaliados */}
+          <Card className="lg:col-span-1">
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">Especialistas</CardTitle>
+              <Users className="h-4 w-4 text-[var(--primary)]" />
+            </CardHeader>
+            <CardContent>
+              {dashboardQuery.isLoading ? (
+                <Skeleton className="h-8 w-12" />
+              ) : (
+                <>
+                  <div className="text-2xl font-bold">
+                    {ratingValues.length}
+                  </div>
+                  <p className="text-xs text-muted-foreground">com avaliações</p>
                 </>
               )}
             </CardContent>
@@ -331,6 +388,22 @@ export default function Dashboard() {
                           <p className="text-sm text-muted-foreground">
                             {Number(specialist.totalAppointments)} atendimentos
                           </p>
+                          {/* Estrelas do especialista */}
+                          {specialist.specialistId &&
+                            specRatings?.[specialist.specialistId] && (() => {
+                              const sid = specialist.specialistId!;
+                              const r = specRatings[sid];
+                              return (
+                                <p className="text-xs text-amber-500">
+                                  {Array.from({ length: 5 }, (_, i) => (
+                                    <span key={i}>
+                                      {i < Math.round(r.average) ? "\u2605" : "\u2606"}
+                                    </span>
+                                  ))}{" "}
+                                  {r.average.toFixed(1)} ({r.count})
+                                </p>
+                              );
+                            })()}
                         </div>
                       </div>
                       <div className="text-right">

@@ -72,6 +72,7 @@ import {
   submitRating,
   getRatingsBySpecialist,
   getAllSpecialistRatings,
+  getAllRatingsBySalon,
 } from "./db";
 import {
   scheduleAppointmentNotifications,
@@ -2620,6 +2621,17 @@ export const appRouter = router({
           message: "Salão não encontrado",
         });
       return await getAllSpecialistRatings(salon.id);
+    }),
+
+    /** Lista todas as avaliações submetidas do salão — para a página /avaliacoes */
+    getAll: protectedProcedure.query(async ({ ctx }) => {
+      const salon = await getSalonByUserId(ctx.user.id);
+      if (!salon)
+        throw new TRPCError({
+          code: "NOT_FOUND",
+          message: "Salão não encontrado",
+        });
+      return await getAllRatingsBySalon(salon.id);
     }),
   }),
 });

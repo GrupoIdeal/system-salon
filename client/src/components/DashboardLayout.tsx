@@ -22,6 +22,7 @@ import {
   Package,
   PanelLeft,
   Scissors,
+  Star,
   User,
   Users,
   FileText,
@@ -39,6 +40,7 @@ const menuItems = [
   { icon: Package, label: "Produtos", path: "/produtos" },
   { icon: User, label: "Especialistas", path: "/especialistas" },
   { icon: Calendar, label: "Agendamentos", path: "/agendamentos" },
+  { icon: Star, label: "Avaliações", path: "/avaliacoes" },
 ];
 
 const SIDEBAR_WIDTH_KEY = "sidebar-width";
