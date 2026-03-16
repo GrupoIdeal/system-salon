@@ -88,6 +88,8 @@ export const salonSchema = z.object({
     .max(320, "Email muito longo")
     .optional(),
   logo: z.string().url("URL inválida").max(1000, "URL muito longa").optional(),
+  // Chave PIX: aceita qualquer formato (CPF, CNPJ, email, telefone, chave aleatória)
+  pixKey: z.string().max(200, "Chave PIX muito longa").optional(),
   workingHours: z
     .record(
       z.string(),
@@ -192,6 +194,8 @@ export const clientSchema = z.object({
   phone: z.string().optional(),
   birthDate: z.date().optional(),
   notes: safeText(1000, "Notas").optional(),
+  // URL da foto do cliente (salva no Cloudinary)
+  photo: z.string().url().optional().or(z.literal("")),
 });
 
 // ============================================================================
@@ -248,6 +252,32 @@ export const appointmentPublicSchema = z.object({
   clientPhone: z.string().min(10, "Telefone inválido"),
 });
 
+// ============================================================================
+// PRODUCT VALIDATIONS (Sprint 3)
+// ============================================================================
+
+export const productSchema = z.object({
+  name: z
+    .string()
+    .min(2, "Nome deve ter pelo menos 2 caracteres")
+    .transform(sanitizeString),
+  description: safeText(500, "Descrição").optional(),
+  // Estoque atual e estoque mínimo para alerta
+  stock: z.coerce
+    .number()
+    .int()
+    .min(0, "Estoque não pode ser negativo")
+    .default(0),
+  minStock: z.coerce
+    .number()
+    .int()
+    .min(0, "Estoque mínimo não pode ser negativo")
+    .default(5),
+  // Preços opcionais em string decimal (ex: "19.90")
+  costPrice: z.string().optional().nullable(),
+  sellPrice: z.string().optional().nullable(),
+});
+
 export type LoginInput = z.infer<typeof loginSchema>;
 export type RegisterInput = z.infer<typeof registerSchema>;
 export type SalonInput = z.infer<typeof salonSchema>;
@@ -257,3 +287,4 @@ export type ServiceInput = z.infer<typeof serviceSchema>;
 export type AppointmentInput = z.infer<typeof appointmentSchema>;
 export type AppointmentPublicInput = z.infer<typeof appointmentPublicSchema>;
 export type ScheduleInput = z.infer<typeof scheduleSchema>;
+export type ProductInput = z.infer<typeof productSchema>;

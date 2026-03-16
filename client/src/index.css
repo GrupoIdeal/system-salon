@@ -125,6 +125,37 @@
   --sidebar-ring: #bfa07a;
 }
 
+/* ============================================================
+   ALTO CONTRASTE — acessibilidade visual
+   Ativado pela classe .high-contrast no elemento <html>.
+   Sobrescreve as variáveis de cor para máximo contraste.
+   ============================================================ */
+.high-contrast {
+  --background: #000000;
+  --foreground: #ffffff;
+  --card: #111111;
+  --card-foreground: #ffffff;
+  --popover: #000000;
+  --popover-foreground: #ffffff;
+  --primary: #ffff00;
+  --primary-foreground: #000000;
+  --secondary: #222222;
+  --secondary-foreground: #ffffff;
+  --muted: #333333;
+  --muted-foreground: #cccccc;
+  --accent: #ffff00;
+  --accent-foreground: #000000;
+  --border: #ffffff;
+  --input: #222222;
+  --ring: #ffff00;
+  --sidebar: #0a0a0a;
+  --sidebar-foreground: #ffffff;
+  --sidebar-primary: #ffff00;
+  --sidebar-primary-foreground: #000000;
+  --sidebar-border: #ffffff;
+  --sidebar-ring: #ffff00;
+}
+
 @layer base {
   * {
     @apply border-border outline-ring/50;

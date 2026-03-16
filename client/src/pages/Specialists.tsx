@@ -3,6 +3,7 @@ import DashboardLayout from "@/components/DashboardLayout";
 import { useState, useId } from "react";
 import { Input } from "@/components/ui/input";
 import { Switch } from "@/components/ui/switch";
+import { PhotoUpload } from "@/components/PhotoUpload";
 import {
   Card,
   CardContent,
@@ -30,9 +31,33 @@ import {
 
 // SyncStatusIndicator removed - sync functionality no longer needed
 
-// Componente para exibir card de especialista com horários
+/**
+ * Mini componente de estrelas (somente leitura).
+ * Exibe estrelas cheias/vazias baseado na média e o contador de avaliações.
+ */
+function StarDisplay({ average, count }: { average: number; count: number }) {
+  return (
+    <div
+      className="flex items-center gap-1 mt-1"
+      aria-label={`Média: ${average} de 5 estrelas, ${count} avaliaões`}
+    >
+      {[1, 2, 3, 4, 5].map(n => (
+        <span
+          key={n}
+          className={`text-sm ${n <= Math.round(average) ? "text-amber-400" : "text-gray-300"}`}
+        >
+          &#9733;
+        </span>
+      ))}
+      <span className="text-xs text-muted-foreground ml-1">
+        {average.toFixed(1)} ({count})
+      </span>
+    </div>
+  );
+}
 function SpecialistCard({
   specialist,
+  rating,
   onEdit,
   onDelete,
 }: {
@@ -45,6 +70,8 @@ function SpecialistCard({
     specialty?: string | null;
     bio?: string | null;
   };
+  // Média de avaliações do especialista (pode ser null se sem avaliações)
+  rating?: { average: number; count: number } | null;
   onEdit: (specialist: {
     id: string;
     name: string;
@@ -88,6 +115,10 @@ function SpecialistCard({
             <div className="text-muted-foreground text-sm mb-1 break-words">
               {specialist.specialty}
             </div>
+            {/* Avaliações média — exibida se houver ao menos uma */}
+            {rating && rating.count > 0 && (
+              <StarDisplay average={rating.average} count={rating.count} />
+            )}
             <div className="text-muted-foreground text-sm break-words">
               {specialist.email}
             </div>
@@ -271,6 +302,8 @@ export default function Specialists() {
   const [copiedLinks, setCopiedLinks] = useState<Set<string>>(new Set());
 
   const specialistsQuery = trpc.specialists.list.useQuery();
+  // Busca médias de avaliações de todos os especialistas do salão
+  const ratingsQuery = trpc.ratings.getAllAverages.useQuery();
   const createMutation = trpc.specialists.create.useMutation({
     onSuccess: () => {
       // Backend aplica schedule de forma atômica quando enviado no payload
@@ -326,17 +359,6 @@ export default function Specialists() {
     setEditingSpecialistId(null);
     setShowScheduleManagement(false);
     // workingDays reset removed - handled by SpecialistScheduleManagement
-  };
-
-  // Função para lidar com upload de imagem (simples, base64)
-  const handlePhotoChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-    const reader = new FileReader();
-    reader.onload = ev => {
-      setFormData({ ...formData, photo: ev.target?.result as string });
-    };
-    reader.readAsDataURL(file);
   };
 
   // Função para editar um especialista
@@ -472,7 +494,9 @@ export default function Specialists() {
     <DashboardLayout>
       <div className="flex flex-col md:flex-row items-start md:items-center justify-between mb-6 gap-4">
         <div className="flex-1">
-          <h1 className="text-2xl sm:text-3xl font-bold tracking-tight">Especialistas</h1>
+          <h1 className="text-2xl sm:text-3xl font-bold tracking-tight">
+            Especialistas
+          </h1>
           <p className="text-muted-foreground">
             Gerencie os profissionais do salão
           </p>
@@ -557,30 +581,16 @@ export default function Specialists() {
           <Card className="flex-1 shadow-xl border-none rounded-2xl bg-white/90 backdrop-blur-lg">
             <CardHeader className="flex flex-col items-center gap-2 pb-0">
               <div className="flex flex-col items-center gap-2">
-                <div className="relative group cursor-pointer">
-                  <label className="block">
-                    <input
-                      type="file"
-                      accept="image/*"
-                      onChange={handlePhotoChange}
-                      className="hidden"
-                    />
-                    <div className="w-36 h-36 rounded-full bg-gradient-to-tr from-blue-100 to-slate-100 flex items-center justify-center border-4 border-white shadow-lg overflow-hidden">
-                      {formData.photo ? (
-                        <img
-                          src={formData.photo}
-                          alt="Foto do especialista"
-                          className="w-full h-full object-cover"
-                        />
-                      ) : (
-                        <User2 className="h-16 w-16 text-slate-400" />
-                      )}
-                      <span className="absolute bottom-2 right-2 bg-[var(--primary)] text-[var(--primary-foreground)] text-xs px-2 py-1 rounded shadow opacity-0 group-hover:opacity-100 transition">
-                        Alterar foto
-                      </span>
-                    </div>
-                  </label>
-                </div>
+                {/*
+                 * PhotoUpload: abre câmera traseira no celular (capture="environment").
+                 * Ao selecionar, faz upload no Cloudinary e salva a URL em formData.photo.
+                 */}
+                <PhotoUpload
+                  currentPhoto={formData.photo || null}
+                  onUpload={url => setFormData(f => ({ ...f, photo: url }))}
+                  label="Alterar foto"
+                  size={144}
+                />
               </div>
               <CardTitle className="text-2xl text-gray-600 font-bold mt-2">
                 {isEditing ? "Editar Especialista" : "Novo Especialista"}
@@ -1056,6 +1066,7 @@ export default function Specialists() {
                 <SpecialistCard
                   key={spec.id}
                   specialist={spec}
+                  rating={ratingsQuery.data?.[spec.id] ?? null}
                   onEdit={handleEditSpecialist}
                   onDelete={confirmDelete}
                 />

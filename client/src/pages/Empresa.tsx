@@ -19,6 +19,8 @@ export default function Empresa() {
     address: "",
     phone: "",
     email: "",
+    // Chave PIX do salão
+    pixKey: "",
   });
 
   // Busca dados da empresa (salon)
@@ -36,6 +38,7 @@ export default function Empresa() {
         address: salonQuery.data.address || "",
         phone: salonQuery.data.phone || "",
         email: salonQuery.data.email || "",
+        pixKey: (salonQuery.data as any).pixKey || "",
       });
     }
   }, [salonQuery.data]);
@@ -62,7 +65,17 @@ export default function Empresa() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
-      await updateMutation.mutateAsync(form);
+      // Strings vazias precisam ser undefined para passar na validação Zod
+      // (logo exige URL válida, email exige formato válido — "" não é aceito)
+      await updateMutation.mutateAsync({
+        name: form.name,
+        logo: form.logo || undefined,
+        cnpj: form.cnpj || undefined,
+        address: form.address || undefined,
+        phone: form.phone || undefined,
+        email: form.email || undefined,
+        pixKey: form.pixKey || undefined,
+      });
       setEditMode(false);
       salonQuery.refetch();
     } catch (_error) {
@@ -74,7 +87,9 @@ export default function Empresa() {
     <DashboardLayout>
       <div className="flex items-center justify-between mb-8">
         <div>
-          <h1 className="text-2xl sm:text-3xl font-bold tracking-tight">Empresa</h1>
+          <h1 className="text-2xl sm:text-3xl font-bold tracking-tight">
+            Empresa
+          </h1>
           <p className="text-muted-foreground">
             Gerencie os dados básicos da empresa
           </p>
@@ -173,6 +188,21 @@ export default function Empresa() {
                 disabled={!editMode}
                 placeholder="Rua, número, bairro, cidade - UF"
               />
+            </div>
+
+            {/* Chave PIX */}
+            <div className="space-y-2">
+              <Label htmlFor="pixKey">💳 Chave PIX</Label>
+              <Input
+                id="pixKey"
+                value={form.pixKey}
+                onChange={e => setForm(f => ({ ...f, pixKey: e.target.value }))}
+                disabled={!editMode}
+                placeholder="CPF, CNPJ, e-mail, telefone ou chave aleatória"
+              />
+              <p className="text-xs text-muted-foreground">
+                Usada para gerar o QR Code PIX ao finalizar atendimentos.
+              </p>
             </div>
 
             <Alert>

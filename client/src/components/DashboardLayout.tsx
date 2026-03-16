@@ -19,8 +19,10 @@ import {
   Calendar,
   LayoutDashboard,
   LogOut,
+  Package,
   PanelLeft,
   Scissors,
+  Star,
   User,
   Users,
   FileText,
@@ -28,14 +30,17 @@ import {
 import { type CSSProperties, useEffect, useRef, useState } from "react";
 import { useLocation } from "wouter";
 import { DashboardLayoutSkeleton } from "./DashboardLayoutSkeleton";
+import { AccessibilityBar } from "./AccessibilityBar";
 import { Button } from "./ui/button";
 
 const menuItems = [
   { icon: LayoutDashboard, label: "Dashboard", path: "/dashboard" },
   { icon: Users, label: "Clientes", path: "/clientes" },
   { icon: Scissors, label: "Serviços", path: "/servicos" },
+  { icon: Package, label: "Produtos", path: "/produtos" },
   { icon: User, label: "Especialistas", path: "/especialistas" },
   { icon: Calendar, label: "Agendamentos", path: "/agendamentos" },
+  { icon: Star, label: "Avaliações", path: "/avaliacoes" },
 ];
 
 const SIDEBAR_WIDTH_KEY = "sidebar-width";
@@ -278,7 +283,13 @@ function DashboardLayoutContent({
             </SidebarMenu>
           </SidebarContent>
 
-          <SidebarFooter className="flex items-center p-4 border-t border-[var(--sidebar-border)] bg-[var(--sidebar)]">
+          <SidebarFooter className="flex flex-col gap-2 p-4 border-t border-[var(--sidebar-border)] bg-[var(--sidebar)]">
+            {/* Barra de acessibilidade no rodapé da sidebar (desktop) */}
+            {!isCollapsed && (
+              <div className="flex justify-center pb-1">
+                <AccessibilityBar />
+              </div>
+            )}
             <Button
               onClick={async () => {
                 await logout();
@@ -316,6 +327,8 @@ function DashboardLayoutContent({
                 </div>
               </div>
             </div>
+            {/* Barra de acessibilidade no header mobile */}
+            <AccessibilityBar />
           </div>
         )}
         <main className="flex-1 p-4 sm:p-6 lg:p-8 bg-[var(--background)] dark:bg-[var(--card)] overflow-x-hidden">

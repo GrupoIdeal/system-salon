@@ -19,9 +19,12 @@ const RecuperarSenha = lazy(() => import("./pages/RecuperarSenha"));
 const RedefinirSenha = lazy(() => import("./pages/RedefinirSenha"));
 const Empresa = lazy(() => import("./pages/Empresa"));
 const Specialists = lazy(() => import("./pages/Specialists"));
+const Products = lazy(() => import("./pages/Products"));
 const PublicBooking = lazy(() => import("./pages/PublicBooking"));
+const Rating = lazy(() => import("./pages/Rating"));
 const Usuarios = lazy(() => import("./pages/Usuarios"));
 const Logs = lazy(() => import("./pages/Logs"));
+const Avaliacoes = lazy(() => import("./pages/Avaliacoes"));
 const NotFound = lazy(() => import("@/pages/NotFound"));
 
 // Tela genérica exibida enquanto o chunk da página está sendo baixado
@@ -90,6 +93,8 @@ function Router() {
       <Route path="/recuperar-senha" component={RecuperarSenha} />
       <Route path="/redefinir-senha" component={RedefinirSenha} />
       <Route path="/agendar" component={PublicBooking} />
+      {/* Página pública de avaliação pós-atendimento: /avaliar?token=xxx */}
+      <Route path="/avaliar" component={Rating} />
       <Route
         path="/dashboard"
         component={() => <ProtectedRoute component={Dashboard} />}
@@ -119,8 +124,16 @@ function Router() {
         component={() => <ProtectedRoute component={Specialists} />}
       />
       <Route
+        path="/produtos"
+        component={() => <ProtectedRoute component={Products} />}
+      />
+      <Route
         path="/usuarios"
         component={() => <ProtectedRoute component={Usuarios} adminOnly />}
+      />
+      <Route
+        path="/avaliacoes"
+        component={() => <ProtectedRoute component={Avaliacoes} />}
       />
       <Route path="/404" component={NotFound} />
       {/* Final fallback route */}

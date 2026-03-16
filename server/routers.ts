@@ -53,6 +53,26 @@ import {
   getAllDashboardData,
   createAuditLog,
   listAuditLogsWithCount,
+  // Funções de produtos (Sprint 3)
+  getProductsBySalonId,
+  getProductById,
+  createProduct,
+  updateProduct,
+  deleteProduct,
+  getLowStockProducts,
+  // Funções de produtos no atendimento (checkout)
+  saveAppointmentProducts,
+  getAppointmentProducts,
+  // Pontos de fidelidade
+  addLoyaltyPoints,
+  updateSalon,
+  // Avaliações (Sprint 6)
+  createRating,
+  getRatingByToken,
+  submitRating,
+  getRatingsBySpecialist,
+  getAllSpecialistRatings,
+  getAllRatingsBySalon,
 } from "./db";
 import {
   scheduleAppointmentNotifications,
@@ -96,6 +116,8 @@ import {
   passwordResetRequestSchema,
   passwordResetSchema,
   scheduleSchema,
+  // Schema de produtos (Sprint 3)
+  productSchema,
 } from "@shared/validations";
 import type { Service, User, InsertUser } from "../drizzle/schema";
 import { uploadBase64Image } from "./cloudinary";
@@ -374,7 +396,7 @@ export const appRouter = router({
 
     update: protectedProcedure
       .input(salonSchema)
-      .mutation(async ({ ctx: _ctx, input: _input }) => {
+      .mutation(async ({ ctx: _ctx, input }) => {
         const salon = await getSalonByUserId(_ctx.user.id);
         if (!salon) {
           throw new TRPCError({
@@ -382,7 +404,15 @@ export const appRouter = router({
             message: "Salão não encontrado",
           });
         }
-        // Removido updateSalon, pois não está importado nem implementado
+        await updateSalon(salon.id, {
+          name: input.name,
+          cnpj: input.cnpj ?? null,
+          address: input.address ?? null,
+          phone: input.phone ?? null,
+          email: input.email ?? null,
+          logo: input.logo ?? null,
+          pixKey: input.pixKey ?? null,
+        });
         return { success: true };
       }),
 
@@ -1411,7 +1441,17 @@ export const appRouter = router({
               "other",
             ])
             .optional(),
-          amountPaid: z.number().positive().optional(), // novo campo opcional: valor pago real
+          amountPaid: z.number().positive().optional(),
+          // Produtos vendidos durante o atendimento (opcional)
+          products: z
+            .array(
+              z.object({
+                productId: z.string(),
+                quantity: z.number().int().positive(),
+                unitPrice: z.number().nonnegative(),
+              })
+            )
+            .optional(),
         })
       )
       .mutation(async ({ ctx: _ctx, input: _input }) => {
@@ -1447,6 +1487,11 @@ export const appRouter = router({
           });
         }
 
+        // Registrar produtos vendidos e descontar estoque
+        if (_input.products && _input.products.length > 0) {
+          await saveAppointmentProducts(_input.id, salon.id, _input.products);
+        }
+
         // Atualizar status do agendamento
         await updateAppointment(_input.id, {
           status: "completed",
@@ -1455,7 +1500,7 @@ export const appRouter = router({
 
         // Registrar transação financeira
         try {
-          // Passar amountPaid quando fornecido para usar valor real pago
+          // Passar amountPaid quando fornecido para usar valor real pago (já inclui produtos)
           await recordAppointmentRevenue(
             _input.id,
             _input.paymentMethod || "cash",
@@ -1465,7 +1510,50 @@ export const appRouter = router({
           // Não falha a operação se não conseguir registrar a receita
         }
 
-        return { success: true, message: "Agendamento concluído com sucesso" };
+        // Acumular pontos de fidelidade para o cliente
+        // Regra: R$1 pago = 1 ponto. Usa amountPaid se fornecido, senão price do serviço.
+        try {
+          let valorBase = _input.amountPaid ?? 0;
+          if (!valorBase && appointment.serviceId) {
+            const svc = await getServiceById(appointment.serviceId);
+            valorBase = parseFloat(svc?.price ?? "0") || 0;
+          }
+          if (appointment.clientId && valorBase > 0) {
+            await addLoyaltyPoints(appointment.clientId, valorBase);
+          }
+        } catch {
+          // Não falha o fluxo principal se pontos não puderem ser adicionados
+        }
+
+        // Gerar token único de avaliação e criar registro pendente
+        let ratingToken: string | null = null;
+        try {
+          const token = crypto.randomUUID();
+          // Busca nome do cliente para snapshot (não-fatal)
+          let clientName: string | null = null;
+          if (appointment.clientId) {
+            const client = await getClientById(appointment.clientId);
+            clientName = client?.name ?? null;
+          }
+          await createRating({
+            id: generateId(),
+            salonId: salon.id,
+            specialistId: appointment.specialistId ?? "",
+            appointmentId: appointment.id,
+            token,
+            used: false,
+            clientName,
+          });
+          ratingToken = token;
+        } catch {
+          // Não falha o fluxo principal se o token não puder ser gerado
+        }
+
+        return {
+          success: true,
+          message: "Agendamento concluído com sucesso",
+          ratingToken,
+        };
       }),
 
     // Ação rápida: Cancelar agendamento
@@ -2262,7 +2350,23 @@ export const appRouter = router({
           });
         }
 
-        const { specialistId, ...updates } = input;
+        const {
+          specialistId,
+          customUnavailableDates: rawDates,
+          ...otherUpdates
+        } = input;
+        // Converter strings ISO para Date[] isolando o campo para evitar conflito de tipos
+        const updates: Partial<
+          Omit<
+            import("./specialist-schedule").SpecialistSchedule,
+            "specialistId"
+          >
+        > = {
+          ...otherUpdates,
+          ...(rawDates && {
+            customUnavailableDates: rawDates.map(s => new Date(s)),
+          }),
+        };
         // Persist updates and return the display-ready schedule to the client
         await updateSpecialistSchedule(specialistId, updates);
         return await getSpecialistScheduleForDisplay(specialistId);
@@ -2411,14 +2515,178 @@ export const appRouter = router({
   }),
 
   dashboard: dashboardRouter,
+
+  // ============================================================
+  // MÓDULO DE PRODUTOS (Sprint 3)
+  // ============================================================
+  products: router({
+    /** Lista todos os produtos do salão */
+    list: protectedProcedure.query(async ({ ctx }) => {
+      const salon = await getSalonByUserId(ctx.user.id);
+      if (!salon)
+        throw new TRPCError({
+          code: "NOT_FOUND",
+          message: "Salão não encontrado",
+        });
+      return getProductsBySalonId(salon.id);
+    }),
+
+    /** Lista produtos com estoque baixo (stock <= minStock) */
+    lowStock: protectedProcedure.query(async ({ ctx }) => {
+      const salon = await getSalonByUserId(ctx.user.id);
+      if (!salon)
+        throw new TRPCError({
+          code: "NOT_FOUND",
+          message: "Salão não encontrado",
+        });
+      return getLowStockProducts(salon.id);
+    }),
+
+    /** Cria um novo produto */
+    create: protectedProcedure
+      .input(productSchema)
+      .mutation(async ({ ctx, input }) => {
+        const salon = await getSalonByUserId(ctx.user.id);
+        if (!salon)
+          throw new TRPCError({
+            code: "NOT_FOUND",
+            message: "Salão não encontrado",
+          });
+        return createProduct({ ...input, salonId: salon.id });
+      }),
+
+    /** Atualiza um produto existente */
+    update: protectedProcedure
+      .input(productSchema.extend({ id: z.string() }))
+      .mutation(async ({ ctx, input }) => {
+        const salon = await getSalonByUserId(ctx.user.id);
+        if (!salon)
+          throw new TRPCError({
+            code: "NOT_FOUND",
+            message: "Salão não encontrado",
+          });
+        const { id, ...data } = input;
+        const updated = await updateProduct(id, salon.id, data);
+        if (!updated)
+          throw new TRPCError({
+            code: "NOT_FOUND",
+            message: "Produto não encontrado",
+          });
+        return updated;
+      }),
+
+    /** Remove um produto */
+    delete: protectedProcedure
+      .input(z.object({ id: z.string() }))
+      .mutation(async ({ ctx, input }) => {
+        const salon = await getSalonByUserId(ctx.user.id);
+        if (!salon)
+          throw new TRPCError({
+            code: "NOT_FOUND",
+            message: "Salão não encontrado",
+          });
+        const ok = await deleteProduct(input.id, salon.id);
+        if (!ok)
+          throw new TRPCError({
+            code: "NOT_FOUND",
+            message: "Produto não encontrado",
+          });
+        return { success: true };
+      }),
+  }),
+
+  // ==========================================================================
+  // RATINGS — Avaliações pós-atendimento
+  // ==========================================================================
+  ratings: router({
+    /** Lista todas as avaliações enviadas de um especialista */
+    getBySpecialist: protectedProcedure
+      .input(z.object({ specialistId: z.string() }))
+      .query(async ({ ctx, input }) => {
+        const salon = await getSalonByUserId(ctx.user.id);
+        if (!salon)
+          throw new TRPCError({
+            code: "NOT_FOUND",
+            message: "Salão não encontrado",
+          });
+        return await getRatingsBySpecialist(input.specialistId);
+      }),
+
+    /** Retorna mapa specialistId -> { average, count } para o salão inteiro */
+    getAllAverages: protectedProcedure.query(async ({ ctx }) => {
+      const salon = await getSalonByUserId(ctx.user.id);
+      if (!salon)
+        throw new TRPCError({
+          code: "NOT_FOUND",
+          message: "Salão não encontrado",
+        });
+      return await getAllSpecialistRatings(salon.id);
+    }),
+
+    /** Lista todas as avaliações submetidas do salão — para a página /avaliacoes */
+    getAll: protectedProcedure.query(async ({ ctx }) => {
+      const salon = await getSalonByUserId(ctx.user.id);
+      if (!salon)
+        throw new TRPCError({
+          code: "NOT_FOUND",
+          message: "Salão não encontrado",
+        });
+      return await getAllRatingsBySalon(salon.id);
+    }),
+  }),
 });
 
 // Importar o roteador de agendamento público
 import { publicBookingRouter } from "./public-booking";
 
-// Roteador público (sem autenticação) para agendamentos
+// Roteador público (sem autenticação) para agendamentos e avaliações
+// ⚙️ ratings.submit e ratings.getByToken são públicos (acesso via token único)
 export const publicRouter = router({
   booking: publicBookingRouter,
+  ratings: router({
+    /** Busca a avaliação pelo token — retorna info do serviço para exibir na tela pública */
+    getByToken: publicProcedure
+      .input(z.object({ token: z.string() }))
+      .query(async ({ input }) => {
+        const rating = await getRatingByToken(input.token);
+        if (!rating)
+          throw new TRPCError({
+            code: "NOT_FOUND",
+            message: "Avaliação não encontrada",
+          });
+        return rating;
+      }),
+
+    /** Submete a avaliação do cliente (1-5 estrelas + comentário opcional) */
+    submit: publicProcedure
+      .input(
+        z.object({
+          token: z.string(),
+          stars: z.number().int().min(1).max(5),
+          comment: z.string().max(500).optional(),
+        })
+      )
+      .mutation(async ({ input }) => {
+        const rating = await getRatingByToken(input.token);
+        if (!rating)
+          throw new TRPCError({
+            code: "NOT_FOUND",
+            message: "Avaliação não encontrada",
+          });
+        if (rating.used)
+          throw new TRPCError({
+            code: "BAD_REQUEST",
+            message: "Esta avaliação já foi enviada",
+          });
+        const ok = await submitRating(input.token, input.stars, input.comment);
+        if (!ok)
+          throw new TRPCError({
+            code: "INTERNAL_SERVER_ERROR",
+            message: "Erro ao salvar avaliação",
+          });
+        return { success: true };
+      }),
+  }),
 });
 
 export type AppRouter = typeof appRouter;
