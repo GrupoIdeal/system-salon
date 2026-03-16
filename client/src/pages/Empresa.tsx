@@ -65,7 +65,17 @@ export default function Empresa() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
-      await updateMutation.mutateAsync(form);
+      // Strings vazias precisam ser undefined para passar na validação Zod
+      // (logo exige URL válida, email exige formato válido — "" não é aceito)
+      await updateMutation.mutateAsync({
+        name: form.name,
+        logo: form.logo || undefined,
+        cnpj: form.cnpj || undefined,
+        address: form.address || undefined,
+        phone: form.phone || undefined,
+        email: form.email || undefined,
+        pixKey: form.pixKey || undefined,
+      });
       setEditMode(false);
       salonQuery.refetch();
     } catch (_error) {
