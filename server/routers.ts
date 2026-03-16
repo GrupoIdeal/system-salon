@@ -2271,7 +2271,23 @@ export const appRouter = router({
           });
         }
 
-        const { specialistId, ...updates } = input;
+        const {
+          specialistId,
+          customUnavailableDates: rawDates,
+          ...otherUpdates
+        } = input;
+        // Converter strings ISO para Date[] isolando o campo para evitar conflito de tipos
+        const updates: Partial<
+          Omit<
+            import("./specialist-schedule").SpecialistSchedule,
+            "specialistId"
+          >
+        > = {
+          ...otherUpdates,
+          ...(rawDates && {
+            customUnavailableDates: rawDates.map(s => new Date(s)),
+          }),
+        };
         // Persist updates and return the display-ready schedule to the client
         await updateSpecialistSchedule(specialistId, updates);
         return await getSpecialistScheduleForDisplay(specialistId);

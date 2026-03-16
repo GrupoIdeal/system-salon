@@ -11,9 +11,9 @@ type AuditLogRow = {
   entityId?: string | null;
   salonId?: string | null;
   salonName?: string | null;
-  createdAt: string;
+  // O servidor retorna Date — exibir via createdAtPretty ou formatando aqui
+  createdAt: Date;
   createdAtPretty?: string;
-  metadataPreview?: string;
   metadata?: unknown;
   before?: unknown;
   after?: unknown;
@@ -108,7 +108,9 @@ export default function Logs() {
                         </td>
                         <td className="p-2 align-top">
                           <div className="text-xs whitespace-pre-wrap">
-                            {l.metadataPreview ?? ""}
+                            {l.metadata
+                              ? JSON.stringify(l.metadata).slice(0, 80)
+                              : ""}
                           </div>
                         </td>
                         <td className="p-2 align-top">

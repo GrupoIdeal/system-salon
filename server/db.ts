@@ -750,6 +750,7 @@ export async function getAppointmentsWithDetailsBySalonId(
       status: appointments.status,
       notes: appointments.notes,
       isPublic: appointments.isPublic,
+      paidAmount: appointments.paidAmount,
       createdAt: appointments.createdAt,
       updatedAt: appointments.updatedAt,
       // Client fields
@@ -762,6 +763,7 @@ export async function getAppointmentsWithDetailsBySalonId(
         salonId: clients.salonId,
         createdAt: clients.createdAt,
         updatedAt: clients.updatedAt,
+        loyaltyPoints: clients.loyaltyPoints,
       },
       // Service fields
       service: {
@@ -770,6 +772,7 @@ export async function getAppointmentsWithDetailsBySalonId(
         description: services.description,
         duration: services.duration,
         price: services.price,
+        priceFrom: services.priceFrom,
         status: services.status,
         salonId: services.salonId,
         specialistId: services.specialistId,
@@ -811,6 +814,7 @@ export async function getAppointmentsWithDetailsBySalonId(
     status: row.status,
     notes: row.notes,
     isPublic: row.isPublic,
+    paidAmount: row.paidAmount,
     createdAt: row.createdAt,
     updatedAt: row.updatedAt,
     client: row.client,
