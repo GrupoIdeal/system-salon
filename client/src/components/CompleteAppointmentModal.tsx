@@ -21,7 +21,16 @@ import {
 } from "@/components/ui/select";
 import { trpc } from "@/lib/trpc";
 import { toast } from "sonner";
-import { Loader2, Plus, Trash2, Package, ShoppingCart, Star, Copy, Check } from "lucide-react";
+import {
+  Loader2,
+  Plus,
+  Trash2,
+  Package,
+  ShoppingCart,
+  Star,
+  Copy,
+  Check,
+} from "lucide-react";
 import { PixQRCode } from "@/components/PixQRCode";
 
 interface AppointmentForComplete {
@@ -182,13 +191,14 @@ export default function CompleteAppointmentModal({
 
   // ─── Mutation de conclusão ────────────────────────────────────────────────
   const completeMutation = trpc.appointments.complete.useMutation({
-    onSuccess: (data) => {
+    onSuccess: data => {
       toast.success("Agendamento concluído com sucesso!");
-      onSuccess?.();
-      // Se gerou token de avaliação, mostra tela de sucesso no modal
+      // Se gerou token de avaliação, mantém modal aberto para o usuário copiar o link
+      // onSuccess e onClose são chamados só quando o usuário fechar manualmente
       if ((data as any)?.ratingToken) {
         setRatingToken((data as any).ratingToken);
       } else {
+        onSuccess?.();
         onClose();
       }
     },
@@ -255,7 +265,10 @@ export default function CompleteAppointmentModal({
             {/* Estrelas decorativas */}
             <div className="flex justify-center gap-1">
               {[1, 2, 3, 4, 5].map(i => (
-                <Star key={i} className="h-7 w-7 fill-yellow-400 text-yellow-400" />
+                <Star
+                  key={i}
+                  className="h-7 w-7 fill-yellow-400 text-yellow-400"
+                />
               ))}
             </div>
 
@@ -267,15 +280,19 @@ export default function CompleteAppointmentModal({
             {/* Botão copiar */}
             <Button className="w-full" onClick={handleCopyLink}>
               {copied ? (
-                <><Check className="mr-2 h-4 w-4" /> Link copiado!</>
+                <>
+                  <Check className="mr-2 h-4 w-4" /> Link copiado!
+                </>
               ) : (
-                <><Copy className="mr-2 h-4 w-4" /> Copiar link de avaliação</>
+                <>
+                  <Copy className="mr-2 h-4 w-4" /> Copiar link de avaliação
+                </>
               )}
             </Button>
           </div>
 
           <DialogFooter>
-            <Button variant="outline" className="w-full" onClick={onClose}>
+            <Button variant="outline" className="w-full" onClick={() => { onSuccess?.(); onClose(); }}>
               Fechar
             </Button>
           </DialogFooter>
