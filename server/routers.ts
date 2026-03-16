@@ -1421,6 +1421,9 @@ export const appRouter = router({
               "pix",
               "bank_transfer",
               "other",
+            ])
+            .optional(),
+          amountPaid: z.number().positive().optional(),
           // Produtos vendidos durante o atendimento (opcional)
           products: z
             .array(
@@ -1468,11 +1471,7 @@ export const appRouter = router({
 
         // Registrar produtos vendidos e descontar estoque
         if (_input.products && _input.products.length > 0) {
-          await saveAppointmentProducts(
-            _input.id,
-            salon.id,
-            _input.products
-          );
+          await saveAppointmentProducts(_input.id, salon.id, _input.products);
         }
 
         // Atualizar status do agendamento
@@ -1484,9 +1483,6 @@ export const appRouter = router({
         // Registrar transação financeira
         try {
           // Passar amountPaid quando fornecido para usar valor real pago (já inclui produtos)
-        // Registrar transação financeira
-        try {
-          // Passar amountPaid quando fornecido para usar valor real pago
           await recordAppointmentRevenue(
             _input.id,
             _input.paymentMethod || "cash",
