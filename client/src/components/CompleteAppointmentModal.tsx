@@ -21,7 +21,7 @@ import {
 } from "@/components/ui/select";
 import { trpc } from "@/lib/trpc";
 import { toast } from "sonner";
-import { Loader2, Plus, Trash2, Package, ShoppingCart } from "lucide-react";
+import { Loader2, Plus, Trash2, Package, ShoppingCart, Star, Copy, Check } from "lucide-react";
 import { PixQRCode } from "@/components/PixQRCode";
 
 interface AppointmentForComplete {
@@ -51,6 +51,11 @@ export default function CompleteAppointmentModal({
   appointment,
   onSuccess,
 }: Props) {
+  // Token retornado após concluir — exibe tela de sucesso com link de avaliação
+  const [ratingToken, setRatingToken] = useState<string | null>(null);
+  // Controla ícone de "copiado" por 2s
+  const [copied, setCopied] = useState(false);
+
   // Valor do serviço (base do total)
   const [serviceAmount, setServiceAmount] = useState<string>("");
   const [paymentMethod, setPaymentMethod] = useState<
@@ -88,6 +93,8 @@ export default function CompleteAppointmentModal({
       setProductSearch("");
       setSelectedProductId("");
       setProductQty(1);
+      setRatingToken(null);
+      setCopied(false);
     }
   }, [isOpen, appointment]);
 
@@ -175,10 +182,15 @@ export default function CompleteAppointmentModal({
 
   // ─── Mutation de conclusão ────────────────────────────────────────────────
   const completeMutation = trpc.appointments.complete.useMutation({
-    onSuccess: () => {
+    onSuccess: (data) => {
       toast.success("Agendamento concluído com sucesso!");
-      onClose();
       onSuccess?.();
+      // Se gerou token de avaliação, mostra tela de sucesso no modal
+      if ((data as any)?.ratingToken) {
+        setRatingToken((data as any).ratingToken);
+      } else {
+        onClose();
+      }
     },
     onError: err => {
       toast.error(`Erro ao concluir agendamento: ${err.message}`);
@@ -210,6 +222,67 @@ export default function CompleteAppointmentModal({
   const filteredProducts = (productsQuery.data ?? []).filter(p =>
     p.name.toLowerCase().includes(productSearch.toLowerCase())
   );
+
+  // URL do link de avaliação
+  const ratingUrl = ratingToken
+    ? `${window.location.origin}/avaliar?token=${ratingToken}`
+    : null;
+
+  const handleCopyLink = () => {
+    if (!ratingUrl) return;
+    navigator.clipboard.writeText(ratingUrl).then(() => {
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    });
+  };
+
+  // ─── Tela de sucesso com link de avaliação ────────────────────────────────
+  if (ratingToken) {
+    return (
+      <Dialog open={isOpen} onOpenChange={onClose}>
+        <DialogContent className="max-w-sm">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2 text-green-600">
+              <Check className="h-5 w-5" />
+              Atendimento concluído!
+            </DialogTitle>
+            <DialogDescription>
+              Compartilhe o link abaixo para o cliente avaliar o atendimento.
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="space-y-4 py-2">
+            {/* Estrelas decorativas */}
+            <div className="flex justify-center gap-1">
+              {[1, 2, 3, 4, 5].map(i => (
+                <Star key={i} className="h-7 w-7 fill-yellow-400 text-yellow-400" />
+              ))}
+            </div>
+
+            {/* URL do link de avaliação */}
+            <div className="bg-muted rounded-md px-3 py-2 text-xs text-muted-foreground break-all">
+              {ratingUrl}
+            </div>
+
+            {/* Botão copiar */}
+            <Button className="w-full" onClick={handleCopyLink}>
+              {copied ? (
+                <><Check className="mr-2 h-4 w-4" /> Link copiado!</>
+              ) : (
+                <><Copy className="mr-2 h-4 w-4" /> Copiar link de avaliação</>
+              )}
+            </Button>
+          </div>
+
+          <DialogFooter>
+            <Button variant="outline" className="w-full" onClick={onClose}>
+              Fechar
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+    );
+  }
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
