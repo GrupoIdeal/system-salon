@@ -1,7 +1,7 @@
 # System Salon — Documentação Técnica Completa
 
-**Versão:** 1.0  
-**Última atualização:** Março de 2026  
+**Versão:** 1.6  
+**Última atualização:** 16 de Março de 2026  
 **Autor do projeto:** Ronny Senna  
 **Desenvolvido por:** Ideal Soluções Tecnológicas  
 
@@ -36,14 +36,18 @@ O **System Salon** é um sistema web de gestão completa para salões de beleza 
 |--------|-----------|
 | **Agendamentos** | Criar, editar, cancelar e concluir agendamentos com controle de horários |
 | **Clientes** | Cadastro e histórico completo de clientes |
-| **Especialistas** | Gerenciamento de profissionais, horários e especialidades |
+| **Especialistas** | Gerenciamento de profissionais, horários e especialidades com avaliações |
 | **Serviços** | Catálogo de serviços com preços e durações |
+| **Produtos** | Estoque de produtos com venda direta no checkout do atendimento |
 | **Financeiro** | Registro de transações e relatórios de receita |
-| **Dashboard** | Painel com métricas e gráficos em tempo real |
+| **Dashboard** | Painel com métricas, gráficos e KPIs de avaliações em tempo real |
 | **Agendamento Público** | Página para clientes se agendarem sem conta |
+| **Avaliações** | Sistema de rating pós-atendimento com link por token único |
+| **PIX QR Code** | Geração automática de QR Code PIX ao concluir atendimento |
+| **Fidelidade** | Pontos por atendimento com exibição no painel do cliente |
 | **Usuários** | Controle de acesso com papéis e permissões |
 | **Auditoria** | Log completo de todas as ações realizadas no sistema |
-| **PWA** | Funciona como aplicativo instalável em celulares |
+| **PWA** | Funciona como app instalável com cache offline via Workbox |
 
 ### Tipo de Aplicação
 
@@ -467,6 +471,71 @@ Registro financeiro vinculado aos agendamentos concluídos e despesas avulsas.
 
 ---
 
+### Tabela: `products` — Produtos
+
+Estoque de produtos do salão, com controle de quantidade e preço de custo/venda.
+
+| Coluna | Tipo | Descrição |
+|--------|------|-----------|
+| `id` | varchar(64) PK | ID único |
+| `salonId` | varchar(64) FK → salons | Salão (cascade delete) |
+| `name` | text | Nome do produto |
+| `description` | text | Descrição |
+| `costPrice` | decimal(10,2) | Preço de custo |
+| `sellPrice` | decimal(10,2) | Preço de venda |
+| `stock` | integer | Estoque atual |
+| `minStock` | integer | Estoque mínimo (alerta de baixo estoque) |
+| `brand` | text | Marca |
+| `category` | text | Categoria |
+| `status` | enum('active','inactive') | Se está ativo |
+| `createdAt` / `updatedAt` | timestamp | Metadados |
+
+**Índices:** `salonId_idx`  
+**Alerta:** produtos com `stock <= minStock` aparecem no card de alerta do Dashboard.
+
+---
+
+### Tabela: `appointmentProducts` — Produtos Vendidos no Atendimento
+
+Registra os produtos vendidos/utilizados em cada atendimento concluído.
+
+| Coluna | Tipo | Descrição |
+|--------|------|-----------|
+| `id` | varchar(64) PK | ID único |
+| `appointmentId` | varchar(64) FK → appointments | Atendimento (cascade delete) |
+| `productId` | varchar(64) FK → products | Produto (cascade delete) |
+| `salonId` | varchar(64) FK → salons | Salão |
+| `quantity` | integer | Quantidade vendida |
+| `unitPrice` | decimal(10,2) | Preço unitário no momento da venda |
+| `createdAt` | timestamp | Data do registro |
+
+Ao inserir um `appointmentProduct`, o sistema **decrementa automaticamente** o estoque do produto correspondente.
+
+---
+
+### Tabela: `ratings` — Avaliações Pós-Atendimento
+
+Armazena tokens de avaliação gerados ao concluir cada atendimento e as avaliações submetidas pelos clientes.
+
+| Coluna | Tipo | Descrição |
+|--------|------|-----------|
+| `id` | varchar(64) PK | ID único |
+| `salonId` | varchar(64) FK → salons | Salão |
+| `specialistId` | varchar(64) FK → specialists | Especialista avaliado |
+| `appointmentId` | varchar(64) FK → appointments | Atendimento de origem |
+| `token` | varchar(255) UNIQUE | Token de uso único compartilhado com o cliente |
+| `used` | boolean | `false` = aguardando, `true` = avaliação enviada |
+| `stars` | integer | Nota de 1 a 5 estrelas (preenchido ao submeter) |
+| `comment` | text | Comentário opcional do cliente |
+| `clientName` | text | Snapshot do nome do cliente no momento do atendimento |
+| `createdAt` | timestamp | Criada automaticamente ao concluir o atendimento |
+| `submittedAt` | timestamp | Data em que o cliente submeteu a nota |
+
+**Índices:** `salonId_idx`, `specialistId_idx`, `token_idx` (UNIQUE)  
+**Fluxo:** atendimento concluído → token gerado → link `/avaliar?token=xxx` compartilhado → cliente avalia → `used = true`, `stars` e `submittedAt` preenchidos.
+
+---
+
 ### Tabela: `passwordResets` — Tokens de Reset de Senha
 
 | Coluna | Tipo | Descrição |
@@ -603,9 +672,35 @@ Arquivo central com TODOS os endpoints da API. Organizado em namespaces:
 | `appointments.getAvailableSlots` | query | protegido | Horários livres para especialista/serviço/data |
 | `appointments.validateSlot` | query | protegido | Valida se horário específico está disponível |
 | `appointments.getSuggestions` | query | protegido | Sugere horários próximos ao preferido |
-| `appointments.complete` | mutation | protegido | Conclui agendamento + registra transação de receita |
+| `appointments.complete` | mutation | protegido | Conclui agendamento + transação + produtos + pontos de fidelidade + gera token de avaliação |
 | `appointments.cancel` | mutation | protegido | Cancela com motivo nas notas |
 | `appointments.confirm` | mutation | protegido | Confirma agendamento pendente |
+
+#### `products` — Produtos
+
+| Procedure | Tipo | Acesso | Descrição |
+|-----------|------|--------|-----------|
+| `products.list` | query | protegido | Lista produtos do salão |
+| `products.get` | query | protegido | Busca por ID |
+| `products.create` | mutation | protegido | Cria produto |
+| `products.update` | mutation | protegido | Atualiza produto |
+| `products.delete` | mutation | protegido | Remove produto |
+| `products.lowStock` | query | protegido | Retorna produtos com `stock <= minStock` (alerta Dashboard) |
+
+#### `ratings` — Avaliações (protegido)
+
+| Procedure | Tipo | Acesso | Descrição |
+|-----------|------|--------|-----------|
+| `ratings.getBySpecialist` | query | protegido | Lista todas as avaliações de um especialista |
+| `ratings.getAllAverages` | query | protegido | Mapa `specialistId → {average, count}` para o salão |
+| `ratings.getAll` | query | protegido | Lista todas as avaliações submetidas (página /avaliacoes) |
+
+#### `publicRouter.ratings` — Avaliações (público, sem JWT)
+
+| Procedure | Tipo | Acesso | Descrição |
+|-----------|------|--------|-----------|
+| `ratings.getByToken` | query | público | Busca avaliação pelo token único |
+| `ratings.submit` | mutation | público | Submete nota (1-5 estrelas) + comentário opcional |
 
 #### `schedule` — Agenda dos Especialistas
 
@@ -715,7 +810,18 @@ Arquivo com todas as funções que executam queries no PostgreSQL via Drizzle OR
 
 **Dashboard:**
 - `getDashboardMetrics(salonId)` — KPIs com **cache de 10 minutos** em memória para evitar recálculos constantes
-- `getRevenueChart`, `getMonthlyComparison`, `getAllDashboardData`
+- `getRevenueChart`, `getMonthlyComparison`
+- `getAllDashboardData(salonId, chartDays)` — executa métricas + gráfico + comparativo + ratings em paralelo
+
+**Produtos:** `getProductsBySalonId`, `createProduct`, `updateProduct`, `deleteProduct`, `getLowStockProducts`
+
+**Avaliações:**
+- `createRating(data)` — cria entrada pendente com token único ao concluir atendimento
+- `getRatingByToken(token)` — busca pela chave única (usado na página pública `/avaliar`)
+- `submitRating(token, stars, comment?)` — marca `used=true`, salva nota e `submittedAt`
+- `getRatingsBySpecialist(specialistId)` — lista avaliações de um especialista
+- `getAllSpecialistRatings(salonId)` — mapa `specialistId → {average, count}` com SQL `AVG + GROUP BY`
+- `getAllRatingsBySalon(salonId)` — todas as avaliações submetidas com join de especialista (para `/avaliacoes`)
 
 **Password Reset:** `createPasswordReset`, `getPasswordResetByToken`, `markPasswordResetAsUsed`
 
@@ -763,11 +869,14 @@ Usa **Wouter** (roteamento leve, ~2KB vs 47KB do React Router) com **lazy loadin
 | `/recuperar-senha` | `RecuperarSenha.tsx` | Pública |
 | `/redefinir-senha` | `RedefinirSenha.tsx` | Pública |
 | `/agendar` | `PublicBooking.tsx` | Pública |
+| `/avaliar` | `Rating.tsx` | Pública (token via query string) |
 | `/dashboard` | `Dashboard.tsx` | Protegida |
 | `/clientes` | `Clients.tsx` | Protegida |
 | `/servicos` | `Services.tsx` | Protegida |
 | `/agendamentos` | `Appointments.tsx` | Protegida |
 | `/especialistas` | `Specialists.tsx` | Protegida |
+| `/produtos` | `Products.tsx` | Protegida |
+| `/avaliacoes` | `Avaliacoes.tsx` | Protegida |
 | `/empresa` | `Empresa.tsx` | Admin |
 | `/usuarios` | `Usuarios.tsx` | Admin |
 | `/logs` | `Logs.tsx` | Admin |
@@ -796,9 +905,13 @@ Página pública (sem login) que permite a clientes externos agendarem serviços
 
 #### `Dashboard.tsx`
 Painel principal do sistema exibindo:
-- **Cards de KPIs**: Receita total do mês, agendamentos do dia, agendamentos pendentes, novos clientes no mês
-- **Gráfico de receita**: Linha dos últimos 30 dias (Recharts)
-- **Lista de próximos agendamentos**: Horário, cliente, especialista, serviço e status
+- **6 cards de KPI**: Receita do mês, Receita semanal, Agendamentos hoje (com concluídos), Taxa de ocupação, Média de avaliações (★), Especialistas com avaliações
+- **Alerta de estoque baixo**: Card vermelho clicável quando algum produto está abaixo do mínimo
+- **Gráfico de receita**: Área chart dos últimos 30 dias (Recharts)
+- **Top 5 Serviços do Mês**: ranking por receita
+- **Top 5 Especialistas do Mês**: ranking por receita + estrelas de avaliação de cada um
+- **Clientes Mais Valiosos**: top 5 por gasto total
+- **Próximos Agendamentos**: confirmados e pendentes
 
 #### `Clients.tsx`
 CRUD completo de clientes com:
@@ -823,9 +936,30 @@ Módulo mais complexo do sistema. Funcionalidades:
 - **Estatísticas**: Cards com taxa de conclusão e cancelamento (memoizados)
 - **Integração com CalendarPicker** para navegação de datas
 
+#### `Rating.tsx` *(nova — pública)*
+Página de avaliação acessada pelo cliente via link `<origem>/avaliar?token=<token>`:
+- Verifica o token na API pública — exibe erro se inválido ou já usado
+- Componente `StarPicker` interativo: hover e clique para selecionar 1-5 estrelas
+- Campo de comentário opcional
+- Após envio: tela de agradecimento
+- Usa `publicTrpc` (sem JWT) servido em `/api/public`
+
+#### `Avaliacoes.tsx` *(nova — protegida)*
+Página de gerenciamento de avaliações recebidas (`/avaliacoes`):
+- **KPIs**: total de avaliações, média geral, distribuição por nota (1★ a 5★)
+- **Tabela** com nota colorida, comentário, nome do cliente, especialista e data
+- Campo de busca por especialista ou cliente
+- Empty state com orientação para compartilhar o link
+
+#### `Products.tsx` *(nova — protegida)*
+Gerenciamento de estoque (`/produtos`):
+- Listagem com status, estoque atual e alerta visual quando abaixo do mínimo
+- Campos: nome, descrição, preço de custo, preço de venda, estoque, estoque mínimo, marca, categoria
+- Toggle de status ativo/inativo
+
 #### `Specialists.tsx`
 Gerenciamento de especialistas:
-- Cards com foto, nome, especialidade e status
+- Cards com foto, nome, especialidade, status e **média de avaliações** (estrelas)
 - CRUD via modais
 - Botão de configuração de horários que abre `SpecialistScheduleManagement`
 
@@ -865,7 +999,30 @@ Modal em 4 passos para criar/editar agendamentos:
 4. Confirmar e salvar
 
 #### `CompleteAppointmentModal.tsx`
-Modal para registrar conclusão de serviço: valor pago e método de pagamento. Ao salvar, cria automaticamente uma transação financeira de receita.
+Modal de checkout ao concluir um atendimento. Funcionalidades:
+- Campo de valor do serviço (pré-preenchido com o preço do serviço)
+- **Carrinho de produtos**: busca por nome, seleção e quantidade — cada produto adicionado desconta do estoque
+- Resumo do total (serviço + produtos)
+- Seletor de método de pagamento (Dinheiro, Cartão, PIX, Transferência)
+- **QR Code PIX**: exibido automaticamente ao selecionar PIX, com a chave cadastrada em Empresa
+- Ao confirmar pagamento:
+  1. Cria transação de receita
+  2. Registra produtos vendidos (`appointmentProducts`) e decrementa estoque
+  3. Gera token de avaliação único
+  4. **Exibe tela de sucesso** com botão "Copiar link de avaliação" — o modal permanece aberto até o usuário fechar manualmente
+
+#### `PixQRCode.tsx` *(novo)*
+Componente que gera e exibe um QR Code PIX no padrão do Banco Central:
+- Recebe `pixKey`, `amount` e `salonName`
+- Monta o payload EMV (Pix estático)
+- Renderiza via `qrcode.react`
+- Exibe a chave PIX em texto e botão de copiar
+
+#### `AccessibilityBar.tsx` *(novo)*
+Barra de acessibilidade flutuante disponível em todas as páginas:
+- Controle de tamanho de fonte (+/−) armazenado em `localStorage`
+- Toggle de alto contraste
+- Aplica classes CSS globais ao elemento `<html>` que afetam toda a interface
 
 #### `CalendarPicker.tsx`
 Calendário mensal com:
@@ -1132,12 +1289,65 @@ Toda operação CRUD registra automaticamente um `auditLog` com:
 
 Isso garante rastreabilidade completa para fins de compliance e resolução de conflitos.
 
-### Progressive Web App (PWA)
+### Progressive Web App (PWA) e Cache Offline (Workbox)
 
 O sistema é configurado como PWA via `vite-plugin-pwa`:
 - Pode ser instalado como app nativo em Android/iOS/Desktop
-- Service Worker (`client/src/sw.ts`) faz cache de assets para funcionamento offline
 - Manifest com nome, ícones e cores definidos
+
+O Service Worker em `client/src/sw.ts` implementa três estratégias de cache com **Workbox** (`workbox-routing`, `workbox-strategies`, `workbox-expiration`):
+
+| Estratégia | Recursos | Cache | Comportamento |
+|-----------|---------|-------|---------------|
+| **CacheFirst** | Imagens e fontes | `static-assets` — 30 dias, máx. 60 itens | Serve direto do cache; rede só se não estiver em cache |
+| **StaleWhileRevalidate** | JS, CSS | `js-css-cache` | Entrega do cache instantaneamente e atualiza em background |
+| **NetworkFirst** | Chamadas `/api/` | `api-cache` — 5min, timeout 5s | Tenta a rede primeiro; fallback para cache se offline |
+
+Isso garante que o aplicativo funciona mesmo com conexão instável ou offline para as telas já visitadas.
+
+### Módulo de Produtos (Sprint 3)
+
+O sistema possui controle de estoque integrado ao checkout:
+1. Admin cadastra produtos com preço de custo/venda e estoque mínimo
+2. Ao concluir um atendimento, o funcionário adiciona produtos ao carrinho
+3. A mutation `appointments.complete` recebe `products[]` e:
+   - Insere registros em `appointmentProducts`
+   - Decrementa o estoque de cada produto
+4. O Dashboard exibe um **alerta de estoque baixo** para produtos com `stock <= minStock`
+
+### Sistema de Avaliações Pós-Atendimento (Sprint 6)
+
+Fluxo completo de avaliação:
+1. Funcionário conclui atendimento → server gera token UUID único → insere em `ratings` com `used=false`
+2. `CompleteAppointmentModal` exibe tela de sucesso com botão **"Copiar link de avaliação"**
+3. Funcionário compartilha o link `<origem>/avaliar?token=<token>` com o cliente (WhatsApp, SMS, etc.)
+4. Cliente acessa a URL pública → `Rating.tsx` carrega dados do token via `publicTrpc.ratings.getByToken`
+5. Cliente seleciona 1-5 estrelas e escreve comentário opcional → `publicTrpc.ratings.submit`
+6. Servidor marca `used=true`, salva `stars`, `comment` e `submittedAt` → token não pode ser reutilizado
+7. Admin vê todas as avaliações em `/avaliacoes` e as médias no Dashboard e na página de Especialistas
+
+### PIX QR Code (Sprint 5)
+
+Ao selecionar PIX como método de pagamento no `CompleteAppointmentModal`:
+1. Busca a chave PIX cadastrada em Empresa (`salon.pixKey`)
+2. O componente `PixQRCode` monta o payload no padrão EMV do Banco Central com valor e nome do salão
+3. Renderiza o QR Code para o cliente escanear
+4. Se a chave PIX não estiver cadastrada, exibe alerta orientando o admin a configurar em Empresa
+
+### Pontos de Fidelidade (Sprint 5)
+
+Ao concluir um atendimento:
+1. O servidor calcula pontos com base no valor pago
+2. Registra em `transactions` com tipo `loyalty_points`
+3. O total de pontos fica disponível via `clients.getLoyaltyPoints`
+4. Pode ser exibido no perfil do cliente para programas de fidelidade
+
+### Barra de Acessibilidade (Sprint 5)
+
+Componente `AccessibilityBar` disponível globalmente:
+- Persiste configurações de fonte e contraste em `localStorage`
+- Aplica classes `text-lg` / `text-xl` no `<html>` para ampliar toda a interface
+- Toggle de modo de alto contraste para usuários com deficiência visual
 
 ---
 
@@ -1173,31 +1383,74 @@ O sistema é configurado como PWA via `vite-plugin-pwa`:
 [Toast de sucesso exibido ao usuário]
 ```
 
-### Fluxo: Conclusão de Agendamento
+### Fluxo: Conclusão de Agendamento (com Produtos + Avaliação)
 
 ```
 [Usuário clica em "Concluir"]
         │
         ▼
 [CompleteAppointmentModal]
-        │ Valor pago (R$) + Método de pagamento
+        │ 1. Valor do serviço (pré-preenchido)
+        │ 2. Adiciona produtos ao carrinho (busca por nome → dropdown)
+        │ 3. Seleciona método de pagamento
+        │    → Se PIX: exibe QR Code gerado com a chave do salão
         ▼
-[appointments.complete.useMutation({ id, paymentMethod, amountPaid })]
+[appointments.complete.useMutation({ id, paymentMethod, amountPaid, products[] })]
         │
         ▼
 [Servidor — appointments.complete procedure]
         │ 1. updateAppointment({ status: "completed", paidAmount })
-        │ 2. recordAppointmentRevenue() → INSERT em transactions
-        │    (type: "income", status: "completed", paymentMethod)
-        │ 3. createAuditLog() para o agendamento
-        │ 4. createAuditLog() para a transação
+        │ 2. recordAppointmentRevenue() → INSERT em transactions (receita)
+        │ 3. Para cada produto: INSERT em appointmentProducts
+        │                       UPDATE products SET stock = stock - quantity
+        │ 4. Calcula pontos de fidelidade → INSERT em transactions (loyalty)
+        │ 5. createRating({ token: UUID, used: false }) → avaliação pendente
+        │ 6. createAuditLog() para o agendamento e transação
+        │ ← { success: true, ratingToken: "<uuid>" }
+        ▼
+[CompleteAppointmentModal — tela de sucesso]
+        │ Exibe 5 estrelas decorativas + URL do link
+        │ Botão "Copiar link de avaliação" → clipboard
+        │ Modal permanece aberto até clicar em "Fechar"
+        ▼
+[Usuário clica em "Fechar"]
+        │ onSuccess() → lista de agendamentos re-busca
+        │ Dashboard cache invalidado na próxima requisição
+        ▼
+[Funcionário envia link ao cliente via WhatsApp/SMS]
+```
+
+### Fluxo: Cliente Avalia o Atendimento
+
+```
+[Cliente recebe link: /avaliar?token=<uuid>]
         │
         ▼
-[Dashboard Cache invalidado na próxima requisição]
-[KPIs atualizados na próxima visita ao dashboard]
+[Rating.tsx — página pública]
+        │ publicTrpc.ratings.getByToken({ token })
+        │ ← rating: { id, specialistName, clientName, used }
+        │
+        ├─ token inválido → mensagem de erro
+        ├─ used=true → "Avaliação já enviada"
+        └─ used=false → exibe formulário
+        ▼
+[StarPicker — cliente clica nas estrelas (1-5)]
+        │ + comentário opcional
+        ▼
+[publicTrpc.ratings.submit({ token, stars, comment })]
+        │ Servidor: submitRating() → used=true, stars, submittedAt=now()
+        ▼
+[Tela de agradecimento]
+
+[Admin consulta /avaliacoes]
+        │ trpc.ratings.getAll.useQuery()
+        │ ← todas as avaliações com join de especialista, ordenadas por data
+        ▼
+[Tabela com nota, comentário, cliente, especialista e data]
 ```
 
 ---
 
-*Documentação gerada em Março de 2026 para o projeto System Salon.*  
+*Documentação atualizada em 16 de Março de 2026 para o projeto System Salon.*  
+*Sprints 5 e 6 incluídos: PIX QR Code, Fidelidade, Acessibilidade, Avaliações, Produtos, Service Worker Workbox.*  
 *Desenvolvido com React, TypeScript, tRPC, Drizzle ORM e PostgreSQL.*
