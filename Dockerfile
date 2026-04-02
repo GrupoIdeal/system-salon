@@ -22,7 +22,8 @@ RUN corepack enable && corepack prepare pnpm@latest --activate
 COPY package.json pnpm-lock.yaml ./
 COPY patches ./patches/
 
-RUN pnpm install --prod --frozen-lockfile
+RUN pnpm install --prod --frozen-lockfile && \
+    pnpm add --no-save @tailwindcss/vite @vitejs/plugin-react vite-plugin-manus-runtime vite-plugin-pwa vite
 
 COPY --from=builder /app/dist ./dist
 
