@@ -2,6 +2,11 @@
 import { TRPCError } from "@trpc/server";
 import { publicProcedure, router, protectedProcedure } from "./_core/trpc";
 import { systemRouter } from "./_core/systemRouter";
+import {
+  createStripePaymentIntent,
+  confirmStripePayment,
+  generatePaymentOptions,
+} from "./stripe";
 import { COOKIE_NAME, ONE_YEAR_MS } from "@shared/const";
 import { getSessionCookieOptions } from "./_core/cookies";
 import { z } from "zod";
@@ -2632,6 +2637,100 @@ export const appRouter = router({
           message: "Salão não encontrado",
         });
       return await getAllRatingsBySalon(salon.id);
+    }),
+  }),
+
+  // ==========================================================================
+  // STRIPE — Pagamentos via cartão
+  // ==========================================================================
+  stripe: router({
+    /** Cria um Payment Intent e retorna as opções de pagamento */
+    createPaymentIntent: protectedProcedure
+      .input(
+        z.object({
+          amount: z.number().positive(),
+          description: z.string().optional(),
+        })
+      )
+      .mutation(async ({ ctx, input }) => {
+        const salon = await getSalonByUserId(ctx.user.id);
+        if (!salon)
+          throw new TRPCError({
+            code: "NOT_FOUND",
+            message: "Salão não encontrado",
+          });
+        const paymentIntent = await createStripePaymentIntent({
+          amount: input.amount,
+          description: input.description || "Pagamento BizFlow Access",
+          metadata: { salonId: salon.id, userId: ctx.user.id },
+        });
+        return paymentIntent;
+      }),
+
+    /** Confirma um Payment Intent após o cliente preencher os dados do cartão */
+    confirmPayment: protectedProcedure
+      .input(
+        z.object({
+          paymentIntentId: z.string(),
+        })
+      )
+      .mutation(async ({ input }) => {
+        const result = await confirmStripePayment(input.paymentIntentId);
+        return result;
+      }),
+
+    /** Retorna as opções de pagamento disponíveis */
+    getPaymentOptions: protectedProcedure
+      .input(
+        z.object({
+          amount: z.number().positive(),
+        })
+      )
+      .query(async ({ ctx }) => {
+        const salon = await getSalonByUserId(ctx.user.id);
+        if (!salon)
+          throw new TRPCError({
+            code: "NOT_FOUND",
+            message: "Salão não encontrado",
+          });
+        return generatePaymentOptions(
+          input.amount,
+          salon.pixKey || undefined,
+          salon.name
+        );
+      }),
+  }),
+
+  // ==========================================================================
+  // NOTIFICATIONS — Inscrição push e gerenciamento
+  // ==========================================================================
+  notifications: router({
+    /** Registra subscription do service worker para push notifications */
+    subscribe: protectedProcedure
+      .input(
+        z.object({
+          endpoint: z.string(),
+          keys: z.object({
+            p256dh: z.string(),
+            auth: z.string(),
+          }),
+        })
+      )
+      .mutation(async ({ ctx, input }) => {
+        // Em produção: salvar no banco de dados
+        // await savePushSubscription(ctx.user.id, input);
+        console.log(
+          `📱 [Push] Usuário ${ctx.user.id} registrado para notificações push`
+        );
+        return { success: true };
+      }),
+
+    /** Remove inscrição push */
+    unsubscribe: protectedProcedure.mutation(async ({ ctx }) => {
+      console.log(
+        `📱 [Push] Usuário ${ctx.user.id} cancelou notificações push`
+      );
+      return { success: true };
     }),
   }),
 });

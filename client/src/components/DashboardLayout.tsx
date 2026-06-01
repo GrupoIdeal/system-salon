@@ -17,6 +17,7 @@ import { APP_LOGO, APP_TITLE, getLoginUrl } from "@/const";
 import { useIsMobile } from "@/hooks/useMobile";
 import {
   Calendar,
+  Hand,
   LayoutDashboard,
   LogOut,
   Package,
@@ -32,6 +33,7 @@ import { useLocation } from "wouter";
 import { DashboardLayoutSkeleton } from "./DashboardLayoutSkeleton";
 import { AccessibilityBar } from "./AccessibilityBar";
 import { Button } from "./ui/button";
+import { usePushNotifications } from "@/hooks/usePushNotifications";
 
 const menuItems = [
   { icon: LayoutDashboard, label: "Dashboard", path: "/dashboard" },
@@ -41,6 +43,7 @@ const menuItems = [
   { icon: User, label: "Especialistas", path: "/especialistas" },
   { icon: Calendar, label: "Agendamentos", path: "/agendamentos" },
   { icon: Star, label: "Avaliações", path: "/avaliacoes" },
+  { icon: Hand, label: "Ajuda Libras", path: "/ajuda-libras" },
 ];
 
 const SIDEBAR_WIDTH_KEY = "sidebar-width";
@@ -134,6 +137,9 @@ function DashboardLayoutContent({
   const sidebarRef = useRef<HTMLDivElement>(null);
   const activeMenuItem = menuItems.find(item => item.path === location);
   const isMobile = useIsMobile();
+
+  // Registrar push notifications quando o usuário está autenticado
+  usePushNotifications(!!user);
 
   useEffect(() => {
     if (isCollapsed) {

@@ -51,7 +51,6 @@ registerRoute(
 // ──────────────────────────────────────────────────────────────
 // Estratégia "Network First" para chamadas da API tRPC
 // Tenta buscar da rede; em modo offline usa o cache salvo.
-// ⚙️ Ponto de troca: aumentar maxAgeSeconds para cache mais longo.
 // ──────────────────────────────────────────────────────────────
 registerRoute(
   ({ url }) => url.pathname.startsWith("/api/"),
@@ -61,9 +60,77 @@ registerRoute(
     plugins: [
       new ExpirationPlugin({
         maxEntries: 50,
-        // Dados da API ficam em cache por 5 minutos
         maxAgeSeconds: 5 * 60,
       }),
     ],
   })
+);
+
+// ──────────────────────────────────────────────────────────────
+// WEB PUSH NOTIFICATIONS
+// ──────────────────────────────────────────────────────────────
+
+// Escuta eventos de push: exibe notificação quando recebida
+self.addEventListener("push", (event: PushEvent) => {
+  let data: {
+    title?: string;
+    body?: string;
+    icon?: string;
+    badge?: string;
+    url?: string;
+  } = {};
+
+  if (event.data) {
+    try {
+      data = event.data.json();
+    } catch {
+      data = { title: event.data.text() };
+    }
+  }
+
+  const title = data.title || "BizFlow Access";
+  const options: NotificationOptions = {
+    body: data.body || "Você tem uma nova notificação",
+    icon: data.icon || "/image/Logo.png",
+    badge: data.badge || "/image/favicon.png",
+    vibrate: [200, 100, 200],
+    tag: "bizflow-notification",
+    renotify: true,
+    requireInteraction: true,
+    data: {
+      url: data.url || "/dashboard",
+    },
+  };
+
+  event.waitUntil(self.registration.showNotification(title, options));
+});
+
+// Abre a URL quando o usuário clica na notificação
+self.addEventListener(
+  "notificationclick",
+  (event: NotificationEvent) => {
+    event.notification.close();
+
+    const urlToOpen =
+      (event.notification.data as any)?.url || "/dashboard";
+
+    event.waitUntil(
+      self.clients
+        .matchAll({ type: "window", includeUncontrolled: true })
+        .then((windowClients) => {
+          // Se já tem uma janela aberta, foca nela e navega
+          for (const client of windowClients) {
+            if ("url" in client && "focus" in client) {
+              client.focus();
+              if ("navigate" in client) {
+                (client as any).navigate(urlToOpen);
+              }
+              return;
+            }
+          }
+          // Abre nova janela
+          return self.clients.openWindow(urlToOpen);
+        })
+    );
+  }
 );
