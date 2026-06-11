@@ -9,7 +9,20 @@ import { getLoginUrl, APP_TITLE } from "./const";
 import { getAuthToken } from "@/lib/auth-utils";
 import "./index.css";
 
-const queryClient = new QueryClient();
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      // Dados considerados "frescos" por 5 min — evita re-fetch desnecessário
+      staleTime: 5 * 60 * 1000,
+      // Cache mantido por 10 min após o componente desmontar
+      gcTime: 10 * 60 * 1000,
+      // Apenas 1 retry em caso de erro (padrão é 3)
+      retry: 1,
+      // Não re-busca automaticamente ao retornar à aba do browser
+      refetchOnWindowFocus: false,
+    },
+  },
+});
 
 const redirectToLoginIfUnauthorized = (error: unknown) => {
   if (!(error instanceof TRPCClientError)) return;

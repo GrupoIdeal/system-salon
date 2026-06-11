@@ -22,6 +22,8 @@ import {
   passwordResets,
   transactions,
   auditLogs,
+  products,
+  appointmentProducts,
   InsertUser,
   InsertSalon,
   InsertSpecialist,
@@ -31,6 +33,7 @@ import {
   InsertPasswordReset,
   InsertTransaction,
   InsertAuditLog,
+  InsertProduct,
   User,
   Salon,
   Specialist,
@@ -40,6 +43,11 @@ import {
   AppointmentWithDetails,
   PasswordReset,
   AuditLog,
+  Product,
+  AppointmentProduct,
+  ratings,
+  Rating,
+  InsertRating,
 } from "../drizzle/schema";
 import * as schema from "../drizzle/schema";
 import * as relations from "../drizzle/relations";
@@ -73,7 +81,11 @@ function maskSensitiveFields(value: unknown): unknown {
     const obj: Record<string, unknown> = {};
     for (const [k, v] of Object.entries(value as Record<string, unknown>)) {
       const lower = k.toLowerCase();
-      if (/(password|pass|pwd|secret|token)/.test(lower)) {
+      if (
+        /(password|pass|pwd|secret|token|apikey|api_key|private_key|authorization|bearer)/.test(
+          lower
+        )
+      ) {
         obj[k] = "[REDACTED]";
       } else {
         obj[k] = maskSensitiveFields(v);
@@ -422,10 +434,14 @@ export async function getUserByEmail(email: string): Promise<User | undefined> {
   return result.length > 0 ? result[0] : undefined;
 }
 
-export async function listUsers(): Promise<User[]> {
+export async function listUsers(): Promise<Omit<User, "password">[]> {
   const db = await getDb();
   if (!db) return [];
-  return await db.select().from(users);
+  const result = await db.select().from(users);
+  // Nunca retornar o hash de senha na listagem de usuários
+  return result.map(
+    ({ password: _p, ...rest }) => rest as Omit<User, "password">
+  );
 }
 
 // ============================================================================
@@ -628,6 +644,30 @@ export async function deleteClient(clientId: string): Promise<void> {
   await db.delete(clients).where(eq(clients.id, clientId));
 }
 
+/**
+ * Incrementa os pontos de fidelidade de um cliente.
+ * Regra: cada R$ 1,00 pago = 1 ponto.
+ * ⚙️ Ponto de troca: ajuste a regra de conversão aqui se necessário.
+ */
+export async function addLoyaltyPoints(
+  clientId: string,
+  amountPaid: number
+): Promise<void> {
+  const db = await getDb();
+  if (!db) return;
+
+  const pointsToAdd = Math.floor(amountPaid); // R$1 = 1 ponto
+  if (pointsToAdd <= 0) return;
+
+  await db
+    .update(clients)
+    .set({
+      loyaltyPoints: sql`${clients.loyaltyPoints} + ${pointsToAdd}`,
+      updatedAt: new Date(),
+    })
+    .where(eq(clients.id, clientId));
+}
+
 // ============================================================================
 // SERVICE QUERIES
 // ============================================================================
@@ -739,6 +779,7 @@ export async function getAppointmentsWithDetailsBySalonId(
       status: appointments.status,
       notes: appointments.notes,
       isPublic: appointments.isPublic,
+      paidAmount: appointments.paidAmount,
       createdAt: appointments.createdAt,
       updatedAt: appointments.updatedAt,
       // Client fields
@@ -748,9 +789,11 @@ export async function getAppointmentsWithDetailsBySalonId(
         email: clients.email,
         phone: clients.phone,
         notes: clients.notes,
+        photo: clients.photo,
         salonId: clients.salonId,
         createdAt: clients.createdAt,
         updatedAt: clients.updatedAt,
+        loyaltyPoints: clients.loyaltyPoints,
       },
       // Service fields
       service: {
@@ -759,6 +802,7 @@ export async function getAppointmentsWithDetailsBySalonId(
         description: services.description,
         duration: services.duration,
         price: services.price,
+        priceFrom: services.priceFrom,
         status: services.status,
         salonId: services.salonId,
         specialistId: services.specialistId,
@@ -800,6 +844,7 @@ export async function getAppointmentsWithDetailsBySalonId(
     status: row.status,
     notes: row.notes,
     isPublic: row.isPublic,
+    paidAmount: row.paidAmount,
     createdAt: row.createdAt,
     updatedAt: row.updatedAt,
     client: row.client,
@@ -1571,11 +1616,13 @@ export async function getAvailableTimeSlots(
     return [];
   }
 
-  // Busca dados do especialista e serviço
-  const specialist = await getSpecialistById(specialistId);
-  const service = await getServiceById(serviceId);
+  // Busca especialista e serviço em paralelo (eram sequenciais antes — 2 round-trips → 1)
+  const [specialist, service] = await Promise.all([
+    getSpecialistById(specialistId),
+    getServiceById(serviceId),
+  ]);
 
-  // Busca dados do salão
+  // Busca dados do salão (depende do specialist, então não pode ser em paralelo)
   const salon = specialist ? await getSalonById(specialist.salonId) : null;
 
   console.log("📊 Specialist data:", {
@@ -2041,9 +2088,71 @@ export function generateId(): string {
  * Métricas do Dashboard - Dados financeiros e de negócios
  * OTIMIZADO: Todas as queries rodam em paralelo para melhor performance
  */
-export async function getDashboardMetrics(salonId: string) {
+/**
+ * Cache simples em memória para as métricas do Dashboard.
+ * Evita executar 6 queries pesadas toda vez que a página abre.
+ * TTL: 10 minutos por salão. Invalidado automaticamente ao expirar.
+ *
+ * Troca: dados podem ter até 10 min de atraso. Para forçar refresh,
+ * chame getDashboardMetrics(salonId, true).
+ */
+type DashboardMetricsResult = {
+  revenue: {
+    monthly: number;
+    weekly: number;
+    monthlyTransactions: number;
+    weeklyTransactions: number;
+  };
+  appointments: {
+    today: {
+      total: number;
+      completed: number;
+      confirmed: number;
+      pending: number;
+      cancelled: number;
+    };
+    occupationRate: number;
+  };
+  topServices: {
+    serviceId: string | null;
+    serviceName: string;
+    totalRevenue: string | null;
+    totalBookings: number;
+  }[];
+  topSpecialists: {
+    specialistId: string | null;
+    specialistName: string;
+    totalRevenue: string | null;
+    totalAppointments: number;
+  }[];
+  topClients: {
+    clientId: string | null;
+    clientName: string;
+    totalSpent: string | null;
+    totalVisits: number;
+    lastVisit: Date;
+  }[];
+};
+const dashboardMetricsCache = new Map<
+  string,
+  { data: DashboardMetricsResult; expiresAt: number }
+>();
+const DASHBOARD_CACHE_TTL_MS = 10 * 60 * 1000; // 10 minutos
+
+export async function getDashboardMetrics(
+  salonId: string,
+  forceRefresh = false
+) {
   const db = await getDb();
   if (!db) return null;
+
+  // Verifica cache antes de executar as 6 queries pesadas
+  if (!forceRefresh) {
+    const cached = dashboardMetricsCache.get(salonId);
+    if (cached && Date.now() < cached.expiresAt) {
+      return cached.data;
+    }
+  }
 
   const today = new Date();
   const startOfMonth = new Date(today.getFullYear(), today.getMonth(), 1);
@@ -2192,7 +2301,7 @@ export async function getDashboardMetrics(salonId: string) {
   const occupationRate = todayAppointments[0]?.completed || 0;
   const totalSlotsToday = 24; // Assumindo horário comercial de 8h às 20h (12 horas) com slots de 30min
 
-  return {
+  const result = {
     revenue: {
       monthly: Number(monthlyRevenue[0]?.total || 0),
       weekly: Number(weeklyRevenue[0]?.total || 0),
@@ -2213,6 +2322,14 @@ export async function getDashboardMetrics(salonId: string) {
     topSpecialists,
     topClients,
   };
+
+  // Salva resultado no cache por 10 minutos
+  dashboardMetricsCache.set(salonId, {
+    data: result,
+    expiresAt: Date.now() + DASHBOARD_CACHE_TTL_MS,
+  });
+
+  return result;
 }
 
 /**
@@ -2341,18 +2458,324 @@ export async function getAllDashboardData(
   salonId: string,
   chartDays: number = 30
 ) {
-  const [metrics, revenueChart, monthlyComparison] = await Promise.all([
-    getDashboardMetrics(salonId),
-    getRevenueChart(salonId, chartDays),
-    getMonthlyComparison(salonId),
-  ]);
+  const [metrics, revenueChart, monthlyComparison, specRatings] =
+    await Promise.all([
+      getDashboardMetrics(salonId),
+      getRevenueChart(salonId, chartDays),
+      getMonthlyComparison(salonId),
+      getAllSpecialistRatings(salonId),
+    ]);
 
   return {
     metrics,
     revenueChart,
     monthlyComparison,
+    specRatings,
   };
 }
 
 export { users };
 export { eq } from "drizzle-orm";
+
+// ============================================================
+// MÓDULO DE PRODUTOS (Sprint 3)
+// ============================================================
+
+/** Retorna todos os produtos de um salão ordenados por nome */
+export async function getProductsBySalonId(
+  salonId: string
+): Promise<Product[]> {
+  const db = await getDb();
+  if (!db) return [];
+  return db
+    .select()
+    .from(products)
+    .where(eq(products.salonId, salonId))
+    .orderBy(asc(products.name));
+}
+
+/** Retorna um produto pelo id (garante que pertence ao salão certo) */
+export async function getProductById(
+  id: string,
+  salonId: string
+): Promise<Product | null> {
+  const db = await getDb();
+  if (!db) return null;
+  const rows = await db
+    .select()
+    .from(products)
+    .where(and(eq(products.id, id), eq(products.salonId, salonId)))
+    .limit(1);
+  return rows[0] ?? null;
+}
+
+/** Cria um novo produto */
+export async function createProduct(
+  data: Omit<InsertProduct, "id">
+): Promise<Product> {
+  const db = await getDb();
+  if (!db) throw new Error("Banco de dados não disponível");
+  const rows = await db
+    .insert(products)
+    .values({ ...data, id: nanoid() })
+    .returning();
+  return rows[0];
+}
+
+/** Atualiza campos de um produto existente */
+export async function updateProduct(
+  id: string,
+  salonId: string,
+  data: Partial<InsertProduct>
+): Promise<Product | null> {
+  const db = await getDb();
+  if (!db) return null;
+  const rows = await db
+    .update(products)
+    .set({ ...data, updatedAt: new Date() })
+    .where(and(eq(products.id, id), eq(products.salonId, salonId)))
+    .returning();
+  return rows[0] ?? null;
+}
+
+/** Remove um produto */
+export async function deleteProduct(
+  id: string,
+  salonId: string
+): Promise<boolean> {
+  const db = await getDb();
+  if (!db) return false;
+  const rows = await db
+    .delete(products)
+    .where(and(eq(products.id, id), eq(products.salonId, salonId)))
+    .returning({ id: products.id });
+  return rows.length > 0;
+}
+
+/**
+ * Retorna produtos com estoque baixo (stock <= minStock)
+ * Usado para exibir alertas no Dashboard
+ */
+export async function getLowStockProducts(salonId: string): Promise<Product[]> {
+  const db = await getDb();
+  if (!db) return [];
+  return db
+    .select()
+    .from(products)
+    .where(
+      and(
+        eq(products.salonId, salonId),
+        sql`${products.stock} <= ${products.minStock}`
+      )
+    )
+    .orderBy(asc(products.stock));
+}
+
+// ============================================================================
+// APPOINTMENT PRODUCTS (produtos vendidos durante o atendimento)
+// ============================================================================
+
+/**
+ * Retorna os produtos registrados em um agendamento
+ */
+export async function getAppointmentProducts(
+  appointmentId: string
+): Promise<(AppointmentProduct & { product: Product })[]> {
+  const db = await getDb();
+  if (!db) return [];
+  const rows = await db
+    .select({
+      ap: appointmentProducts,
+      product: products,
+    })
+    .from(appointmentProducts)
+    .leftJoin(products, eq(appointmentProducts.productId, products.id))
+    .where(eq(appointmentProducts.appointmentId, appointmentId));
+  return rows
+    .filter(r => r.product !== null)
+    .map(r => ({ ...r.ap, product: r.product! }));
+}
+
+/**
+ * Registra os produtos vendidos em um atendimento e desconta o estoque.
+ * Chamado durante o checkout (conclusão) do agendamento.
+ *
+ * @param appointmentId - ID do agendamento
+ * @param salonId - ID do salão
+ * @param items - Lista de { productId, quantity, unitPrice }
+ */
+export async function saveAppointmentProducts(
+  appointmentId: string,
+  salonId: string,
+  items: { productId: string; quantity: number; unitPrice: number }[]
+): Promise<void> {
+  const db = await getDb();
+  if (!db || items.length === 0) return;
+
+  for (const item of items) {
+    // 1. Inserir linha de produto no atendimento
+    await db.insert(appointmentProducts).values({
+      id: nanoid(),
+      appointmentId,
+      productId: item.productId,
+      salonId,
+      quantity: item.quantity,
+      unitPrice: item.unitPrice.toString(),
+    });
+
+    // 2. Descontar do estoque (não deixa ficar negativo)
+    await db
+      .update(products)
+      .set({
+        stock: sql`GREATEST(0, ${products.stock} - ${item.quantity})`,
+        updatedAt: new Date(),
+      })
+      .where(eq(products.id, item.productId));
+  }
+}
+
+// ============================================================================
+// RATINGS FUNCTIONS
+// ============================================================================
+
+export type { Rating, InsertRating } from "../drizzle/schema";
+
+/**
+ * Cria um registro de avaliação pendente (token ainda não utilizado).
+ * Chamado ao concluir o atendimento.
+ */
+export async function createRating(data: InsertRating): Promise<Rating | null> {
+  const db = await getDb();
+  if (!db) return null;
+  const result = await db.insert(ratings).values(data).returning();
+  return result[0] ?? null;
+}
+
+/**
+ * Busca uma avaliação pelo token único.
+ * Usada na página pública /avaliar?token=xxx
+ */
+export async function getRatingByToken(token: string): Promise<Rating | null> {
+  const db = await getDb();
+  if (!db) return null;
+  const result = await db
+    .select()
+    .from(ratings)
+    .where(eq(ratings.token, token))
+    .limit(1);
+  return result[0] ?? null;
+}
+
+/**
+ * Submete a avaliação do cliente (stars + comment).
+ * Marca o token como usado e registra o timestamp.
+ */
+export async function submitRating(
+  token: string,
+  stars: number,
+  comment?: string
+): Promise<boolean> {
+  const db = await getDb();
+  if (!db) return false;
+  const result = await db
+    .update(ratings)
+    .set({
+      stars,
+      comment: comment ?? null,
+      used: true,
+      submittedAt: new Date(),
+    })
+    .where(eq(ratings.token, token))
+    .returning();
+  return result.length > 0;
+}
+
+/**
+ * Retorna todas as avaliações enviadas de um especialista.
+ * Usado na tela de especialistas do dashboard.
+ */
+export async function getRatingsBySpecialist(
+  specialistId: string
+): Promise<Rating[]> {
+  const db = await getDb();
+  if (!db) return [];
+  return await db
+    .select()
+    .from(ratings)
+    .where(eq(ratings.specialistId, specialistId));
+}
+
+/**
+ * Retorna TODAS as avaliações submetidas de um salão, com join de especialista.
+ * Usada na página /avaliacoes do admin.
+ */
+export async function getAllRatingsBySalon(salonId: string) {
+  const db = await getDb();
+  if (!db) return [];
+  return await db
+    .select({
+      id: ratings.id,
+      stars: ratings.stars,
+      comment: ratings.comment,
+      clientName: ratings.clientName,
+      submittedAt: ratings.submittedAt,
+      specialistId: ratings.specialistId,
+      specialistName: specialists.name,
+    })
+    .from(ratings)
+    .leftJoin(specialists, eq(ratings.specialistId, specialists.id))
+    .where(and(eq(ratings.salonId, salonId), eq(ratings.used, true)))
+    .orderBy(sql`${ratings.submittedAt} DESC NULLS LAST`);
+}
+
+/**
+ * Calcula a média de estrelas de um especialista.
+ * Retorna null se não houver nenhuma avaliação.
+ */
+export async function getAverageRating(
+  specialistId: string
+): Promise<{ average: number; count: number } | null> {
+  const db = await getDb();
+  if (!db) return null;
+  const result = await db
+    .select({
+      average: sql<number>`ROUND(AVG(${ratings.stars})::numeric, 1)`,
+      count: sql<number>`COUNT(*)`,
+    })
+    .from(ratings)
+    .where(eq(ratings.specialistId, specialistId));
+  const row = result[0];
+  if (!row || Number(row.count) === 0) return null;
+  return { average: Number(row.average), count: Number(row.count) };
+}
+
+/**
+ * Retorna a média de avaliações de todos os especialistas de um salão.
+ * Mapa: specialistId -> { average, count }
+ */
+export async function getAllSpecialistRatings(
+  salonId: string
+): Promise<Record<string, { average: number; count: number }>> {
+  const db = await getDb();
+  if (!db) return {};
+  const rows = await db
+    .select({
+      specialistId: ratings.specialistId,
+      average: sql<number>`ROUND(AVG(${ratings.stars})::numeric, 1)`,
+      count: sql<number>`COUNT(*)`,
+    })
+    .from(ratings)
+    .where(eq(ratings.salonId, salonId))
+    .groupBy(ratings.specialistId);
+
+  const map: Record<string, { average: number; count: number }> = {};
+  for (const row of rows) {
+    if (row.specialistId && Number(row.count) > 0) {
+      map[row.specialistId] = {
+        average: Number(row.average),
+        count: Number(row.count),
+      };
+    }
+  }
+  return map;
+}

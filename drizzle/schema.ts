@@ -78,6 +78,8 @@ export const salons = pgTable(
     phone: varchar("phone", { length: 20 }),
     email: varchar("email", { length: 320 }),
     logo: text("logo"),
+    // Chave PIX do salão (CPF, CNPJ, email, telefone ou aleatória)
+    pixKey: text("pixKey"),
     // Removed workingHours - now using only specialist schedules
     createdAt: timestamp("createdAt", { withTimezone: true }).defaultNow(),
     updatedAt: timestamp("updatedAt", { withTimezone: true }).defaultNow(),
@@ -181,9 +183,12 @@ export const clients = pgTable(
     email: varchar("email", { length: 320 }),
     phone: varchar("phone", { length: 20 }),
     notes: text("notes"),
-    createdAt: timestamp("createdAt", { withTimezone: true }).defaultNow(),
-    updatedAt: timestamp("updatedAt", { withTimezone: true }).defaultNow(),
-    deletedAt: timestamp("deletedAt", { withTimezone: true }),
+    // Foto do cliente (URL do Cloudinary)
+    photo: text("photo"),
+    // Pontos de fidelidade acumulados pelo cliente
+    loyaltyPoints: integer("loyaltyPoints").default(0).notNull(),
+    createdAt: timestamp("createdAt").defaultNow(),
+    updatedAt: timestamp("updatedAt").defaultNow(),
   },
   table => ({
     salonIdIdx: index("clients_salonId_idx").on(table.salonId),
@@ -302,8 +307,16 @@ export const appointments = pgTable(
     appointmentDateIdx: index("appointments_appointmentDate_idx").on(
       table.appointmentDate
     ),
-    statusIdx: index("appointments_status_idx").on(table.status),
-    deletedAtIdx: index("appointments_deletedAt_idx").on(table.deletedAt),
+    // Índices compostos: aceleram as queries mais comuns do sistema
+    // (listagem por salão em período e busca de horários por especialista+data)
+    salonDateIdx: index("appointments_salonId_date_idx").on(
+      table.salonId,
+      table.appointmentDate
+    ),
+    specialistDateIdx: index("appointments_specialistId_date_idx").on(
+      table.specialistId,
+      table.appointmentDate
+    ),
   })
 );
 
@@ -455,7 +468,12 @@ export const transactions = pgTable(
     typeIdx: index("transactions_type_idx").on(table.type),
     statusIdx: index("transactions_status_idx").on(table.status),
     dateIdx: index("transactions_date_idx").on(table.transactionDate),
-    deletedAtIdx: index("transactions_deletedAt_idx").on(table.deletedAt),
+    // Índice composto: acelera as 6 queries de agregação do dashboard
+    // (filtra por salonId + data ao mesmo tempo, sem varrer a tabela inteira)
+    salonDateIdx: index("transactions_salonId_date_idx").on(
+      table.salonId,
+      table.transactionDate
+    ),
   })
 );
 
@@ -569,3 +587,105 @@ export const auditLogsRelations = relations(auditLogs, ({ one }) => ({
 
 export type AuditLog = typeof auditLogs.$inferSelect;
 export type InsertAuditLog = typeof auditLogs.$inferInsert;
+
+/**
+ * Tabela de produtos do salão (estoque e venda)
+ */
+export const products = pgTable(
+  "products",
+  {
+    id: varchar("id", { length: 64 }).primaryKey(),
+    salonId: varchar("salonId", { length: 64 })
+      .notNull()
+      .references(() => salons.id, { onDelete: "cascade" }),
+    name: text("name").notNull(),
+    description: text("description"),
+    stock: integer("stock").default(0).notNull(),
+    // Quantidade mínima antes de acionar alerta de estoque baixo
+    minStock: integer("minStock").default(5).notNull(),
+    costPrice: decimal("costPrice", { precision: 10, scale: 2 }),
+    sellPrice: decimal("sellPrice", { precision: 10, scale: 2 }),
+    createdAt: timestamp("createdAt").defaultNow(),
+    updatedAt: timestamp("updatedAt").defaultNow(),
+  },
+  table => ({
+    salonIdIdx: index("products_salonId_idx").on(table.salonId),
+  })
+);
+
+export type Product = typeof products.$inferSelect;
+export type InsertProduct = typeof products.$inferInsert;
+
+/**
+ * Produtos vendidos em um atendimento (linha de item do checkout)
+ */
+export const appointmentProducts = pgTable(
+  "appointment_products",
+  {
+    id: varchar("id", { length: 64 }).primaryKey(),
+    appointmentId: varchar("appointmentId", { length: 64 })
+      .notNull()
+      .references(() => appointments.id, { onDelete: "cascade" }),
+    productId: varchar("productId", { length: 64 })
+      .notNull()
+      .references(() => products.id),
+    salonId: varchar("salonId", { length: 64 })
+      .notNull()
+      .references(() => salons.id, { onDelete: "cascade" }),
+    // Quantidade vendida
+    quantity: integer("quantity").default(1).notNull(),
+    // Preço unitário no momento da venda (snapshot)
+    unitPrice: decimal("unitPrice", { precision: 10, scale: 2 }).notNull(),
+    createdAt: timestamp("createdAt").defaultNow(),
+  },
+  table => ({
+    appointmentIdIdx: index("apt_products_appointmentId_idx").on(
+      table.appointmentId
+    ),
+    salonIdIdx: index("apt_products_salonId_idx").on(table.salonId),
+  })
+);
+
+export type AppointmentProduct = typeof appointmentProducts.$inferSelect;
+export type InsertAppointmentProduct = typeof appointmentProducts.$inferInsert;
+
+/**
+ * Avaliações pós-atendimento
+ * Um token único é gerado ao concluir o atendimento.
+ * O cliente acessa /avaliar?token=xxx e submete 1–5 estrelas + comentário.
+ */
+export const ratings = pgTable(
+  "ratings",
+  {
+    id: varchar("id", { length: 64 }).primaryKey(),
+    salonId: varchar("salonId", { length: 64 })
+      .notNull()
+      .references(() => salons.id, { onDelete: "cascade" }),
+    specialistId: varchar("specialistId", { length: 64 })
+      .notNull()
+      .references(() => specialists.id, { onDelete: "cascade" }),
+    appointmentId: varchar("appointmentId", { length: 64 })
+      .notNull()
+      .references(() => appointments.id, { onDelete: "cascade" }),
+    // Token único enviado ao cliente (UUID v4)
+    token: varchar("token", { length: 128 }).notNull().unique(),
+    // true após o cliente enviar a avaliação
+    used: boolean("used").notNull().default(false),
+    // Estrelas de 1 a 5 (null enquanto não avaliado)
+    stars: integer("stars"),
+    // Comentário opcional do cliente
+    comment: text("comment"),
+    // Nome do cliente no momento do atendimento (snapshot)
+    clientName: text("clientName"),
+    createdAt: timestamp("createdAt").defaultNow(),
+    submittedAt: timestamp("submittedAt"),
+  },
+  table => ({
+    salonIdIdx: index("ratings_salonId_idx").on(table.salonId),
+    specialistIdIdx: index("ratings_specialistId_idx").on(table.specialistId),
+    tokenIdx: index("ratings_token_idx").on(table.token),
+  })
+);
+
+export type Rating = typeof ratings.$inferSelect;
+export type InsertRating = typeof ratings.$inferInsert;

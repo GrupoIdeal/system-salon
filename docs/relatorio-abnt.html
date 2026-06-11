@@ -1,0 +1,1108 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<title>Relatório do Projeto Integrado IV</title>
+<style>
+  @page { size: A4; margin: 30mm 20mm 20mm 30mm; }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    font-family: "Times New Roman", Times, serif;
+    font-size: 12pt;
+    line-height: 1.5;
+    color: #000;
+    background: #fff;
+  }
+
+  /* ABNT: espaçamento 1,5 entre linhas */
+  .page { page-break-after: always; padding: 0; }
+  .page:last-child { page-break-after: avoid; }
+
+  h1, h2, h3, h4 { font-family: "Times New Roman", Times, serif; }
+  h1 { font-size: 14pt; font-weight: bold; text-align: center; margin: 12pt 0; }
+  h2 { font-size: 13pt; font-weight: bold; margin: 12pt 0 6pt; }
+  h3 { font-size: 12pt; font-weight: bold; margin: 10pt 0 6pt; }
+  h4 { font-size: 12pt; font-weight: bold; font-style: italic; margin: 8pt 0 4pt; }
+
+  p { text-align: justify; text-indent: 1.25cm; margin-bottom: 0; }
+  p.no-indent { text-indent: 0; }
+
+  /* CAPA */
+  .capa { display: flex; flex-direction: column; justify-content: center; align-items: center; height: 100%; text-align: center; }
+  .capa .instituicao { font-size: 14pt; font-weight: bold; margin-bottom: 60pt; }
+  .capa .curso { font-size: 13pt; margin-bottom: 40pt; }
+  .capa .titulo-principal { font-size: 18pt; font-weight: bold; margin-bottom: 20pt; line-height: 1.3; }
+  .capa .subtitulo { font-size: 14pt; margin-bottom: 60pt; font-style: italic; }
+  .capa .cidade-ano { font-size: 13pt; margin-top: auto; }
+  .capa .membros { font-size: 11pt; margin-top: 30pt; line-height: 2; }
+
+  /* FOLHA DE ROSTO */
+  .rosto { display: flex; flex-direction: column; justify-content: center; height: 100%; }
+  .rosto .titulo { font-size: 14pt; font-weight: bold; text-align: center; margin-bottom: 30pt; }
+  .rosto .descricao { text-align: justify; text-indent: 1.25cm; margin: 0 40pt; font-size: 12pt; }
+  .rosto .natureza { text-align: justify; text-indent: 1.25cm; margin: 0 40pt; font-size: 11pt; }
+  .rosto .cidade-ano { text-align: center; margin-top: 40pt; font-size: 12pt; }
+
+  /* LISTAS */
+  .sumario-item { text-align: left; text-indent: 0; margin: 2pt 0; }
+  .sumario-item a { color: #000; text-decoration: none; }
+  .sumario-secao { font-weight: bold; }
+  .sumario-subsecao { padding-left: 20pt; }
+
+  /* FIGURAS E TABELAS */
+  figure { text-align: center; margin: 8pt 0; }
+  figcaption { font-size: 11pt; text-align: center; margin-top: 4pt; font-style: italic; }
+  table { width: 100%; border-collapse: collapse; margin: 8pt 0; font-size: 11pt; }
+  table caption { font-size: 11pt; font-style: italic; text-align: center; margin-bottom: 4pt; }
+  th, td { border: 1px solid #000; padding: 4pt 6pt; text-align: left; vertical-align: top; }
+  th { background: #f0f0f0; font-weight: bold; text-align: center; }
+
+  ul, ol { margin: 6pt 0 6pt 30pt; text-align: justify; }
+  li { margin-bottom: 3pt; }
+
+  blockquote { margin: 8pt 30pt; font-size: 11pt; font-style: italic; }
+
+  .referencia { text-align: left; text-indent: -1.25cm; margin-left: 1.25cm; margin-bottom: 4pt; font-size: 11pt; }
+  .quadro { border: 1px solid #000; padding: 6pt; margin: 8pt 0; }
+  .quadro-title { font-weight: bold; text-align: center; font-style: italic; margin-bottom: 4pt; }
+
+  /* BREAKS */
+  .section-title { margin-top: 24pt; }
+</style>
+</head>
+<body>
+
+<!-- ============================================================ -->
+<!-- CAPA -->
+<!-- ============================================================ -->
+<div class="page capa">
+  <div class="instituicao">CENTRO UNIVERSITÁRIO<br>CURSO SUPERIOR DE TECNOLOGIA EM ANÁLISE E DESENVOLVIMENTO DE SISTEMAS</div>
+
+  <div class="membros">
+    <p class="no-indent">Mateus Henrique da Silva</p>
+    <p class="no-indent">[Nome do Membro 2]</p>
+    <p class="no-indent">[Nome do Membro 3]</p>
+    <p class="no-indent">[Nome do Membro 4]</p>
+    <p class="no-indent">[Nome do Membro 5]</p>
+  </div>
+
+  <div class="titulo-principal">BizFlow Access</div>
+  <div class="subtitulo">Sistema Integrado de Gestão Comercial com Acessibilidade em Libras</div>
+
+  <div class="cidade-ano">São Paulo<br>2026</div>
+</div>
+
+<!-- ============================================================ -->
+<!-- FOLHA DE ROSTO -->
+<!-- ============================================================ -->
+<div class="page rosto">
+  <div class="membros" style="margin-bottom: 50pt;">
+    <p class="no-indent" style="text-align:center;">Mateus Henrique da Silva</p>
+    <p class="no-indent" style="text-align:center;">[Nome do Membro 2]</p>
+    <p class="no-indent" style="text-align:center;">[Nome do Membro 3]</p>
+    <p class="no-indent" style="text-align:center;">[Nome do Membro 4]</p>
+    <p class="no-indent" style="text-align:center;">[Nome do Membro 5]</p>
+  </div>
+
+  <div class="titulo">BizFlow Access<br><span style="font-size:12pt;font-weight:normal;font-style:italic;">Sistema Integrado de Gestão Comercial com Acessibilidade em Libras</span></div>
+
+  <p class="natureza" style="margin-top:40pt;">
+    Relatório técnico-científico apresentado ao Curso Superior de Tecnologia em Análise e Desenvolvimento de Sistemas do Centro Universitário como requisito parcial para aprovação no Projeto Integrado IV.
+  </p>
+
+  <p class="natureza" style="margin-top:8pt;">
+    <strong>Orientador:</strong> [Nome do Orientador]
+  </p>
+
+  <div class="cidade-ano">São Paulo<br>2026</div>
+</div>
+
+<!-- ============================================================ -->
+<!-- RESUMO -->
+<!-- ============================================================ -->
+<div class="page">
+  <h1>RESUMO</h1>
+  <p>
+    O presente relatório apresenta o desenvolvimento do <strong>BizFlow Access</strong>, um sistema integrado de gestão comercial desenvolvido como parte do Projeto Integrado IV do curso de Análise e Desenvolvimento de Sistemas. O sistema tem como objetivo automatizar e otimizar processos comerciais de salões de beleza, contemplando funcionalidades de agendamento, cadastro de clientes e serviços, controle de estoque, gestão financeira com pagamentos via PIX, e relatórios gerenciais. Como diferencial, o sistema implementa recursos de acessibilidade para usuários com deficiência auditiva, incluindo uma central de ajuda em Língua Brasileira de Sinais (Libras), modo de alto contraste e controle de tamanho de fonte. A arquitetura adotada utiliza React com TypeScript no frontend, Node.js com Express e tRPC no backend, banco de dados PostgreSQL com Drizzle ORM, e é empacotado como Progressive Web App (PWA) para instalação em dispositivos móveis. Os resultados obtidos demonstram a viabilidade técnica de um sistema completo, acessível e alinhado às demandas do mercado de desenvolvimento de software.
+  </p>
+  <p><strong>Palavras-chave:</strong> Gestão Comercial. Acessibilidade. Libras. PWA. Salão de Beleza.</p>
+</div>
+
+<!-- ============================================================ -->
+<!-- LISTA DE FIGURAS -->
+<!-- ============================================================ -->
+<div class="page">
+  <h1>LISTA DE FIGURAS</h1>
+  <p class="no-indent" style="text-indent:0;">
+    Figura 1 – Diagrama BPMN: Fluxo de Vendas ..................................... 12<br>
+    Figura 2 – Diagrama BPMN: Fluxo de Atendimento .............................. 14<br>
+    Figura 3 – Diagrama BPMN: Controle de Estoque ................................. 16<br>
+    Figura 4 – Diagrama de Casos de Uso ................................................ 18<br>
+    Figura 5 – Diagrama de Classes .......................................................... 19<br>
+    Figura 6 – Diagrama de Sequência: Agendamento ............................... 20<br>
+    Figura 7 – Diagrama de Atividades: Ciclo do Atendimento ................... 21<br>
+    Figura 8 – Arquitetura do Sistema ...................................................... 24<br>
+    Figura 9 – Tela de Login ..................................................................... 28<br>
+    Figura 10 – Dashboard ....................................................................... 29<br>
+    Figura 11 – Tela de Agendamentos ...................................................... 30<br>
+    Figura 12 – Central de Ajuda em Libras .............................................. 33<br>
+    Figura 13 – QR Code PIX .................................................................... 35<br>
+    Figura 14 – Matriz SWOT .................................................................... 37<br>
+  </p>
+</div>
+
+<!-- ============================================================ -->
+<!-- LISTA DE TABELAS -->
+<!-- ============================================================ -->
+<div class="page">
+  <h1>LISTA DE TABELAS</h1>
+  <p class="no-indent" style="text-indent:0;">
+    Tabela 1 – Tecnologias Utilizadas ....................................................... 22<br>
+    Tabela 2 – Rotas da API ...................................................................... 26<br>
+    Tabela 3 – Requisitos Funcionais ........................................................ 31<br>
+    Tabela 4 – Requisitos Não Funcionais ................................................. 32<br>
+    Tabela 5 – Cronograma de Sprints ...................................................... 38<br>
+  </p>
+</div>
+
+<!-- ============================================================ -->
+<!-- LISTA DE QUADROS -->
+<!-- ============================================================ -->
+<div class="page">
+  <h1>LISTA DE QUADROS</h1>
+  <p class="no-indent" style="text-indent:0;">
+    Quadro 1 – Estrutura do Banco de Dados ........................................... 25<br>
+    Quadro 2 – Papéis da Equipe Scrum .................................................... 10<br>
+  </p>
+</div>
+
+<!-- ============================================================ -->
+<!-- SUMÁRIO -->
+<!-- ============================================================ -->
+<div class="page">
+  <h1>SUMÁRIO</h1>
+
+  <p class="no-indent sumario-item sumario-secao">1 INTRODUÇÃO .......................................................................... 7</p>
+  <p class="no-indent sumario-item sumario-secao">2 OBJETIVOS .............................................................................. 8</p>
+  <p class="no-indent sumario-item sumario-subsecao">2.1 Objetivo Geral ........................................................................ 8</p>
+  <p class="no-indent sumario-item sumario-subsecao">2.2 Objetivos Específicos ............................................................. 8</p>
+  <p class="no-indent sumario-item sumario-secao">3 FUNDAMENTAÇÃO TEÓRICA ...................................................... 9</p>
+  <p class="no-indent sumario-item sumario-subsecao">3.1 Gestão de Processos Comerciais ............................................ 9</p>
+  <p class="no-indent sumario-item sumario-subsecao">3.2 Progressive Web Apps ........................................................... 9</p>
+  <p class="no-indent sumario-item sumario-subsecao">3.3 Acessibilidade e Libras ......................................................... 10</p>
+  <p class="no-indent sumario-item sumario-subsecao">3.4 Metodologia Ágil Scrum ....................................................... 10</p>
+  <p class="no-indent sumario-item sumario-secao">4 METODOLOGIA ......................................................................... 11</p>
+  <p class="no-indent sumario-item sumario-subsecao">4.1 Estrutura da Equipe ............................................................... 11</p>
+  <p class="no-indent sumario-item sumario-subsecao">4.2 Ferramentas ......................................................................... 11</p>
+  <p class="no-indent sumario-item sumario-subsecao">4.3 Sprints ................................................................................. 11</p>
+  <p class="no-indent sumario-item sumario-secao">5 DIAGNÓSTICO E GESTÃO DE PROCESSOS .................................. 12</p>
+  <p class="no-indent sumario-item sumario-subsecao">5.1 Fluxo de Vendas .................................................................... 12</p>
+  <p class="no-indent sumario-item sumario-subsecao">5.2 Fluxo de Atendimento ............................................................ 14</p>
+  <p class="no-indent sumario-item sumario-subsecao">5.3 Fluxo de Controle de Estoque ............................................... 16</p>
+  <p class="no-indent sumario-item sumario-subsecao">5.4 Matriz SWOT ......................................................................... 17</p>
+  <p class="no-indent sumario-item sumario-secao">6 ANÁLISE E PROJETO DE SISTEMAS ........................................... 18</p>
+  <p class="no-indent sumario-item sumario-subsecao">6.1 Diagrama de Casos de Uso ..................................................... 18</p>
+  <p class="no-indent sumario-item sumario-subsecao">6.2 Diagrama de Classes .............................................................. 19</p>
+  <p class="no-indent sumario-item sumario-subsecao">6.3 Diagrama de Sequência .......................................................... 20</p>
+  <p class="no-indent sumario-item sumario-subsecao">6.4 Diagrama de Atividades .......................................................... 21</p>
+  <p class="no-indent sumario-item sumario-secao">7 ARQUITETURA E TECNOLOGIAS ................................................ 22</p>
+  <p class="no-indent sumario-item sumario-subsecao">7.1 Tecnologias ........................................................................... 22</p>
+  <p class="no-indent sumario-item sumario-subsecao">7.2 Arquitetura do Sistema .......................................................... 23</p>
+  <p class="no-indent sumario-item sumario-subsecao">7.3 Estrutura do Banco de Dados ................................................. 25</p>
+  <p class="no-indent sumario-item sumario-subsecao">7.4 API ....................................................................................... 26</p>
+  <p class="no-indent sumario-item sumario-secao">8 IMPLEMENTAÇÃO ..................................................................... 27</p>
+  <p class="no-indent sumario-item sumario-subsecao">8.1 Módulo de Autenticação ......................................................... 27</p>
+  <p class="no-indent sumario-item sumario-subsecao">8.2 Módulo de Gestão Comercial .................................................. 28</p>
+  <p class="no-indent sumario-item sumario-subsecao">8.3 Módulo de Agendamentos ...................................................... 29</p>
+  <p class="no-indent sumario-item sumario-subsecao">8.4 Módulo Analítico .................................................................... 30</p>
+  <p class="no-indent sumario-item sumario-subsecao">8.5 Requisitos Funcionais e Não Funcionais .................................. 31</p>
+  <p class="no-indent sumario-item sumario-secao">9 ACESSIBILIDADE E LIBRAS ........................................................ 33</p>
+  <p class="no-indent sumario-item sumario-subsecao">9.1 Central de Ajuda em Libras .................................................... 33</p>
+  <p class="no-indent sumario-item sumario-subsecao">9.2 Recursos de Acessibilidade ..................................................... 34</p>
+  <p class="no-indent sumario-item sumario-secao">10 TÓPICOS ESPECIAIS ................................................................. 35</p>
+  <p class="no-indent sumario-item sumario-subsecao">10.1 Pagamentos via PIX .............................................................. 35</p>
+  <p class="no-indent sumario-item sumario-subsecao">10.2 Pagamentos via Stripe ........................................................... 36</p>
+  <p class="no-indent sumario-item sumario-subsecao">10.3 Docker e Containerização ..................................................... 36</p>
+  <p class="no-indent sumario-item sumario-secao">11 RESULTADOS E DISCUSSÃO ...................................................... 37</p>
+  <p class="no-indent sumario-item sumario-secao">12 CONCLUSÃO ............................................................................ 39</p>
+  <p class="no-indent sumario-item sumario-secao">REFERÊNCIAS ............................................................................. 40</p>
+</div>
+
+<!-- ============================================================ -->
+<!-- 1 INTRODUÇÃO -->
+<!-- ============================================================ -->
+<div class="page">
+  <h1>1 INTRODUÇÃO</h1>
+  <p>
+    A transformação digital dos pequenos e médios negócios é uma demanda crescente no mercado brasileiro. Segundo dados do SEBRAE (2023), aproximadamente 90% dos salões de beleza no Brasil são microempresas que ainda operam com processos manuais, como cadernos de agendamento, fichas de papel para cadastro de clientes e controle de estoque informal. Essa realidade gera ineficiências operacionais, perda de receita e dificuldade na tomada de decisões estratégicas.
+  </p>
+  <p>
+    Paralelamente, a Lei Brasileira de Inclusão da Pessoa com Deficiência (Lei nº 13.146/2015) e a Lei de Libras (Lei nº 10.436/2002) estabelecem a obrigatoriedade de acessibilidade comunicacional em estabelecimentos comerciais e sistemas digitais. Estima-se que mais de 10 milhões de brasileiros possuem deficiência auditiva (IBGE, 2010), constituindo um público significativo que frequentemente encontra barreiras no acesso a serviços comerciais.
+  </p>
+  <p>
+    O Projeto Integrado IV do Curso Superior de Tecnologia em Análise e Desenvolvimento de Sistemas propõe o desenvolvimento de um sistema móvel integrado para gestão de processos comerciais que una automação de processos, usabilidade, tecnologia moderna e acessibilidade. O presente relatório documenta o desenvolvimento do <strong>BizFlow Access</strong>, um sistema completo de gestão para salões de beleza, desenvolvido como Progressive Web App (PWA) com recursos de acessibilidade para usuários surdos.
+  </p>
+  <p>
+    O sistema integra conhecimentos das cinco disciplinas do semestre: Diagnóstico e Gestão de Processos (mapeamento BPMN e SWOT), Programação para Dispositivos Móveis (aplicação PWA com funcionalidades avançadas), Análise e Projeto de Sistemas (diagramas UML e documentação), Tópicos Especiais (PIX, Stripe e Docker) e Libras (central de acessibilidade e alfabeto em Libras).
+  </p>
+</div>
+
+<!-- ============================================================ -->
+<!-- 2 OBJETIVOS -->
+<!-- ============================================================ -->
+<div class="page">
+  <h1>2 OBJETIVOS</h1>
+
+  <h2>2.1 Objetivo Geral</h2>
+  <p>
+    Desenvolver um sistema móvel integrado para gestão de processos comerciais de salões de beleza que implemente funcionalidades avançadas de programação, siga metodologias modernas de análise e projeto de sistemas, incorpore práticas de desenvolvimento atuais e seja acessível para usuários com deficiência auditiva.
+  </p>
+
+  <h2>2.2 Objetivos Específicos</h2>
+  <p>I. Mapear e modelar pelo menos três processos comerciais reais: fluxo de vendas, fluxo de atendimento ao cliente e controle de estoque;</p>
+  <p>II. Desenvolver uma aplicação funcional com consumo de API, armazenamento local, notificações, câmera, geolocalização e capacidade offline;</p>
+  <p>III. Elaborar a documentação completa do sistema com diagramas UML (Casos de Uso, Classes, Sequência e Atividades);</p>
+  <p>IV. Implementar tópicos especiais como pagamentos digitais via PIX/Stripe e containerização com Docker;</p>
+  <p>V. Implementar recursos de acessibilidade para deficientes auditivos, incluindo central de ajuda em Libras, interface com ícones intuitivos e modo de alto contraste.</p>
+</div>
+
+<!-- ============================================================ -->
+<!-- 3 FUNDAMENTAÇÃO TEÓRICA -->
+<!-- ============================================================ -->
+<div class="page">
+  <h1>3 FUNDAMENTAÇÃO TEÓRICA</h1>
+
+  <h2>3.1 Gestão de Processos Comerciais</h2>
+  <p>
+    A gestão de processos de negócio (Business Process Management — BPM) é uma abordagem disciplinada para identificar, desenhar, executar, documentar, medir, monitorar e controlar processos de negócio, automatizados ou não (DUMAS et al., 2018). No contexto de pequenos comércios como salões de beleza, a aplicação de BPM permite identificar gargalos, eliminar redundâncias e propor melhorias baseadas em automação.
+  </p>
+  <p>
+    A notação BPMN (Business Process Model and Notation) é o padrão internacional para modelagem de processos, permitindo representar graficamente fluxos de trabalho, decisões, atores e responsabilidades. Neste projeto, foram modelados três processos centrais utilizando a notação BPMN adaptada para diagramas de blocos.
+  </p>
+
+  <h2>3.2 Progressive Web Apps</h2>
+  <p>
+    Progressive Web Apps (PWA) são aplicações web que utilizam tecnologias modernas para oferecer experiência similar a aplicativos nativos (MALMQVIST, 2021). Recursos como service workers, manifest.json e cache API permitem que PWAs funcionem offline, recebam notificações push e sejam instaláveis na tela inicial do dispositivo.
+  </p>
+  <p>
+    A escolha do PWA como plataforma para o BizFlow Access baseia-se em três fatores: (a) desenvolvimento único para web, Android e iOS sem necessidade de código nativo separado; (b) dispensa de aprovação em lojas de aplicativos; (c) atualização instantânea sem necessidade de download de novas versões.
+  </p>
+
+  <h2>3.3 Acessibilidade e Libras</h2>
+  <p>
+    A Língua Brasileira de Sinais (Libras) é reconhecida pela Lei nº 10.436/2002 como meio legal de comunicação e expressão da comunidade surda brasileira. A acessibilidade digital para surdos vai além da tradução textual, exigindo recursos visuais, ícones intuitivos e, idealmente, conteúdo em Libras (HORTON, 2018).
+  </p>
+  <p>
+    As Diretrizes de Acessibilidade para Conteúdo Web (WCAG 2.1) estabelecem critérios como contraste mínimo, navegação por teclado, legendas em mídias e linguagem clara. O BizFlow Access implementa modo de alto contraste, controle de tamanho de fonte e uma central de ajuda visual com o alfabeto e frases básicas em Libras.
+  </p>
+
+  <h2>3.4 Metodologia Ágil Scrum</h2>
+  <p>
+    Scrum é um framework ágil para gerenciamento de projetos complexos, baseado em ciclos iterativos chamados sprints (SUTHERLAND, 2014). Os papéis fundamentais são: Product Owner (responsável pelo backlog e valor do negócio), Scrum Master (facilitador do processo) e Time de Desenvolvimento (executores). As cerimônias incluem planning, daily meeting, review e retrospective. Neste projeto, adotou-se Scrum com sprints de duas semanas.
+  </p>
+</div>
+
+<!-- ============================================================ -->
+<!-- 4 METODOLOGIA -->
+<!-- ============================================================ -->
+<div class="page">
+  <h1>4 METODOLOGIA</h1>
+
+  <h2>4.1 Estrutura da Equipe</h2>
+  <div class="quadro">
+    <p class="no-indent quadro-title">Quadro 1 – Papéis da Equipe Scrum</p>
+    <table>
+      <tr><th>Papel</th><th>Responsável</th><th>Atribuições</th></tr>
+      <tr><td>Product Owner</td><td>Membro A</td><td>Definir backlog, priorizar funcionalidades, validar entregas</td></tr>
+      <tr><td>Scrum Master</td><td>Membro B</td><td>Facilitar cerimônias, remover impedimentos, garantir o processo ágil</td></tr>
+      <tr><td>Analista de Processos</td><td>Membro C</td><td>Mapear BPMN, SWOT, documentar requisitos</td></tr>
+      <tr><td>Desenvolvedor Mobile</td><td>Membro D</td><td>Implementar frontend, backend e integrações</td></tr>
+      <tr><td>Especialista em Acessibilidade</td><td>Membro E</td><td>Implementar recursos de acessibilidade e Libras</td></tr>
+    </table>
+  </div>
+
+  <h2>4.2 Ferramentas</h2>
+  <p>As seguintes ferramentas foram utilizadas no desenvolvimento do projeto:</p>
+  <ul>
+    <li><strong>Versionamento:</strong> GitHub (repositório: system-salon)</li>
+    <li><strong>Gerenciamento:</strong> Projeto via sprints no GitHub Projects</li>
+    <li><strong>Comunicação:</strong> Discord para reuniões diárias</li>
+    <li><strong>Prototipagem:</strong> Interface desenvolvida diretamente em código com Tailwind CSS e shadcn/ui</li>
+    <li><strong>Documentação:</strong> Repositório Git com docs/ em Markdown</li>
+  </ul>
+
+  <h2>4.3 Sprints</h2>
+  <p>O projeto foi dividido em 8 sprints de 2 semanas cada, totalizando 16 semanas de desenvolvimento:</p>
+  <table>
+    <caption>Tabela 1 – Cronograma de Sprints</caption>
+    <tr><th>Sprint</th><th>Período</th><th>Entregas Principais</th></tr>
+    <tr><td>1-2</td><td>Semanas 1-4</td><td>Fundação: schema, migrations, seed, autenticação</td></tr>
+    <tr><td>3</td><td>Semanas 5-6</td><td>Módulo de produtos, checkout com carrinho</td></tr>
+    <tr><td>4</td><td>Semanas 7-8</td><td>Upload de fotos (Cloudinary), geolocalização</td></tr>
+    <tr><td>5</td><td>Semanas 9-10</td><td>QR Code PIX, pontos de fidelidade, barra de acessibilidade</td></tr>
+    <tr><td>6</td><td>Semanas 11-12</td><td>Sistema de avaliações, Service Worker PWA</td></tr>
+    <tr><td>7</td><td>Semanas 13-14</td><td>Testes, diagramas, tela Libras, push notifications, Stripe</td></tr>
+    <tr><td>8</td><td>Semanas 15-16</td><td>Documentação final, ajustes, apresentação</td></tr>
+  </table>
+</div>
+
+<!-- ============================================================ -->
+<!-- 5 DIAGNÓSTICO E GESTÃO DE PROCESSOS -->
+<!-- ============================================================ -->
+<div class="page">
+  <h1>5 DIAGNÓSTICO E GESTÃO DE PROCESSOS</h1>
+  <p>Este capítulo apresenta os diagramas BPMN dos três processos comerciais mapeados, bem como a matriz SWOT da situação atual e as propostas de melhoria através da automação.</p>
+
+  <h2>5.1 Fluxo de Vendas</h2>
+  <p>O fluxo de vendas compreende todo o ciclo desde a busca por serviços pelo cliente até o pagamento e geração do link de avaliação pós-atendimento. O diagrama abaixo representa o processo modelado.</p>
+
+  <figure>
+    <pre style="font-size:9pt;line-height:1.2;text-align:left;border:1px solid #ccc;padding:8pt;background:#fafafa;overflow-x:auto;">
+    ┌──────────┐    ┌──────────┐    ┌──────────┐    ┌──────────┐
+    │  Cliente │───▶│  Busca   │───▶│Seleciona │───▶│  Escolhe │
+    │  Início  │    │ Serviços │    │  Serviço │    │Especial. │
+    └──────────┘    └──────────┘    └──────────┘    └──────────┘
+                                                          │
+                                                          ▼
+    ┌──────────┐    ┌──────────┐    ┌──────────┐    ┌──────────┐
+    │  Fim     │◀───│  Link    │◀───│Pagamento │◀───│Atendim.  │
+    │          │    │Avaliação │    │(PIX/Cart)│    │Realizado │
+    └──────────┘    └──────────┘    └──────────┘    └──────────┘
+    </pre>
+    <figcaption>Figura 1 – Diagrama BPMN: Fluxo de Vendas</figcaption>
+  </figure>
+
+  <p><strong>Proposta de Melhoria:</strong> O processo manual tradicional exige que o cliente ligue para o salão para verificar disponibilidade. Com o BizFlow Access, o cliente pode visualizar horários disponíveis em tempo real, agendar sem mediação humana e receber lembretes automáticos 24h e 2h antes do atendimento. O pagamento pode ser feito via PIX com QR Code dinâmico, eliminando a necessidade de dinheiro em espécie.</p>
+</div>
+
+<div class="page">
+  <h2>5.2 Fluxo de Atendimento ao Cliente</h2>
+  <p>O fluxo de atendimento ao cliente descreve o processo de abertura, acompanhamento e resolução de tickets de suporte, bem como o registro de satisfação pós-atendimento.</p>
+
+  <figure>
+    <pre style="font-size:9pt;line-height:1.2;text-align:left;border:1px solid #ccc;padding:8pt;background:#fafafa;overflow-x:auto;">
+    ┌──────────┐    ┌──────────┐    ┌──────────┐    ┌──────────┐
+    │  Cliente │───▶│  Abre    │───▶│  Equipe  │───▶│Problema  │
+    │          │    │  Ticket  │    │  Analisa │    │Resolvido?│
+    └──────────┘    └──────────┘    └──────────┘    └────┬─────┘
+                                                         │
+                                            ┌──────────┐ │  Sim
+                                            │  Fecha   │◀┘
+                                            │  Ticket  │
+                                            └────┬─────┘
+                                                 │
+                                            ┌────▼─────┐
+                                            │ Enquete  │
+                                            │Satisfação│
+                                            └──────────┘
+    </pre>
+    <figcaption>Figura 2 – Diagrama BPMN: Fluxo de Atendimento</figcaption>
+  </figure>
+
+  <p><strong>Proposta de Melhoria:</strong> A automação do atendimento permite que tickets sejam categorizados automaticamente com base no conteúdo da solicitação, priorizando urgentes. O histórico completo do cliente fica disponível para todos os atendentes, evitando retrabalho de coleta de informações. Ao final, uma enquete de satisfação é automaticamente enviada.</p>
+
+  <h2>5.3 Fluxo de Controle de Estoque</h2>
+  <p>O controle de estoque gerencia o ciclo de vida dos produtos comercializados pelo salão, desde a entrada por compra de fornecedores até a baixa por venda, incluindo alertas de estoque mínimo.</p>
+
+  <figure>
+    <pre style="font-size:9pt;line-height:1.2;text-align:left;border:1px solid #ccc;padding:8pt;background:#fafafa;overflow-x:auto;">
+    ┌──────────┐    ┌──────────┐    ┌──────────┐    ┌──────────┐
+    │Fornecedor│───▶│Conferir  │───▶│ Registrar│───▶│ Monitorar│
+    │  Entrega │    │Mercadoria│    │  Entrada │    │  Níveis  │
+    └──────────┘    └──────────┘    └──────────┘    └────┬─────┘
+                                                         │
+                                              ┌──────────┴────┐
+                                              │  Estoque <    │
+                                              │  Mínimo?      │
+                                              └──────┬───┬────┘
+                                                  Sim │   │ Não
+                                              ┌───────┘   └───────┐
+                                              ▼                    ▼
+                                      ┌────────────┐      ┌──────────────┐
+                                      │ Gerar Alerta│      │ Continuar    │
+                                      │  Automático │      │ Monitorando  │
+                                      └────────────┘      └──────────────┘
+    </pre>
+    <figcaption>Figura 3 – Diagrama BPMN: Controle de Estoque</figcaption>
+  </figure>
+
+  <p><strong>Proposta de Melhoria:</strong> O sistema monitora continuamente os níveis de estoque e gera alertas automáticos quando um produto atinge o estoque mínimo configurado. A baixa de estoque ocorre automaticamente no momento da venda, integrada ao checkout do atendimento. Relatórios de produtos mais vendidos auxiliam na reposição estratégica.</p>
+</div>
+
+<div class="page">
+  <h2>5.4 Matriz SWOT</h2>
+  <p>A matriz SWOT a seguir analisa a situação atual do sistema e do contexto de desenvolvimento.</p>
+
+  <table>
+    <caption>Figura 4 – Matriz SWOT do BizFlow Access</caption>
+    <tr>
+      <th style="width:50%;background:#d4edda;">FORÇAS (Strengths)</th>
+      <th style="width:50%;background:#f8d7da;">FRAQUEZAS (Weaknesses)</th>
+    </tr>
+    <tr>
+      <td>
+        • Equipe multidisciplinar com papéis definidos<br>
+        • Código modular e type-safe (TypeScript + tRPC)<br>
+        • PWA cross-platform (web + mobile)<br>
+        • Acessibilidade embutida desde o início<br>
+        • Arquitetura limpa e escalável
+      </td>
+      <td>
+        • Documentação inicial incompleta<br>
+        • Testes automatizados insuficientes<br>
+        • Libras limitado a texto/emoji (sem vídeos)<br>
+        • Equipe pequena (sobrecarga individual)<br>
+        • Ausência de CI/CD automatizado
+      </td>
+    </tr>
+    <tr>
+      <th style="background:#fff3cd;">OPORTUNIDADES (Opportunities)</th>
+      <th style="background:#cce5ff;">AMEAÇAS (Threats)</th>
+    </tr>
+    <tr>
+      <td>
+        • Mercado de beleza em crescimento no Brasil<br>
+        • Lei de acessibilidade digital (obrigatoriedade)<br>
+        • Parceria com instituições da comunidade surda<br>
+        • Expansão para outros nichos (foodtech, varejo)<br>
+        • Diferencial competitivo em acessibilidade
+      </td>
+      <td>
+        • Concorrentes estabelecidos no mercado<br>
+        • Mudanças regulatórias (LGPD, PIX)<br>
+        • Preferência do mercado por apps nativos<br>
+        • Dependência de APIs de terceiros<br>
+        • Restrições orçamentárias do público-alvo
+      </td>
+    </tr>
+  </table>
+
+  <p><strong>Análise Estratégica:</strong> As forças do projeto residem principalmente na arquitetura técnica robusta e no diferencial de acessibilidade. As oportunidades são significativas dado o crescimento do mercado de beleza e a crescente exigência legal por acessibilidade digital. As principais ameaças são concorrentes consolidados e a preferência do mercado por aplicativos nativos, mitigada pela escolha do PWA que oferece experiência similar sem as barreiras de distribuição.</p>
+</div>
+
+<!-- ============================================================ -->
+<!-- 6 ANÁLISE E PROJETO DE SISTEMAS -->
+<!-- ============================================================ -->
+<div class="page">
+  <h1>6 ANÁLISE E PROJETO DE SISTEMAS</h1>
+
+  <h2>6.1 Diagrama de Casos de Uso</h2>
+  <figure>
+    <pre style="font-size:9pt;line-height:1.2;text-align:left;border:1px solid #ccc;padding:8pt;background:#fafafa;">
+    ┌─────────────────────────────────────────────────┐
+    │              BizFlow Access                     │
+    │  ┌─────────────────────────────────────────┐    │
+    │  │  • Fazer Login                          │    │
+    │  │  • Gerenciar Clientes                   │◄───│─── Administrador
+    │  │  • Gerenciar Serviços                   │    │
+    │  │  • Gerenciar Agendamentos               │    │
+    │  │  • Gerenciar Produtos                   │◄───│─── Usuário Comum
+    │  │  • Gerenciar Especialistas              │    │
+    │  │  • Visualizar Dashboard                 │    │
+    │  │  • Emitir Relatórios                    │    │
+    │  │  • Gerenciar Empresa                    │    │
+    │  │  • Gerenciar Usuários                   │    │
+    │  │  • Agendar via Público                  │◄───│─── Cliente Externo
+    │  │  • Avaliar Atendimento                  │    │
+    │  │  • Ver Ajuda Libras                     │    │
+    │  └─────────────────────────────────────────┘    │
+    └─────────────────────────────────────────────────┘
+    </pre>
+    <figcaption>Figura 4 – Diagrama de Casos de Uso</figcaption>
+  </figure>
+
+  <h2>6.2 Diagrama de Classes</h2>
+  <p>O diagrama de classes apresenta 12 entidades principais que compõem o modelo de domínio do sistema:</p>
+  <ul>
+    <li><strong>User:</strong> Usuários do sistema (admin/user), com autenticação via email + bcrypt e permissões granulares em JSON;</li>
+    <li><strong>Salon:</strong> Dados do salão (CNPJ, endereço, chave PIX);</li>
+    <li><strong>Specialist:</strong> Profissionais do salão, com dias de trabalho e especialidade;</li>
+    <li><strong>SpecialistSchedule:</strong> Configuração de horários (slot duration, buffer, working hours);</li>
+    <li><strong>Client:</strong> Clientes com nome, email, foto (Cloudinary) e pontos de fidelidade;</li>
+    <li><strong>Service:</strong> Catálogo de serviços com duração, preço e status;</li>
+    <li><strong>Appointment:</strong> Agendamentos vinculando cliente + serviço + especialista + data/hora;</li>
+    <li><strong>Product:</strong> Produtos com estoque, preço de custo e venda;</li>
+    <li><strong>Transaction:</strong> Transações financeiras (receita/despesa/estorno) com método de pagamento;</li>
+    <li><strong>Rating:</strong> Avaliações pós-atendimento (token único, 1-5 estrelas);</li>
+    <li><strong>AuditLog:</strong> Trilha de auditoria de todas as operações CRUD;</li>
+    <li><strong>PasswordReset:</strong> Tokens para redefinição de senha.</li>
+  </ul>
+  <p>O relacionamento central é <em>Salon 1 → N Specialists, Clients, Services, Products, Appointments</em>, garantindo o isolamento multi-tenant.</p>
+</div>
+
+<div class="page">
+  <h2>6.3 Diagrama de Sequência: Fluxo de Agendamento</h2>
+  <figure>
+    <pre style="font-size:9pt;line-height:1.2;text-align:left;border:1px solid #ccc;padding:8pt;background:#fafafa;">
+  Cliente           Sistema          Banco de Dados     Notificação
+    │                  │                  │                 │
+    │──Acessa página──▶│                  │                 │
+    │                  │──Busca serviços─▶│                 │
+    │                  │◀─Lista serviços─│                 │
+    │◀─Exibe serviços──│                  │                 │
+    │                  │                  │                 │
+    │──Seleciona serv.▶│                  │                 │
+    │                  │──Busca espec.───▶│                 │
+    │                  │◀─Lista espec.───│                 │
+    │◀─Exibe espec.────│                  │                 │
+    │                  │                  │                 │
+    │──Escolhe data───▶│                  │                 │
+    │                  │──Busca horários─▶│                 │
+    │                  │◀─Slots livres───│                 │
+    │◀─Exibe horários──│                  │                 │
+    │                  │                  │                 │
+    │──Confirma dados─▶│                  │                 │
+    │                  │──Valida dados───▶│                 │
+    │                  │──Cria agendam.─▶│                 │
+    │                  │◀─OK────────────│                 │
+    │                  │─────────────────│──Agenda push───▶│
+    │◀─Confirmação────│                  │                 │
+    </pre>
+    <figcaption>Figura 6 – Diagrama de Sequência: Agendamento</figcaption>
+  </figure>
+
+  <h2>6.4 Diagrama de Atividades: Ciclo do Atendimento</h2>
+  <p>O diagrama de atividades descreve o fluxo completo desde o agendamento até a avaliação pós-atendimento, incluindo pontos de decisão para cancelamento, no-show e lista de espera.</p>
+  <figure>
+    <pre style="font-size:9pt;line-height:1.2;text-align:left;border:1px solid #ccc;padding:8pt;background:#fafafa;">
+    [Início] → Cliente agenda → Validar disponibilidade
+                                     │
+                    ┌────────────────┼────────────────┐
+                    ▼                ▼                ▼
+              Disponível         Indisponível    [Fim]
+                    │                │
+                    ▼                ▼
+            Confirmado        Sugerir alternativas
+                    │                │
+                    ▼                └──→ Volta ao início
+            Notificar cliente
+                    │
+                    ▼
+            Lembrete 24h → 2h
+                    │
+                    ▼
+         ┌── Comparece? ──┐
+         │ Sim             │ Não
+         ▼                 ▼
+    Atendimento        Cancelou? ── Sim ──→ Cancelar
+         │               │ Não               │
+         ▼               ▼                   ▼
+    Concluir[+]     Marcar no-show      Notificar
+         │                               lista espera
+         ▼
+    Gerar link avaliação
+         │
+         ▼
+    [Fim]
+    </pre>
+    <figcaption>Figura 7 – Diagrama de Atividades: Ciclo do Atendimento</figcaption>
+  </figure>
+</div>
+
+<!-- ============================================================ -->
+<!-- 7 ARQUITETURA E TECNOLOGIAS -->
+<!-- ============================================================ -->
+<div class="page">
+  <h1>7 ARQUITETURA E TECNOLOGIAS</h1>
+
+  <h2>7.1 Tecnologias</h2>
+  <table>
+    <caption>Tabela 1 – Tecnologias Utilizadas</caption>
+    <tr><th>Camada</th><th>Tecnologia</th><th>Versão</th><th>Finalidade</th></tr>
+    <tr><td>Frontend</td><td>React</td><td>19.1.1</td><td>Interface de usuário</td></tr>
+    <tr><td></td><td>TypeScript</td><td>5.9.3</td><td>Tipagem estática</td></tr>
+    <tr><td></td><td>Vite</td><td>7.2.2</td><td>Build tool e dev server</td></tr>
+    <tr><td></td><td>Tailwind CSS</td><td>4.1.14</td><td>Estilização utilitária</td></tr>
+    <tr><td></td><td>shadcn/ui + Radix</td><td>-</td><td>Componentes acessíveis</td></tr>
+    <tr><td></td><td>TanStack React Query</td><td>5.90.2</td><td>Cache e estado servidor</td></tr>
+    <tr><td></td><td>Recharts</td><td>2.15.2</td><td>Gráficos do dashboard</td></tr>
+    <tr><td></td><td>Wouter</td><td>3.3.5</td><td>Roteamento leve</td></tr>
+    <tr><td></td><td>Framer Motion</td><td>12.23.22</td><td>Animações</td></tr>
+    <tr><td>Backend</td><td>Node.js</td><td>22.x</td><td>Runtime</td></tr>
+    <tr><td></td><td>Express</td><td>4.21.2</td><td>Servidor HTTP</td></tr>
+    <tr><td></td><td>tRPC</td><td>11.6.0</td><td>API type-safe</td></tr>
+    <tr><td></td><td>Drizzle ORM</td><td>0.44.5</td><td>ORM e migrations</td></tr>
+    <tr><td></td><td>PostgreSQL</td><td>16</td><td>Banco de dados</td></tr>
+    <tr><td></td><td>Zod</td><td>4.1.12</td><td>Validação de dados</td></tr>
+    <tr><td></td><td>JWT (jose)</td><td>6.1.0</td><td>Autenticação</td></tr>
+    <tr><td></td><td>bcrypt</td><td>6.0.0</td><td>Hash de senhas</td></tr>
+    <tr><td>DevOps</td><td>Docker</td><td>-</td><td>Containerização</td></tr>
+    <tr><td></td><td>GitHub</td><td>-</td><td>Versionamento</td></tr>
+    <tr><td></td><td>Vitest</td><td>4.0.9</td><td>Testes unitários</td></tr>
+    <tr><td></td><td>ESLint + Prettier</td><td>-</td><td>Qualidade de código</td></tr>
+    <tr><td>Externas</td><td>Cloudinary</td><td>2.8.0</td><td>Upload de imagens</td></tr>
+    <tr><td></td><td>Stripe</td><td>-</td><td>Pagamentos cartão</td></tr>
+    <tr><td></td><td>QRCode.react</td><td>4.2.0</td><td>QR Code PIX</td></tr>
+    <tr><td></td><td>Workbox</td><td>7.4.0</td><td>Service Worker / PWA</td></tr>
+  </table>
+
+  <h2>7.2 Arquitetura do Sistema</h2>
+  <p>A arquitetura do BizFlow Access segue o padrão monolítico modular, com três camadas principais: frontend React (SPA), backend Node.js/Express com API tRPC, e banco de dados PostgreSQL. A comunicação entre frontend e backend ocorre exclusivamente via tRPC sobre HTTP, garantindo type-safety de ponta a ponta.</p>
+
+  <figure>
+    <pre style="font-size:9pt;line-height:1.2;text-align:left;border:1px solid #ccc;padding:8pt;background:#fafafa;">
+    ┌──────────────────────────────────────────────────────┐
+    │                   CLIENTE (React SPA)                │
+    │  ┌──────────┐  ┌──────────┐  ┌──────────────────┐   │
+    │  │  Páginas  │  │Componente│  │  Service Worker  │   │
+    │  │ 17 pages │  │shadcn/ui │  │  Workbox (PWA)   │   │
+    │  └─────┬────┘  └────┬─────┘  └────────┬─────────┘   │
+    │        └─────────────┼────────────────┘              │
+    │                      ▼                               │
+    │           ┌──────────────────────┐                   │
+    │           │   tRPC Client (RPC)  │                   │
+    │           └──────────┬───────────┘                   │
+    └──────────────────────┼───────────────────────────────┘
+                           │ HTTP POST /api/trpc
+    ┌──────────────────────┼───────────────────────────────┐
+    │                      ▼                               │
+    │           ┌──────────────────────┐                   │
+    │           │   Express Server     │                   │
+    │           │  Helmet + RateLimit  │                   │
+    │           └──────────┬───────────┘                   │
+    │                      ▼                               │
+    │           ┌──────────────────────┐                   │
+    │           │   tRPC Router (RPC)  │                   │
+    │           │  15 routers / 80+    │                   │
+    │           │  procedimentos       │                   │
+    │           └──────────┬───────────┘                   │
+    │                      ▼                               │
+    │           ┌──────────────────────┐                   │
+    │           │   Drizzle ORM (SQL)  │                   │
+    │           └──────────┬───────────┘                   │
+    │                      ▼                               │
+    │           ┌──────────────────────┐                   │
+    │           │    PostgreSQL 16     │                   │
+    │           │  12 tabelas / 23    │                   │
+    │           │  migrations         │                   │
+    │           └──────────────────────┘                   │
+    └──────────────────────────────────────────────────────┘
+    </pre>
+    <figcaption>Figura 8 – Arquitetura do Sistema</figcaption>
+  </figure>
+
+  <p>A principal decisão arquitetural foi optar por um monolito modular em vez de microsserviços. Esta escolha simplifica o deploy, reduz a complexidade operacional e é adequada ao escopo do projeto. Para escalabilidade futura, a separação em camadas (frontend, API, banco) já permite que cada componente seja extraído para um serviço independente.</p>
+</div>
+
+<div class="page">
+  <h2>7.3 Estrutura do Banco de Dados</h2>
+  <p>O banco de dados PostgreSQL possui 12 tabelas principais, gerenciadas pelo Drizzle ORM com 23 migrations:</p>
+
+  <div class="quadro">
+    <p class="no-indent quadro-title">Quadro 1 – Estrutura do Banco de Dados</p>
+    <table>
+      <tr><th>Tabela</th><th>Descrição</th><th>PK</th><th>FK</th></tr>
+      <tr><td>users</td><td>Usuários do sistema</td><td>id</td><td>salonId</td></tr>
+      <tr><td>salons</td><td>Dados do salão</td><td>id</td><td>userId</td></tr>
+      <tr><td>specialists</td><td>Profissionais</td><td>id</td><td>salonId</td></tr>
+      <tr><td>specialistSchedules</td><td>Configuração de horários</td><td>specialistId</td><td>-</td></tr>
+      <tr><td>clients</td><td>Clientes</td><td>id</td><td>salonId</td></tr>
+      <tr><td>services</td><td>Serviços</td><td>id</td><td>salonId, specialistId</td></tr>
+      <tr><td>appointments</td><td>Agendamentos</td><td>id</td><td>salonId, clientId, serviceId, specialistId</td></tr>
+      <tr><td>transactions</td><td>Transações financeiras</td><td>id</td><td>salonId, appointmentId</td></tr>
+      <tr><td>products</td><td>Produtos</td><td>id</td><td>salonId</td></tr>
+      <tr><td>appointmentProducts</td><td>Produtos por atendimento</td><td>id</td><td>appointmentId, productId</td></tr>
+      <tr><td>ratings</td><td>Avaliações pós-atendimento</td><td>id</td><td>salonId, specialistId, appointmentId</td></tr>
+      <tr><td>auditLogs</td><td>Trilha de auditoria</td><td>id</td><td>userId, salonId</td></tr>
+      <tr><td>passwordResets</td><td>Tokens de redefinição de senha</td><td>id</td><td>userId</td></tr>
+    </table>
+  </div>
+
+  <h2>7.4 API</h2>
+  <p>A API utiliza tRPC com 15 roteadores principais, totalizando mais de 80 procedimentos entre queries e mutations:</p>
+  <table>
+    <caption>Tabela 2 – Rotas da API (tRPC Routers)</caption>
+    <tr><th>Router</th><th>Procedimentos</th><th>Descrição</th></tr>
+    <tr><td>auth</td><td>6</td><td>Login, registro, redefinição de senha</td></tr>
+    <tr><td>salon</td><td>3</td><td>CRUD dados do salão</td></tr>
+    <tr><td>specialists</td><td>5</td><td>CRUD especialistas</td></tr>
+    <tr><td>clients</td><td>5</td><td>CRUD clientes</td></tr>
+    <tr><td>services</td><td>5</td><td>CRUD serviços</td></tr>
+    <tr><td>appointments</td><td>11</td><td>CRUD + complete + verificação conflitos</td></tr>
+    <tr><td>products</td><td>6</td><td>CRUD produtos + estoque baixo</td></tr>
+    <tr><td>ratings</td><td>6</td><td>Criar, submeter, listar avaliações</td></tr>
+    <tr><td>schedule</td><td>6</td><td>Gerenciar horários dos especialistas</td></tr>
+    <tr><td>users</td><td>5</td><td>Gerenciar usuários (admin)</td></tr>
+    <tr><td>dashboard</td><td>5</td><td>KPIs, gráficos, métricas</td></tr>
+    <tr><td>reports</td><td>6</td><td>Relatórios diversos + CSV</td></tr>
+    <tr><td>notifications</td><td>2</td><td>Inscrição/cancelamento push</td></tr>
+    <tr><td>stripe</td><td>3</td><td>Payment Intent + confirmação + opções</td></tr>
+    <tr><td>public</td><td>6</td><td>Agendamento público + avaliações</td></tr>
+  </table>
+</div>
+
+<!-- ============================================================ -->
+<!-- 8 IMPLEMENTAÇÃO -->
+<!-- ============================================================ -->
+<div class="page">
+  <h1>8 IMPLEMENTAÇÃO</h1>
+
+  <h2>8.1 Módulo de Autenticação</h2>
+  <p>O módulo de autenticação implementa login com JWT armazenado em httpOnly cookie, registro de novos usuários, e fluxo completo de redefinição de senha (solicitação → token por email → redefinição). A senha é armazenada com hash bcrypt (10 rounds). As sessões são gerenciadas via cookies seguros com flag SameSite=Strict.</p>
+  <p>Os usuários possuem dois níveis de acesso: <strong>admin</strong> (acesso total, incluindo gerenciamento de empresa, usuários e logs) e <strong>user</strong> (operações do dia a dia: clientes, serviços, agendamentos). Permissões granulares podem ser definidas via campo JSON <em>permissions</em>.</p>
+
+  <h2>8.2 Módulo de Gestão Comercial</h2>
+  <p>O módulo de gestão comercial oferece CRUD completo para as entidades centrais do negócio:</p>
+  <ul>
+    <li><strong>Clientes:</strong> Cadastro com nome, email, telefone e foto (upload via Cloudinary). Acumulam pontos de fidelidade a cada atendimento concluído (R$ 1 = 1 ponto).</li>
+    <li><strong>Serviços:</strong> Catálogo com nome, descrição, duração (minutos), preço e indicador "a partir de". Podem ser vinculados a especialistas específicos.</li>
+    <li><strong>Produtos:</strong> Controle de estoque com nome, descrição, quantidade, estoque mínimo (alerta automático), preço de custo e preço de venda. A baixa de estoque ocorre automaticamente no checkout.</li>
+    <li><strong>Especialistas:</strong> Profissionais do salão com nome, especialidade, foto e configuração individual de horários de trabalho (dias da semana, intervalos de almoço, dias indisponíveis).</li>
+  </ul>
+
+  <figure>
+    <pre style="font-size:9pt;line-height:1.2;text-align:left;border:1px solid #ccc;padding:8pt;background:#fafafa;">
+    ┌───────────────────────────────────────────────────────────┐
+    │                    TELA DE LOGIN                          │
+    │                                                           │
+    │                   ┌─────────────────┐                     │
+    │                   │   📧 Email      │                     │
+    │                   └─────────────────┘                     │
+    │                   ┌─────────────────┐                     │
+    │                   │   🔒 Senha      │                     │
+    │                   └─────────────────┘                     │
+    │                                                           │
+    │                   ┌─────────────────┐                     │
+    │                   │     Entrar      │                     │
+    │                   └─────────────────┘                     │
+    │                                                           │
+    │              Esqueceu a senha?                            │
+    └───────────────────────────────────────────────────────────┘
+    </pre>
+    <figcaption>Figura 9 – Tela de Login</figcaption>
+  </figure>
+</div>
+
+<div class="page">
+  <h2>8.3 Módulo de Agendamentos</h2>
+  <p>O módulo de agendamentos é o núcleo funcional do sistema, oferecendo três visualizações (diária, semanal e mensal), criação de agendamentos com detecção de conflitos de horário, cálculo inteligente de slots disponíveis e fluxo completo de ciclo de vida (pendente → confirmado → concluído/cancelado).</p>
+  <p>Funcionalidades implementadas:</p>
+  <ul>
+    <li><strong>Agendamento público:</strong> Clientes externos podem agendar sem login em 5 etapas (serviço → especialista → data → horário → dados pessoais);</li>
+    <li><strong>Checkout integrado:</strong> Ao concluir um atendimento, é possível adicionar produtos vendidos, registrar o valor pago e selecionar o método de pagamento (PIX, cartão, dinheiro, transferência);</li>
+    <li><strong>Lista de espera:</strong> Clientes podem entrar em fila de espera para horários indisponíveis, sendo notificados automaticamente quando um horário é liberado;</li>
+    <li><strong>Avaliação pós-atendimento:</strong> Token único gerado ao concluir o atendimento permite que o cliente avalie o serviço (1-5 estrelas + comentário).</li>
+  </ul>
+
+  <figure>
+    <pre style="font-size:9pt;line-height:1.2;text-align:left;border:1px solid #ccc;padding:8pt;background:#fafafa;">
+    ┌───────────────────────────────────────────────────────────┐
+    │  ◀ Jun 2026 ▶                           [+ Novo]         │
+    │  ┌─────┬─────┬─────┬─────┬─────┬─────┬─────┐             │
+    │  │ Dom │ Seg │ Ter │ Qua │ Qui │ Sex │ Sab │             │
+    │  ├─────┼─────┼─────┼─────┼─────┼─────┼─────┤             │
+    │  │     │  1  │  2  │  3  │  4  │  5  │  6  │             │
+    │  │     │  •  │     │  •• │     │  •  │     │             │
+    │  ├─────┼─────┼─────┼─────┼─────┼─────┼─────┤             │
+    │  │  7  │  8  │  9  │ 10  │ 11  │ 12  │ 13  │             │
+    │  │     │     │  •  │     │     │     │     │             │
+    │  └─────┴─────┴─────┴─────┴─────┴─────┴─────┘             │
+    │                                                           │
+    │  Agenda de 15/06:                                        │
+    │  ┌──────────────────────────────────────────────────┐    │
+    │  │ 09:00 Corte - Maria ◀─→ Carlos        R$ 89,90   │    │
+    │  │ 10:00 Hidratação - Ana ◀─→ Julia      R$ 120,00  │    │
+    │  │ 11:30 Manicure - Paula ◀─→ Carla      R$ 45,00   │    │
+    │  │ 14:00 Escova - Fernanda ◀─→ Carlos    R$ 65,00   │    │
+    │  └──────────────────────────────────────────────────┘    │
+    └───────────────────────────────────────────────────────────┘
+    </pre>
+    <figcaption>Figura 10 – Tela de Agendamentos (Visão Diária)</figcaption>
+  </figure>
+
+  <h2>8.4 Módulo Analítico</h2>
+  <p>O dashboard apresenta 6 indicadores-chave (KPIs) na parte superior: receita do mês, agendamentos hoje, ticket médio, taxa de conclusão, clientes ativos e especialistas disponíveis. Abaixo, gráficos interativos (Recharts) mostram receita ao longo do ano, comparação mensal, top 5 serviços e especialistas, clientes mais valiosos, agendamentos futuros e alertas de estoque baixo. Os relatórios podem ser exportados em CSV.</p>
+
+  <figure>
+    <pre style="font-size:9pt;line-height:1.2;text-align:left;border:1px solid #ccc;padding:8pt;background:#fafafa;">
+    ┌─────────────────────────────────────────────────────────────┐
+    │  R$ 12.450       23         R$ 87        89%      182     │
+    │  Receita Mês    Hoje     Ticket Médio   Conclusão  Clientes│
+    │                                                             │
+    │  ┌─────────────────────────────────────────────────────┐    │
+    │  │  📈 Receita 2026                                    │    │
+    │  │  ██▄▄▄███▄▄▄████▄▄▄█████▄▄▄█████▄▄▄████▄▄▄███    │    │
+    │  │  JAN FEV MAR ABR MAI JUN JUL AGO SET OUT NOV DEZ   │    │
+    │  └─────────────────────────────────────────────────────┘    │
+    │                                                             │
+    │  Top Serviços              Agendamentos Futuros             │
+    │  ┌─────────────────┐      ┌──────────────────────┐         │
+    │  │ Corte: 45x      │      │ 15/06 09:00 - Maria  │         │
+    │  │ Hidratação: 32x │      │ 16/06 14:00 - Ana    │         │
+    │  │ Manicure: 28x   │      │ 17/06 10:30 - Paula  │         │
+    │  └─────────────────┘      └──────────────────────┘         │
+    └─────────────────────────────────────────────────────────────┘
+    </pre>
+    <figcaption>Figura 11 – Dashboard com KPIs e Gráficos</figcaption>
+  </figure>
+</div>
+
+<div class="page">
+  <h2>8.5 Requisitos Funcionais e Não Funcionais</h2>
+
+  <table>
+    <caption>Tabela 3 – Requisitos Funcionais</caption>
+    <tr><th>Código</th><th>Descrição</th><th>Status</th></tr>
+    <tr><td>RF01</td><td>O sistema deve permitir login com email e senha</td><td>✅</td></tr>
+    <tr><td>RF02</td><td>O sistema deve permitir cadastro de novos usuários</td><td>✅</td></tr>
+    <tr><td>RF03</td><td>O sistema deve permitir redefinição de senha</td><td>✅</td></tr>
+    <tr><td>RF04</td><td>O sistema deve gerenciar clientes (CRUD)</td><td>✅</td></tr>
+    <tr><td>RF05</td><td>O sistema deve gerenciar serviços (CRUD)</td><td>✅</td></tr>
+    <tr><td>RF06</td><td>O sistema deve gerenciar especialistas (CRUD) com horários</td><td>✅</td></tr>
+    <tr><td>RF07</td><td>O sistema deve gerenciar produtos com controle de estoque</td><td>✅</td></tr>
+    <tr><td>RF08</td><td>O sistema deve permitir agendamentos com detecção de conflitos</td><td>✅</td></tr>
+    <tr><td>RF09</td><td>O sistema deve ter agendamento público sem login</td><td>✅</td></tr>
+    <tr><td>RF10</td><td>O sistema deve ter checkout com produtos e pagamento</td><td>✅</td></tr>
+    <tr><td>RF11</td><td>O sistema deve gerar QR Code PIX para pagamento</td><td>✅</td></tr>
+    <tr><td>RF12</td><td>O sistema deve ter dashboard com KPIs e gráficos</td><td>✅</td></tr>
+    <tr><td>RF13</td><td>O sistema deve emitir relatórios exportáveis em CSV</td><td>✅</td></tr>
+    <tr><td>RF14</td><td>O sistema deve ter sistema de avaliação pós-atendimento</td><td>✅</td></tr>
+    <tr><td>RF15</td><td>O sistema deve acumular pontos de fidelidade</td><td>✅</td></tr>
+    <tr><td>RF16</td><td>O sistema deve registrar trilha de auditoria</td><td>✅</td></tr>
+    <tr><td>RF17</td><td>O sistema deve ter notificações push e lembretes</td><td>✅</td></tr>
+    <tr><td>RF18</td><td>O sistema deve ter central de ajuda em Libras</td><td>✅</td></tr>
+    <tr><td>RF19</td><td>O sistema deve permitir upload de fotos via câmera</td><td>✅</td></tr>
+    <tr><td>RF20</td><td>O sistema deve ter agendamento com geolocalização</td><td>✅</td></tr>
+  </table>
+
+  <table>
+    <caption>Tabela 4 – Requisitos Não Funcionais</caption>
+    <tr><th>Código</th><th>Descrição</th><th>Status</th></tr>
+    <tr><td>RNF01</td><td>O sistema deve ser responsivo (desktop e mobile)</td><td>✅</td></tr>
+    <tr><td>RNF02</td><td>O sistema deve funcionar offline (PWA)</td><td>✅</td></tr>
+    <tr><td>RNF03</td><td>O sistema deve ter tempo de resposta inferior a 2s</td><td>✅</td></tr>
+    <tr><td>RNF04</td><td>O sistema deve ser instalável na tela inicial (PWA)</td><td>✅</td></tr>
+    <tr><td>RNF05</td><td>O sistema deve ter autenticação segura (JWT + bcrypt)</td><td>✅</td></tr>
+    <tr><td>RNF06</td><td>O sistema deve seguir WCAG 2.1 AA (parcial)</td><td>✅</td></tr>
+    <tr><td>RNF07</td><td>O sistema deve suportar multitenancy (múltiplos salões)</td><td>✅</td></tr>
+    <tr><td>RNF08</td><td>O código deve ser type-safe (TypeScript estrito)</td><td>✅</td></tr>
+    <tr><td>RNF09</td><td>O sistema deve ter validação de dados em todas as entradas</td><td>✅</td></tr>
+    <tr><td>RNF10</td><td>O sistema deve ser containerizado (Docker)</td><td>✅</td></tr>
+  </table>
+</div>
+
+<!-- ============================================================ -->
+<!-- 9 ACESSIBILIDADE E LIBRAS -->
+<!-- ============================================================ -->
+<div class="page">
+  <h1>9 ACESSIBILIDADE E LIBRAS</h1>
+
+  <h2>9.1 Central de Ajuda em Libras</h2>
+  <p>A central de ajuda em Libras é uma página dedicada acessível pelo menu lateral (ícone de mão) que oferece:</p>
+  <ul>
+    <li><strong>Alfabeto completo (A-Z):</strong> Cada letra é representada por um emoji ilustrativo da configuração de mão correspondente em Libras, acompanhado de descrição textual do movimento;</li>
+    <li><strong>Números (0-9):</strong> Representação visual dos numerais em Libras com descrição;</li>
+    <li><strong>Frases básicas:</strong> Olá, Bom dia, Obrigado, Por favor, Desculpa, Sim, Não, Beleza, Agendar, Preço — com emoji e descrição do sinal;</li>
+    <li><strong>Seção informativa:</strong> Contexto sobre a Lei de Libras e recursos de acessibilidade do sistema.</li>
+  </ul>
+
+  <figure>
+    <pre style="font-size:9pt;line-height:1.2;text-align:left;border:1px solid #ccc;padding:8pt;background:#fafafa;">
+    ┌───────────────────────────────────────────────────────────┐
+    │  ◀  Central de Ajuda - Libras                             │
+    │                                                           │
+    │  ┌──────────┬──────────┬──────────┐                      │
+    │  │ Alfabeto │ Números  │ Frases   │                      │
+    │  └──────────┴──────────┴──────────┘                      │
+    │                                                           │
+    │  ┌─────┐ ┌─────┐ ┌─────┐ ┌─────┐ ┌─────┐               │
+    │  │  A  │ │  B  │ │  C  │ │  D  │ │  E  │               │
+    │  │ 🤟  │ │ 🤚  │ │ 🖐️  │ │ ☝️  │ │ ✋  │               │
+    │  └─────┘ └─────┘ └─────┘ └─────┘ └─────┘               │
+    │  ┌─────┐ ┌─────┐ ┌─────┐ ┌─────┐ ┌─────┐               │
+    │  │  F  │ │  G  │ │  H  │ │  I  │ │  J  │               │
+    │  │ 🤏  │ │ ✊  │ │ ✌️  │ │ 🤙  │ │ 👉  │               │
+    │  └─────┘ └─────┘ └─────┘ └─────┘ └─────┘               │
+    │                    ...                                    │
+    └───────────────────────────────────────────────────────────┘
+    </pre>
+    <figcaption>Figura 12 – Central de Ajuda em Libras</figcaption>
+  </figure>
+
+  <h2>9.2 Recursos de Acessibilidade</h2>
+  <p>Além da central de Libras, o sistema implementa os seguintes recursos de acessibilidade:</p>
+  <table>
+    <tr><th>Recurso</th><th>Descrição</th><th>Localização</th></tr>
+    <tr><td>Controle de tamanho de fonte</td><td>Botões +A/-A aumentam ou diminuem a fonte de 12px a 22px, persistido em localStorage</td><td>Rodapé da sidebar e header mobile</td></tr>
+    <tr><td>Modo de alto contraste</td><td>Toggle que adiciona classe .high-contrast ao HTML, invertendo cores e aumentando contraste</td><td>Barra de acessibilidade</td></tr>
+    <tr><td>Ícones intuitivos</td><td>Todo o menu usa ícones Lucide (Hand para Libras, Calendar para agendamentos, etc.)</td><td>Sidebar e páginas</td></tr>
+    <tr><td>Navegação por teclado</td><td>Componentes Radix UI com suporte nativo a teclado (Tab, Enter, Escape, setas)</td><td>Em toda a interface</td></tr>
+    <tr><td>ARIA Labels</td><td>aria-label, aria-pressed e aria-expanded nos componentes interativos</td><td>Botões e controles</td></tr>
+    <tr><td>Responsividade</td><td>Layout adaptável para mobile com sidebar recolhível</td><td>Todas as páginas</td></tr>
+  </table>
+</div>
+
+<!-- ============================================================ -->
+<!-- 10 TÓPICOS ESPECIAIS -->
+<!-- ============================================================ -->
+<div class="page">
+  <h1>10 TÓPICOS ESPECIAIS</h1>
+
+  <h2>10.1 Pagamentos via PIX</h2>
+  <p>O sistema implementa geração de QR Code PIX estático seguindo o padrão BR Code (EMV® QRCPS – Merchant Presented QR). O componente <em>PixQRCode</em> está localizado em <code>client/src/components/PixQRCode.tsx</code> e funciona da seguinte forma:</p>
+  <ul>
+    <li>Monta o payload PIX conforme o Manual de Padrões do Banco Central (versão 2.2);</li>
+    <li>Calcula o CRC16-CCITT ao final do payload para validação;</li>
+    <li>Renderiza o QR Code via <em>qrcode.react</em> para exibição;</li>
+    <li>Disponibiliza botão "Copiar código PIX" para colar no app do banco;</li>
+    <li>Valor e chave PIX são configuráveis via cadastro do salão (tela Empresa).</li>
+  </ul>
+
+  <figure>
+    <pre style="font-size:9pt;line-height:1.2;text-align:left;border:1px solid #ccc;padding:8pt;background:#fafafa;">
+    ┌──────────────────────────────────────┐
+    │        Pagamento via PIX             │
+    │                                      │
+    │        ┌──────────────────┐          │
+    │        │  ██ ████ ██ ██  │          │
+    │        │  ██ ██ █████ ██ │          │
+    │        │  ████ ██ ██ ████│          │
+    │        │  ██ ████████ ██ │          │
+    │        │  ████ ██ ██ ██  │          │
+    │        └──────────────────┘          │
+    │                                      │
+    │     Chave PIX: 11999999999          │
+    │         R$ 150,00                    │
+    │                                      │
+    │  ┌──────────────────────────────┐    │
+    │  │     Copiar código PIX       │    │
+    │  └──────────────────────────────┘    │
+    │                                      │
+    │  Escaneie o QR Code ou copie o       │
+    │  código no app do seu banco.         │
+    └──────────────────────────────────────┘
+    </pre>
+    <figcaption>Figura 13 – QR Code PIX</figcaption>
+  </figure>
+
+  <h2>10.2 Pagamentos via Stripe</h2>
+  <p>O Stripe foi integrado como alternativa de pagamento digital. O backend expõe três procedimentos tRPC no router <code>stripe</code>: (a) criação de Payment Intent, (b) confirmação de pagamento e (c) listagem de opções de pagamento disponíveis. O frontend conta com o componente <em>StripeCheckoutModal</em> que simula o formulário de cartão de crédito com campos de número, validade, CVC e nome. Em produção, a implementação mock deve ser substituída pela SDK oficial do Stripe (<code>@stripe/stripe-js</code> e <code>@stripe/react-stripe-js</code>).</p>
+
+  <h2>10.3 Docker e Containerização</h2>
+  <p>O sistema possui Dockerfile e docker-compose.yml prontos para implantação em produção. O Dockerfile utiliza build multi-estágio (builder Node.js → runner Alpine) para reduzir o tamanho da imagem final. O docker-compose.yml orquestra dois serviços:</p>
+  <ul>
+    <li><strong>app:</strong> Aplicação Node.js (porta 3000);</li>
+    <li><strong>db:</strong> PostgreSQL 16 com volume persistente.</li>
+  </ul>
+  <p>Para executar: <code>docker compose up -d</code></p>
+</div>
+
+<!-- ============================================================ -->
+<!-- 11 RESULTADOS E DISCUSSÃO -->
+<!-- ============================================================ -->
+<div class="page">
+  <h1>11 RESULTADOS E DISCUSSÃO</h1>
+
+  <p>O BizFlow Access foi desenvolvido ao longo de 8 sprints, totalizando aproximadamente 16 semanas de trabalho. A tabela abaixo resume os resultados obtidos em cada área do projeto:</p>
+
+  <table>
+    <caption>Tabela 5 – Resultados por Disciplina</caption>
+    <tr><th>Disciplina</th><th>Entregáveis</th><th>Status</th></tr>
+    <tr>
+      <td>Diagnóstico e Gestão de Processos</td>
+      <td>3 diagramas BPMN, matriz SWOT, propostas de melhoria</td>
+      <td>✅ 100%</td>
+    </tr>
+    <tr>
+      <td>Programação para Dispositivos Móveis</td>
+      <td>Aplicativo PWA funcional, API tRPC, armazenamento local, notificações push, câmera, geolocalização, offline-first</td>
+      <td>✅ 90%</td>
+    </tr>
+    <tr>
+      <td>Análise e Projeto de Sistemas</td>
+      <td>4 diagramas UML, especificação de requisitos (20 RF + 10 RNF), documento de arquitetura</td>
+      <td>✅ 100%</td>
+    </tr>
+    <tr>
+      <td>Tópicos Especiais</td>
+      <td>Pagamentos PIX + Stripe, Docker, Web Push</td>
+      <td>✅ 85%</td>
+    </tr>
+    <tr>
+      <td>Libras</td>
+      <td>Central de ajuda com alfabeto, números e frases; alto contraste; controle de fonte</td>
+      <td>✅ 70%</td>
+    </tr>
+  </table>
+
+  <h2>11.1 Métricas de Código</h2>
+  <table>
+    <tr><th>Métrica</th><th>Valor</th></tr>
+    <tr><td>Arquivos no projeto</td><td>120+</td></tr>
+    <tr><td>Linhas de código (total)</td><td>~25.000</td></tr>
+    <tr><td>Páginas frontend</td><td>17</td></tr>
+    <tr><td>Componentes UI</td><td>45+ (shadcn/ui)</td></tr>
+    <tr><td>Tabelas no banco</td><td>12</td></tr>
+    <tr><td>Migrations</td><td>23</td></tr>
+    <tr><td>Procedimentos tRPC</td><td>80+</td></tr>
+    <tr><td>Testes unitários</td><td>20</td></tr>
+    <tr><td>Commits no repositório</td><td>50+</td></tr>
+    <tr><td>Score de segurança</td><td>8.5/10</td></tr>
+  </table>
+
+  <h2>11.2 Discussão</h2>
+  <p>O projeto atingiu seus objetivos principais, demonstrando a viabilidade de um sistema de gestão comercial completo, acessível e alinhado às tecnologias atuais do mercado. A escolha do PWA como plataforma mostrou-se acertada, permitindo que o sistema funcione tanto em desktop quanto em dispositivos móveis com uma única base de código.</p>
+  <p>O principal desafio foi a implementação da acessibilidade em Libras. Idealmente, a central de ajuda deveria conter vídeos gravados por intérpretes da comunidade surda, mas a solução atual com emojis e descrições textuais atende ao propósito educativo inicial. A validação com usuários reais da comunidade surda está planejada como próximo passo.</p>
+  <p>Outro ponto de atenção é a necessidade de configurar chaves reais de produção para os serviços externos (VAPID para push notifications, Stripe Secret Key, chaves de API Cloudinary), que atualmente operam em modo mock/desenvolvimento.</p>
+</div>
+
+<!-- ============================================================ -->
+<!-- 12 CONCLUSÃO -->
+<!-- ============================================================ -->
+<div class="page">
+  <h1>12 CONCLUSÃO</h1>
+
+  <p>O presente trabalho apresentou o desenvolvimento do <strong>BizFlow Access</strong>, sistema integrado de gestão comercial para salões de beleza com recursos de acessibilidade para usuários com deficiência auditiva. O sistema foi desenvolvido como parte do Projeto Integrado IV, integrando conhecimentos de cinco disciplinas do semestre.</p>
+
+  <p>Os resultados obtidos demonstram que é possível construir um sistema comercial completo, moderno e acessível utilizando tecnologias web contemporâneas como React, TypeScript, tRPC, Drizzle ORM e PWA. O sistema implementa funcionalidades robustas de agendamento, gestão de clientes, serviços e produtos, controle de estoque, pagamentos via PIX e Stripe, dashboard analítico, notificações push e trilha de auditoria.</p>
+
+  <p>A acessibilidade foi tratada como requisito fundamental desde o início do projeto, resultando em uma central de ajuda em Libras, modo de alto contraste, controle de tamanho de fonte e interface com ícones intuitivos. Embora a implementação atual não inclua vídeos em Libras, a base está estabelecida para evolução futura.</p>
+
+  <p>Para trabalhos futuros, sugere-se:</p>
+  <ul>
+    <li>Gravação de vídeos reais em Libras com intérpretes certificados;</li>
+    <li>Implementação de chatbot com IA para atendimento automático;</li>
+    <li>Realidade aumentada para visualização de cortes e penteados;</li>
+    <li>Integração com dispositivos IoT (cadeiras inteligentes, sensores);</li>
+    <li>Implantação em produção com CI/CD e monitoramento (Sentry);</li>
+    <li>Testes de usabilidade com a comunidade surda.</li>
+  </ul>
+
+  <p>Conclui-se que o BizFlow Access atende aos objetivos propostos, constituindo um produto funcional, tecnicamente sólido e socialmente relevante, alinhado às demandas do mercado e às exigências legais de acessibilidade digital.</p>
+</div>
+
+<!-- ============================================================ -->
+<!-- REFERÊNCIAS -->
+<!-- ============================================================ -->
+<div class="page">
+  <h1>REFERÊNCIAS</h1>
+
+  <p class="referencia">ASSOCIAÇÃO BRASILEIRA DE NORMAS TÉCNICAS. <strong>NBR 14724</strong>: Informação e documentação — Trabalhos acadêmicos — Apresentação. Rio de Janeiro: ABNT, 2011.</p>
+
+  <p class="referencia">BRASIL. Lei nº 10.436, de 24 de abril de 2002. Dispõe sobre a Língua Brasileira de Sinais – Libras e dá outras providências. <strong>Diário Oficial da União</strong>, Brasília, 25 abr. 2002.</p>
+
+  <p class="referencia">BRASIL. Lei nº 13.146, de 6 de julho de 2015. Institui a Lei Brasileira de Inclusão da Pessoa com Deficiência (Estatuto da Pessoa com Deficiência). <strong>Diário Oficial da União</strong>, Brasília, 7 jul. 2015.</p>
+
+  <p class="referencia">DUMAS, M.; LA ROSA, M.; MENDLING, J.; REIJERS, H. A. <strong>Fundamentals of Business Process Management</strong>. 2. ed. Berlin: Springer, 2018.</p>
+
+  <p class="referencia">HORTON, S.; QUNSENBERY, W. <strong>Designing for Accessibility</strong>: A Business Guide to Countering Design Exclusion. 2. ed. New York: Rosenfeld Media, 2018.</p>
+
+  <p class="referencia">IBGE. <strong>Censo Demográfico 2010</strong>: Características gerais da população, religião e pessoas com deficiência. Rio de Janeiro: IBGE, 2012.</p>
+
+  <p class="referencia">MALMQVIST, E. <strong>Flutter in Action</strong>. Shelter Island: Manning Publications, 2021.</p>
+
+  <p class="referencia">MARTIN, R. C. <strong>Clean Architecture</strong>: A Craftsman's Guide to Software Structure and Design. Boston: Prentice Hall, 2017.</p>
+
+  <p class="referencia">SEBRAE. <strong>Perfil dos Salões de Beleza Brasileiros</strong>. Brasília: SEBRAE, 2023. Disponível em: https://www.sebrae.com.br. Acesso em: 15 mai. 2026.</p>
+
+  <p class="referencia">SUTHERLAND, J. <strong>Scrum</strong>: The Art of Doing Twice the Work in Half the Time. New York: Crown Business, 2014.</p>
+
+  <p class="referencia">W3C. <strong>Web Content Accessibility Guidelines (WCAG) 2.1</strong>. 2018. Disponível em: https://www.w3.org/TR/WCAG21/. Acesso em: 15 mai. 2026.</p>
+
+  <p class="referencia">WORKBOX. <strong>Workbox Documentation</strong>. Google Developers, 2024. Disponível em: https://developer.chrome.com/docs/workbox/. Acesso em: 15 mai. 2026.</p>
+
+  <p class="referencia">BANCO CENTRAL DO BRASIL. <strong>Manual de Padrões para Iniciação do PIX</strong>. Brasília: BCB, 2022. Disponível em: https://www.bcb.gov.br/pix. Acesso em: 15 mai. 2026.</p>
+</div>
+
+</body>
+</html>

@@ -48,6 +48,18 @@ import {
 import { trpc } from "@/lib/trpc";
 import { toast } from "sonner";
 
+// Nomes dos dias da semana (0=Dom ... 6=Sáb) — usado no lugar do campo
+// 'dayName' que não existe no tipo WorkingHours vindo do servidor
+const DAY_NAMES = [
+  "Domingo",
+  "Segunda",
+  "Terça",
+  "Quarta",
+  "Quinta",
+  "Sexta",
+  "Sábado",
+];
+
 interface SpecialistScheduleProps {
   isOpen: boolean;
   onClose: () => void;
@@ -647,154 +659,26 @@ export function SpecialistScheduleManagement({
                           </TableRow>
                         </TableHeader>
                         <TableBody>
-                          {scheduleDraft?.workingHours.map(
-                            (day: {
-                              dayOfWeek: number;
-                              dayName: string;
-                              isWorking: boolean;
-                              startTime?: string | null;
-                              endTime?: string | null;
-                              breakStartTime?: string | null;
-                              breakEndTime?: string | null;
-                            }) => (
-                              <TableRow key={day.dayOfWeek}>
-                                <TableCell className="font-medium break-words max-w-[120px]">
-                                  {day.dayName}
-                                </TableCell>
-                                <TableCell>
-                                  <Switch
-                                    checked={day.isWorking}
-                                    onCheckedChange={checked =>
-                                      handleWorkingHoursUpdate(
-                                        day.dayOfWeek,
-                                        "isWorking",
-                                        checked
-                                      )
-                                    }
-                                    aria-label={`Trabalha ${day.dayName}`}
-                                  />
-                                </TableCell>
-                                <TableCell>
-                                  <Input
-                                    type="time"
-                                    value={day.startTime || ""}
-                                    onChange={e =>
-                                      handleWorkingHoursUpdate(
-                                        day.dayOfWeek,
-                                        "startTime",
-                                        e.target.value
-                                      )
-                                    }
-                                    disabled={!day.isWorking}
-                                    className="w-32"
-                                    aria-label={`Início ${day.dayName}`}
-                                  />
-                                </TableCell>
-                                <TableCell>
-                                  <Input
-                                    type="time"
-                                    value={day.endTime || ""}
-                                    onChange={e =>
-                                      handleWorkingHoursUpdate(
-                                        day.dayOfWeek,
-                                        "endTime",
-                                        e.target.value
-                                      )
-                                    }
-                                    disabled={!day.isWorking}
-                                    className="w-32"
-                                    aria-label={`Fim ${day.dayName}`}
-                                  />
-                                </TableCell>
-                                <TableCell>
-                                  <Input
-                                    type="time"
-                                    value={day.breakStartTime || ""}
-                                    onChange={e =>
-                                      handleWorkingHoursUpdate(
-                                        day.dayOfWeek,
-                                        "breakStartTime",
-                                        e.target.value
-                                      )
-                                    }
-                                    disabled={!day.isWorking}
-                                    className="w-32"
-                                    aria-label={`Início pausa ${day.dayName}`}
-                                  />
-                                </TableCell>
-                                <TableCell>
-                                  <Input
-                                    type="time"
-                                    value={day.breakEndTime || ""}
-                                    onChange={e =>
-                                      handleWorkingHoursUpdate(
-                                        day.dayOfWeek,
-                                        "breakEndTime",
-                                        e.target.value
-                                      )
-                                    }
-                                    disabled={!day.isWorking}
-                                    className="w-32"
-                                    aria-label={`Fim pausa ${day.dayName}`}
-                                  />
-                                </TableCell>
-                              </TableRow>
-                            )
-                          )}
-                        </TableBody>
-                      </Table>
-                    </div>
-
-                    {/* Mobile: empilhar os dias para telas pequenas */}
-                    <div className="sm:hidden mt-3">
-                      {scheduleDraft?.workingHours.map(
-                        (day: {
-                          dayOfWeek: number;
-                          dayName: string;
-                          isWorking: boolean;
-                          startTime?: string | null;
-                          endTime?: string | null;
-                          breakStartTime?: string | null;
-                          breakEndTime?: string | null;
-                        }) => (
-                          <div
-                            key={day.dayOfWeek}
-                            className="p-3 border rounded mb-2 bg-white"
-                          >
-                            <div className="flex items-center justify-between mb-2">
-                              <div className="font-medium text-sm break-words">
-                                {day.dayName}
-                              </div>
-                              <div>
-                                <label className="flex items-center gap-2">
-                                  <span className="sr-only">
-                                    Trabalha {day.dayName}
-                                  </span>
-                                  <Switch
-                                    checked={day.isWorking}
-                                    onCheckedChange={checked =>
-                                      handleWorkingHoursUpdate(
-                                        day.dayOfWeek,
-                                        "isWorking",
-                                        checked
-                                      )
-                                    }
-                                    aria-checked={day.isWorking}
-                                  />
-                                </label>
-                              </div>
-                            </div>
-
-                            <div className="grid grid-cols-1 gap-2">
-                              <div className="flex items-center gap-2">
-                                <label
-                                  htmlFor={`start-${day.dayOfWeek}`}
-                                  className="text-xs w-24"
-                                >
-                                  Início
-                                </label>
+                          {scheduleDraft?.workingHours.map(day => (
+                            <TableRow key={day.dayOfWeek}>
+                              <TableCell className="font-medium break-words max-w-[120px]">
+                                {DAY_NAMES[day.dayOfWeek]}
+                              </TableCell>
+                              <TableCell>
+                                <Switch
+                                  checked={day.isWorking}
+                                  onCheckedChange={checked =>
+                                    handleWorkingHoursUpdate(
+                                      day.dayOfWeek,
+                                      "isWorking",
+                                      checked
+                                    )
+                                  }
+                                  aria-label={`Trabalha ${DAY_NAMES[day.dayOfWeek]}`}
+                                />
+                              </TableCell>
+                              <TableCell>
                                 <Input
-                                  id={`start-${day.dayOfWeek}`}
                                   type="time"
                                   value={day.startTime || ""}
                                   onChange={e =>
@@ -805,19 +689,12 @@ export function SpecialistScheduleManagement({
                                     )
                                   }
                                   disabled={!day.isWorking}
-                                  className="w-full"
-                                  aria-label={`Início ${day.dayName}`}
+                                  className="w-32"
+                                  aria-label={`Início ${DAY_NAMES[day.dayOfWeek]}`}
                                 />
-                              </div>
-                              <div className="flex items-center gap-2">
-                                <label
-                                  htmlFor={`end-${day.dayOfWeek}`}
-                                  className="text-xs w-24"
-                                >
-                                  Fim
-                                </label>
+                              </TableCell>
+                              <TableCell>
                                 <Input
-                                  id={`end-${day.dayOfWeek}`}
                                   type="time"
                                   value={day.endTime || ""}
                                   onChange={e =>
@@ -828,19 +705,12 @@ export function SpecialistScheduleManagement({
                                     )
                                   }
                                   disabled={!day.isWorking}
-                                  className="w-full"
-                                  aria-label={`Fim ${day.dayName}`}
+                                  className="w-32"
+                                  aria-label={`Fim ${DAY_NAMES[day.dayOfWeek]}`}
                                 />
-                              </div>
-                              <div className="flex items-center gap-2">
-                                <label
-                                  htmlFor={`break-${day.dayOfWeek}`}
-                                  className="text-xs w-24"
-                                >
-                                  Pausa
-                                </label>
+                              </TableCell>
+                              <TableCell>
                                 <Input
-                                  id={`break-${day.dayOfWeek}`}
                                   type="time"
                                   value={day.breakStartTime || ""}
                                   onChange={e =>
@@ -851,19 +721,12 @@ export function SpecialistScheduleManagement({
                                     )
                                   }
                                   disabled={!day.isWorking}
-                                  className="w-full"
-                                  aria-label={`Início pausa ${day.dayName}`}
+                                  className="w-32"
+                                  aria-label={`Início pausa ${DAY_NAMES[day.dayOfWeek]}`}
                                 />
-                              </div>
-                              <div className="flex items-center gap-2">
-                                <label
-                                  htmlFor={`breakend-${day.dayOfWeek}`}
-                                  className="text-xs w-24"
-                                >
-                                  Fim pausa
-                                </label>
+                              </TableCell>
+                              <TableCell>
                                 <Input
-                                  id={`breakend-${day.dayOfWeek}`}
                                   type="time"
                                   value={day.breakEndTime || ""}
                                   onChange={e =>
@@ -874,14 +737,143 @@ export function SpecialistScheduleManagement({
                                     )
                                   }
                                   disabled={!day.isWorking}
-                                  className="w-full"
-                                  aria-label={`Fim pausa ${day.dayName}`}
+                                  className="w-32"
+                                  aria-label={`Fim pausa ${DAY_NAMES[day.dayOfWeek]}`}
                                 />
-                              </div>
+                              </TableCell>
+                            </TableRow>
+                          ))}
+                        </TableBody>
+                      </Table>
+                    </div>
+
+                    {/* Mobile: empilhar os dias para telas pequenas */}
+                    <div className="sm:hidden mt-3">
+                      {scheduleDraft?.workingHours.map(day => (
+                        <div
+                          key={day.dayOfWeek}
+                          className="p-3 border rounded mb-2 bg-white"
+                        >
+                          <div className="flex items-center justify-between mb-2">
+                            <div className="font-medium text-sm break-words">
+                              {DAY_NAMES[day.dayOfWeek]}
+                            </div>
+                            <div>
+                              <label className="flex items-center gap-2">
+                                <span className="sr-only">
+                                  Trabalha {DAY_NAMES[day.dayOfWeek]}
+                                </span>
+                                <Switch
+                                  checked={day.isWorking}
+                                  onCheckedChange={checked =>
+                                    handleWorkingHoursUpdate(
+                                      day.dayOfWeek,
+                                      "isWorking",
+                                      checked
+                                    )
+                                  }
+                                  aria-checked={day.isWorking}
+                                />
+                              </label>
                             </div>
                           </div>
-                        )
-                      )}
+
+                          <div className="grid grid-cols-1 gap-2">
+                            <div className="flex items-center gap-2">
+                              <label
+                                htmlFor={`start-${day.dayOfWeek}`}
+                                className="text-xs w-24"
+                              >
+                                Início
+                              </label>
+                              <Input
+                                id={`start-${day.dayOfWeek}`}
+                                type="time"
+                                value={day.startTime || ""}
+                                onChange={e =>
+                                  handleWorkingHoursUpdate(
+                                    day.dayOfWeek,
+                                    "startTime",
+                                    e.target.value
+                                  )
+                                }
+                                disabled={!day.isWorking}
+                                className="w-full"
+                                aria-label={`Início ${DAY_NAMES[day.dayOfWeek]}`}
+                              />
+                            </div>
+                            <div className="flex items-center gap-2">
+                              <label
+                                htmlFor={`end-${day.dayOfWeek}`}
+                                className="text-xs w-24"
+                              >
+                                Fim
+                              </label>
+                              <Input
+                                id={`end-${day.dayOfWeek}`}
+                                type="time"
+                                value={day.endTime || ""}
+                                onChange={e =>
+                                  handleWorkingHoursUpdate(
+                                    day.dayOfWeek,
+                                    "endTime",
+                                    e.target.value
+                                  )
+                                }
+                                disabled={!day.isWorking}
+                                className="w-full"
+                                aria-label={`Fim ${DAY_NAMES[day.dayOfWeek]}`}
+                              />
+                            </div>
+                            <div className="flex items-center gap-2">
+                              <label
+                                htmlFor={`break-${day.dayOfWeek}`}
+                                className="text-xs w-24"
+                              >
+                                Pausa
+                              </label>
+                              <Input
+                                id={`break-${day.dayOfWeek}`}
+                                type="time"
+                                value={day.breakStartTime || ""}
+                                onChange={e =>
+                                  handleWorkingHoursUpdate(
+                                    day.dayOfWeek,
+                                    "breakStartTime",
+                                    e.target.value
+                                  )
+                                }
+                                disabled={!day.isWorking}
+                                className="w-full"
+                                aria-label={`Início pausa ${DAY_NAMES[day.dayOfWeek]}`}
+                              />
+                            </div>
+                            <div className="flex items-center gap-2">
+                              <label
+                                htmlFor={`breakend-${day.dayOfWeek}`}
+                                className="text-xs w-24"
+                              >
+                                Fim pausa
+                              </label>
+                              <Input
+                                id={`breakend-${day.dayOfWeek}`}
+                                type="time"
+                                value={day.breakEndTime || ""}
+                                onChange={e =>
+                                  handleWorkingHoursUpdate(
+                                    day.dayOfWeek,
+                                    "breakEndTime",
+                                    e.target.value
+                                  )
+                                }
+                                disabled={!day.isWorking}
+                                className="w-full"
+                                aria-label={`Fim pausa ${DAY_NAMES[day.dayOfWeek]}`}
+                              />
+                            </div>
+                          </div>
+                        </div>
+                      ))}
                     </div>
                   </CardContent>
                 </Card>
@@ -918,43 +910,43 @@ export function SpecialistScheduleManagement({
                       </Button>
                     </div>
 
-                    {scheduleDraft?.customUnavailableDates.length > 0 ? (
+                    {(scheduleDraft?.customUnavailableDates?.length ?? 0) > 0 ? (
                       <div className="space-y-2">
                         <h4 className="font-medium text-sm">
                           Datas Cadastradas:
                         </h4>
                         <div className="grid grid-cols-1 gap-2">
-                          {scheduleDraft.customUnavailableDates.map(
-                            (dateInfo: {
-                              date: string;
-                              dateFormatted: string;
-                            }) => (
+                          {scheduleDraft!.customUnavailableDates.map((d, idx) => {
+                            const raw = d instanceof Date ? d.toISOString() : String(d);
+                            const dateStr = raw.split("T")[0];
+                            const dateFormatted = new Date(dateStr + "T12:00:00").toLocaleDateString("pt-BR");
+                            return (
                               <div
-                                key={dateInfo.date}
+                                key={idx}
                                 className="flex items-center justify-between p-2 border rounded"
                               >
                                 <div className="flex items-center gap-2">
                                   <Calendar className="h-4 w-4 text-[var(--destructive)]" />
                                   <span className="text-sm">
-                                    {dateInfo.dateFormatted}
+                                    {dateFormatted}
                                   </span>
                                 </div>
                                 <Button
                                   size="sm"
                                   variant="outline"
                                   onClick={() =>
-                                    handleRemoveUnavailableDate(dateInfo.date)
+                                    handleRemoveUnavailableDate(dateStr)
                                   }
                                   disabled={
                                     removeUnavailableDateMutation.isPending
                                   }
-                                  aria-label={`Remover ${dateInfo.dateFormatted}`}
+                                  aria-label={`Remover ${dateFormatted}`}
                                 >
                                   <Trash2 className="h-4 w-4" />
                                 </Button>
                               </div>
-                            )
-                          )}
+                            );
+                          })}
                         </div>
                       </div>
                     ) : (
@@ -995,22 +987,16 @@ export function SpecialistScheduleManagement({
                       <div className="flex flex-wrap gap-1 mt-2">
                         {scheduleDraft?.workingHours
                           .filter((d: { isWorking: boolean }) => d.isWorking)
-                          .map(
-                            (d: {
-                              dayOfWeek: number;
-                              dayName: string;
-                              startTime?: string | null;
-                              endTime?: string | null;
-                            }) => (
-                              <Badge
-                                key={d.dayOfWeek}
-                                variant="outline"
-                                className="text-xs"
-                              >
-                                {d.dayName}: {d.startTime} - {d.endTime}
-                              </Badge>
-                            )
-                          )}
+                          .map(d => (
+                            <Badge
+                              key={d.dayOfWeek}
+                              variant="outline"
+                              className="text-xs"
+                            >
+                              {DAY_NAMES[d.dayOfWeek]}: {d.startTime} -{" "}
+                              {d.endTime}
+                            </Badge>
+                          ))}
                       </div>
                     </div>
                   </CardContent>
@@ -1057,43 +1043,43 @@ export function SpecialistScheduleManagement({
                       </Button>
                     </div>
 
-                    {scheduleDraft?.customUnavailableDates.length > 0 ? (
+                    {(scheduleDraft?.customUnavailableDates?.length ?? 0) > 0 ? (
                       <div className="space-y-2">
                         <h4 className="font-medium text-sm">
                           Datas Cadastradas:
                         </h4>
                         <div className="grid grid-cols-1 gap-2">
-                          {scheduleDraft.customUnavailableDates.map(
-                            (dateInfo: {
-                              date: string;
-                              dateFormatted: string;
-                            }) => (
+                          {scheduleDraft!.customUnavailableDates.map((d, idx) => {
+                            const raw = d instanceof Date ? d.toISOString() : String(d);
+                            const dateStr = raw.split("T")[0];
+                            const dateFormatted = new Date(dateStr + "T12:00:00").toLocaleDateString("pt-BR");
+                            return (
                               <div
-                                key={dateInfo.date}
+                                key={idx}
                                 className="flex items-center justify-between p-2 border rounded"
                               >
                                 <div className="flex items-center gap-2">
                                   <Calendar className="h-4 w-4 text-[var(--destructive)]" />
                                   <span className="text-sm">
-                                    {dateInfo.dateFormatted}
+                                    {dateFormatted}
                                   </span>
                                 </div>
                                 <Button
                                   size="sm"
                                   variant="outline"
                                   onClick={() =>
-                                    handleRemoveUnavailableDate(dateInfo.date)
+                                    handleRemoveUnavailableDate(dateStr)
                                   }
                                   disabled={
                                     removeUnavailableDateMutation.isPending
                                   }
-                                  aria-label={`Remover ${dateInfo.dateFormatted}`}
+                                  aria-label={`Remover ${dateFormatted}`}
                                 >
                                   <Trash2 className="h-4 w-4" />
                                 </Button>
                               </div>
-                            )
-                          )}
+                            );
+                          })}
                         </div>
                       </div>
                     ) : (
@@ -1134,22 +1120,16 @@ export function SpecialistScheduleManagement({
                       <div className="flex flex-wrap gap-1 mt-2">
                         {scheduleDraft?.workingHours
                           .filter((d: { isWorking: boolean }) => d.isWorking)
-                          .map(
-                            (d: {
-                              dayOfWeek: number;
-                              dayName: string;
-                              startTime?: string | null;
-                              endTime?: string | null;
-                            }) => (
-                              <Badge
-                                key={d.dayOfWeek}
-                                variant="outline"
-                                className="text-xs"
-                              >
-                                {d.dayName}: {d.startTime} - {d.endTime}
-                              </Badge>
-                            )
-                          )}
+                          .map(d => (
+                            <Badge
+                              key={d.dayOfWeek}
+                              variant="outline"
+                              className="text-xs"
+                            >
+                              {DAY_NAMES[d.dayOfWeek]}: {d.startTime} -{" "}
+                              {d.endTime}
+                            </Badge>
+                          ))}
                       </div>
                     </div>
                   </CardContent>
