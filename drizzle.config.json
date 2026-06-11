@@ -1,0 +1,8 @@
+{
+  "dialect": "postgresql",
+  "schema": "./drizzle/schema.ts",
+  "out": "./drizzle/migrations",
+  "dbCredentials": {
+    "url": "postgres://postgres:postgres@localhost:5433/salon"
+  }
+}
