@@ -9,35 +9,61 @@ import {
   boolean,
   jsonb,
   index,
+  uniqueIndex,
+  pgTrigger,
 } from "drizzle-orm/pg-core";
+import { relations } from "drizzle-orm";
 
 export const roleEnum = pgEnum("role", ["user", "admin"]);
 
 /**
  * Core user table for admin authentication
+ * @description Tabela principal de usuários com autenticação e autorização
  */
-export const users = pgTable("users", {
-  id: varchar("id", { length: 64 }).primaryKey(),
-  // Associação opcional ao salão ao qual o usuário pertence
-  salonId: varchar("salonId", { length: 64 }),
-  email: varchar("email", { length: 320 }).notNull().unique(),
-  password: text("password").notNull(),
-  name: text("name").notNull(),
-  role: roleEnum("role").default("user").notNull(),
-  createdAt: timestamp("createdAt").defaultNow(),
-  updatedAt: timestamp("updatedAt").defaultNow(),
-  lastSignedIn: timestamp("lastSignedIn"),
-  photoUrl: text("photoUrl"),
-  phone: varchar("phone", { length: 20 }),
-  // Permissões granulares armazenadas como JSON (ex: { manage_clients: true })
-  permissions: jsonb("permissions").$type<Record<string, boolean> | null>(),
-});
+export const users = pgTable(
+  "users",
+  {
+    id: varchar("id", { length: 64 }).primaryKey(),
+    // Associação opcional ao salão ao qual o usuário pertence
+    salonId: varchar("salonId", { length: 64 }),
+    email: varchar("email", { length: 320 }).notNull().unique(),
+    password: text("password").notNull(),
+    name: text("name").notNull(),
+    role: roleEnum("role").default("user").notNull(),
+    createdAt: timestamp("createdAt", { withTimezone: true }).defaultNow(),
+    updatedAt: timestamp("updatedAt", { withTimezone: true }).defaultNow(),
+    lastSignedIn: timestamp("lastSignedIn", { withTimezone: true }),
+    photoUrl: text("photoUrl"),
+    phone: varchar("phone", { length: 20 }),
+    // Permissões granulares armazenadas como JSON (ex: { manage_clients: true })
+    permissions: jsonb("permissions").$type<Record<string, boolean> | null>(),
+    // Campo para soft delete (opcional)
+    deletedAt: timestamp("deletedAt", { withTimezone: true }),
+  },
+  table => ({
+    salonIdIdx: index("users_salonId_idx").on(table.salonId),
+    emailIdx: index("users_email_idx").on(table.email),
+    roleIdx: index("users_role_idx").on(table.role),
+    deletedAtIdx: index("users_deletedAt_idx").on(table.deletedAt),
+  })
+);
+
+// Definição dos relacionamentos
+export const usersRelations = relations(users, ({ one, many }) => ({
+  salon: one(salons, {
+    fields: [users.salonId],
+    references: [salons.id],
+  }),
+  passwordResets: many(passwordResets),
+  auditLogs: many(auditLogs),
+}));
 
 export type User = typeof users.$inferSelect;
 export type InsertUser = typeof users.$inferInsert;
 
 /**
  * Salon data table
+ * @description Tabela de dados do salão com informações da empresa
  */
 export const salons = pgTable(
   "salons",
@@ -53,13 +79,28 @@ export const salons = pgTable(
     email: varchar("email", { length: 320 }),
     logo: text("logo"),
     // Removed workingHours - now using only specialist schedules
-    createdAt: timestamp("createdAt").defaultNow(),
-    updatedAt: timestamp("updatedAt").defaultNow(),
+    createdAt: timestamp("createdAt", { withTimezone: true }).defaultNow(),
+    updatedAt: timestamp("updatedAt", { withTimezone: true }).defaultNow(),
+    deletedAt: timestamp("deletedAt", { withTimezone: true }),
   },
   table => ({
     userIdIdx: index("salons_userId_idx").on(table.userId),
+    deletedAtIdx: index("salons_deletedAt_idx").on(table.deletedAt),
   })
 );
+
+export const salonsRelations = relations(salons, ({ one, many }) => ({
+  owner: one(users, {
+    fields: [salons.userId],
+    references: [users.id],
+  }),
+  specialists: many(specialists),
+  clients: many(clients),
+  services: many(services),
+  appointments: many(appointments),
+  transactions: many(transactions),
+  auditLogs: many(auditLogs),
+}));
 
 export type Salon = typeof salons.$inferSelect;
 export type InsertSalon = typeof salons.$inferInsert;
@@ -75,6 +116,7 @@ export const serviceStatusEnum = pgEnum("service_status", [
 
 /**
  * Specialist/Collaborator table
+ * @description Tabela de especialistas/colaboradores do salão
  */
 export const specialists = pgTable(
   "specialists",
@@ -100,19 +142,33 @@ export const specialists = pgTable(
       >
     >(),
     status: specialistStatusEnum("status").default("active"),
-    createdAt: timestamp("createdAt").defaultNow(),
-    updatedAt: timestamp("updatedAt").defaultNow(),
+    createdAt: timestamp("createdAt", { withTimezone: true }).defaultNow(),
+    updatedAt: timestamp("updatedAt", { withTimezone: true }).defaultNow(),
+    deletedAt: timestamp("deletedAt", { withTimezone: true }),
   },
   table => ({
     salonIdIdx: index("specialists_salonId_idx").on(table.salonId),
+    statusIdx: index("specialists_status_idx").on(table.status),
+    deletedAtIdx: index("specialists_deletedAt_idx").on(table.deletedAt),
   })
 );
+
+export const specialistsRelations = relations(specialists, ({ one, many }) => ({
+  salon: one(salons, {
+    fields: [specialists.salonId],
+    references: [salons.id],
+  }),
+  services: many(services),
+  appointments: many(appointments),
+  transactions: many(transactions),
+}));
 
 export type Specialist = typeof specialists.$inferSelect;
 export type InsertSpecialist = typeof specialists.$inferInsert;
 
 /**
  * Client table
+ * @description Tabela de clientes do salão
  */
 export const clients = pgTable(
   "clients",
@@ -125,20 +181,32 @@ export const clients = pgTable(
     email: varchar("email", { length: 320 }),
     phone: varchar("phone", { length: 20 }),
     notes: text("notes"),
-    createdAt: timestamp("createdAt").defaultNow(),
-    updatedAt: timestamp("updatedAt").defaultNow(),
+    createdAt: timestamp("createdAt", { withTimezone: true }).defaultNow(),
+    updatedAt: timestamp("updatedAt", { withTimezone: true }).defaultNow(),
+    deletedAt: timestamp("deletedAt", { withTimezone: true }),
   },
   table => ({
     salonIdIdx: index("clients_salonId_idx").on(table.salonId),
     emailIdx: index("clients_email_idx").on(table.email),
+    deletedAtIdx: index("clients_deletedAt_idx").on(table.deletedAt),
   })
 );
+
+export const clientsRelations = relations(clients, ({ one, many }) => ({
+  salon: one(salons, {
+    fields: [clients.salonId],
+    references: [salons.id],
+  }),
+  appointments: many(appointments),
+  transactions: many(transactions),
+}));
 
 export type Client = typeof clients.$inferSelect;
 export type InsertClient = typeof clients.$inferInsert;
 
 /**
  * Service table
+ * @description Tabela de serviços oferecidos pelo salão
  */
 export const services = pgTable(
   "services",
@@ -158,20 +226,37 @@ export const services = pgTable(
     // Indica se o preço é um valor 'a partir de' (mínimo)
     priceFrom: boolean("priceFrom").default(false).notNull(),
     status: serviceStatusEnum("status").default("active"),
-    createdAt: timestamp("createdAt").defaultNow(),
-    updatedAt: timestamp("updatedAt").defaultNow(),
+    createdAt: timestamp("createdAt", { withTimezone: true }).defaultNow(),
+    updatedAt: timestamp("updatedAt", { withTimezone: true }).defaultNow(),
+    deletedAt: timestamp("deletedAt", { withTimezone: true }),
   },
   table => ({
     salonIdIdx: index("services_salonId_idx").on(table.salonId),
     specialistIdIdx: index("services_specialistId_idx").on(table.specialistId),
+    statusIdx: index("services_status_idx").on(table.status),
+    deletedAtIdx: index("services_deletedAt_idx").on(table.deletedAt),
   })
 );
+
+export const servicesRelations = relations(services, ({ one, many }) => ({
+  salon: one(salons, {
+    fields: [services.salonId],
+    references: [salons.id],
+  }),
+  specialist: one(specialists, {
+    fields: [services.specialistId],
+    references: [specialists.id],
+  }),
+  appointments: many(appointments),
+  transactions: many(transactions),
+}));
 
 export type Service = typeof services.$inferSelect;
 export type InsertService = typeof services.$inferInsert;
 
 /**
  * Appointment table
+ * @description Tabela de agendamentos do salão
  */
 export const appointmentStatusEnum = pgEnum("appointment_status", [
   "pending",
@@ -196,15 +281,16 @@ export const appointments = pgTable(
     specialistId: varchar("specialistId", { length: 64 })
       .notNull()
       .references(() => specialists.id, { onDelete: "cascade" }),
-    appointmentDate: timestamp("appointmentDate").notNull(),
+    appointmentDate: timestamp("appointmentDate", { withTimezone: true }).notNull(),
     appointmentTime: varchar("appointmentTime", { length: 10 }).notNull(), // HH:MM format
     status: appointmentStatusEnum("appointment_status").default("pending"),
     notes: text("notes"),
     isPublic: boolean("isPublic").default(false),
     // Valor efetivamente pago pelo cliente (opcional)
     paidAmount: decimal("paidAmount", { precision: 10, scale: 2 }),
-    createdAt: timestamp("createdAt").defaultNow(),
-    updatedAt: timestamp("updatedAt").defaultNow(),
+    createdAt: timestamp("createdAt", { withTimezone: true }).defaultNow(),
+    updatedAt: timestamp("updatedAt", { withTimezone: true }).defaultNow(),
+    deletedAt: timestamp("deletedAt", { withTimezone: true }),
   },
   table => ({
     salonIdIdx: index("appointments_salonId_idx").on(table.salonId),
@@ -216,8 +302,30 @@ export const appointments = pgTable(
     appointmentDateIdx: index("appointments_appointmentDate_idx").on(
       table.appointmentDate
     ),
+    statusIdx: index("appointments_status_idx").on(table.status),
+    deletedAtIdx: index("appointments_deletedAt_idx").on(table.deletedAt),
   })
 );
+
+export const appointmentsRelations = relations(appointments, ({ one }) => ({
+  salon: one(salons, {
+    fields: [appointments.salonId],
+    references: [salons.id],
+  }),
+  client: one(clients, {
+    fields: [appointments.clientId],
+    references: [clients.id],
+  }),
+  service: one(services, {
+    fields: [appointments.serviceId],
+    references: [services.id],
+  }),
+  specialist: one(specialists, {
+    fields: [appointments.specialistId],
+    references: [specialists.id],
+  }),
+  transaction: one(transactions),
+}));
 
 export type Appointment = typeof appointments.$inferSelect;
 export type InsertAppointment = typeof appointments.$inferInsert;
@@ -231,6 +339,7 @@ export type AppointmentWithDetails = Appointment & {
 
 /**
  * Password reset token table
+ * @description Tabela de tokens para recuperação de senha
  */
 export const passwordResets = pgTable(
   "passwordResets",
@@ -240,15 +349,23 @@ export const passwordResets = pgTable(
       .notNull()
       .references(() => users.id, { onDelete: "cascade" }),
     token: varchar("token", { length: 255 }).notNull().unique(),
-    expiresAt: timestamp("expiresAt").notNull(),
+    expiresAt: timestamp("expiresAt", { withTimezone: true }).notNull(),
     used: boolean("used").default(false),
-    createdAt: timestamp("createdAt").defaultNow(),
+    createdAt: timestamp("createdAt", { withTimezone: true }).defaultNow(),
   },
   table => ({
     userIdIdx: index("passwordResets_userId_idx").on(table.userId),
     tokenIdx: index("passwordResets_token_idx").on(table.token),
+    expiresAtIdx: index("passwordResets_expiresAt_idx").on(table.expiresAt),
   })
 );
+
+export const passwordResetsRelations = relations(passwordResets, ({ one }) => ({
+  user: one(users, {
+    fields: [passwordResets.userId],
+    references: [users.id],
+  }),
+}));
 
 export type PasswordReset = typeof passwordResets.$inferSelect;
 export type InsertPasswordReset = typeof passwordResets.$inferInsert;
@@ -279,6 +396,7 @@ export const paymentMethodEnum = pgEnum("payment_method", [
 
 /**
  * Tabela de transações financeiras
+ * @description Tabela para controle financeiro do salão
  */
 export const transactions = pgTable(
   "transactions",
@@ -323,9 +441,10 @@ export const transactions = pgTable(
     notes: text("notes"), // Observações adicionais
 
     // Metadados
-    transactionDate: timestamp("transactionDate").notNull(),
-    createdAt: timestamp("createdAt").defaultNow(),
-    updatedAt: timestamp("updatedAt").defaultNow(),
+    transactionDate: timestamp("transactionDate", { withTimezone: true }).notNull(),
+    createdAt: timestamp("createdAt", { withTimezone: true }).defaultNow(),
+    updatedAt: timestamp("updatedAt", { withTimezone: true }).defaultNow(),
+    deletedAt: timestamp("deletedAt", { withTimezone: true }),
   },
   table => ({
     salonIdIdx: index("transactions_salonId_idx").on(table.salonId),
@@ -336,8 +455,32 @@ export const transactions = pgTable(
     typeIdx: index("transactions_type_idx").on(table.type),
     statusIdx: index("transactions_status_idx").on(table.status),
     dateIdx: index("transactions_date_idx").on(table.transactionDate),
+    deletedAtIdx: index("transactions_deletedAt_idx").on(table.deletedAt),
   })
 );
+
+export const transactionsRelations = relations(transactions, ({ one }) => ({
+  salon: one(salons, {
+    fields: [transactions.salonId],
+    references: [salons.id],
+  }),
+  appointment: one(appointments, {
+    fields: [transactions.appointmentId],
+    references: [appointments.id],
+  }),
+  client: one(clients, {
+    fields: [transactions.clientId],
+    references: [clients.id],
+  }),
+  service: one(services, {
+    fields: [transactions.serviceId],
+    references: [services.id],
+  }),
+  specialist: one(specialists, {
+    fields: [transactions.specialistId],
+    references: [specialists.id],
+  }),
+}));
 
 export type Transaction = typeof transactions.$inferSelect;
 export type InsertTransaction = typeof transactions.$inferInsert;
@@ -368,8 +511,8 @@ export const specialistSchedules = pgTable(
     customUnavailableDates: jsonb("customUnavailableDates")
       .default([])
       .$type<string[]>(),
-    createdAt: timestamp("createdAt").defaultNow(),
-    updatedAt: timestamp("updatedAt").defaultNow(),
+    createdAt: timestamp("createdAt", { withTimezone: true }).defaultNow(),
+    updatedAt: timestamp("updatedAt", { withTimezone: true }).defaultNow(),
   },
   table => ({
     updatedAtIdx: index("specialistSchedules_updatedAt_idx").on(
@@ -377,6 +520,13 @@ export const specialistSchedules = pgTable(
     ),
   })
 );
+
+export const specialistSchedulesRelations = relations(specialistSchedules, ({ one }) => ({
+  specialist: one(specialists, {
+    fields: [specialistSchedules.specialistId],
+    references: [specialists.id],
+  }),
+}));
 
 export type SpecialistScheduleRow = typeof specialistSchedules.$inferSelect;
 export type InsertSpecialistSchedule = typeof specialistSchedules.$inferInsert;
@@ -395,15 +545,27 @@ export const auditLogs = pgTable(
     before: jsonb("before").$type<object | null>(),
     after: jsonb("after").$type<object | null>(),
     metadata: jsonb("metadata").$type<object | null>(), // ip, userAgent, reason...
-    createdAt: timestamp("createdAt").defaultNow().notNull(),
+    createdAt: timestamp("createdAt", { withTimezone: true }).defaultNow().notNull(),
   },
   table => ({
     userIdIdx: index("audit_logs_userId_idx").on(table.userId),
     entityIdx: index("audit_logs_entity_idx").on(table.entity, table.entityId),
     salonIdIdx: index("audit_logs_salonId_idx").on(table.salonId),
     createdAtIdx: index("audit_logs_createdAt_idx").on(table.createdAt),
+    actionIdx: index("audit_logs_action_idx").on(table.action),
   })
 );
+
+export const auditLogsRelations = relations(auditLogs, ({ one }) => ({
+  user: one(users, {
+    fields: [auditLogs.userId],
+    references: [users.id],
+  }),
+  salon: one(salons, {
+    fields: [auditLogs.salonId],
+    references: [salons.id],
+  }),
+}));
 
 export type AuditLog = typeof auditLogs.$inferSelect;
 export type InsertAuditLog = typeof auditLogs.$inferInsert;
