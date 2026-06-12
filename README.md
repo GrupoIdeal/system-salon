@@ -16,9 +16,19 @@
 ## 📋 Índice
 
 - [Visão Geral](#visão-geral)
+- [🚀 Quick Start — Guia Rápido](#-quick-start--guia-rápido)
 - [Funcionalidades](#funcionalidades-principais)
 - [Tecnologias](#tecnologias-utilizadas)
-- [Setup — Passo a Passo](#-setup--passo-a-passo-do-zero)
+- [📦 Setup Completo — Passo a Passo](#-setup-completo--passo-a-passo)
+  - [Pré-requisitos](#pré-requisitos)
+  - [1. Clonar o Repositório](#1-clonar-o-repositório)
+  - [2. Instalar Dependências](#2-instalar-dependências)
+  - [3. Configurar Variáveis de Ambiente](#3-configurar-variáveis-de-ambiente)
+  - [4. Iniciar Banco de Dados](#4-iniciar-banco-de-dados)
+  - [5. Configurar Banco de Dados](#5-configurar-banco-de-dados)
+  - [6. Iniciar Back-end](#6-iniciar-back-end)
+  - [7. Iniciar Front-end](#7-iniciar-front-end)
+  - [8. Iniciar Mobile](#8-iniciar-mobile)
 - [Rodando com Docker](#rodando-com-docker)
 - [Segurança](#segurança)
 - [Deploy em Produção](#deploy-em-produção)
@@ -39,8 +49,50 @@ Aplicação full-stack em TypeScript que combina:
 - 🗄️ Drizzle ORM + PostgreSQL (modelo e migrações)
 - 📧 Sistema de notificações, lista de espera e geração de relatórios
 - 🔒 Segurança robusta com Helmet, Rate Limiting e validações fortes
+- 📱 Aplicativo mobile React Native (Expo)
 
 O projeto foi projetado para suportar tanto uso administrativo (dashboard interno) quanto um fluxo de agendamento público (página para clientes sem login).
+
+---
+
+## 🚀 Quick Start — Guia Rápido
+
+> Para quem já tem experiência e quer rodar o projeto rapidamente.
+
+```bash
+# 1. Clonar e entrar no diretório
+git clone https://github.com/ronnysenna/system-salon.git
+cd system-salon
+
+# 2. Instalar dependências
+pnpm install
+
+# 3. Copiar variáveis de ambiente
+cp .env.example .env
+
+# 4. Subir banco de dados
+docker-compose up -d db
+
+# 5. Aguardar 5 segundos e criar tabelas
+sleep 5 && pnpm db:push
+
+# 6. Popular banco com dados de teste
+NODE_ENV=development pnpm tsx drizzle/seed-admin.ts
+
+# 7. Iniciar back-end e front-end juntos
+NODE_ENV=development pnpm dev
+```
+
+**Acesse:** http://localhost:3000  
+**Login:** `teste@teste.com` | **Senha:** `123123`
+
+### Mobile (terminal separado)
+
+```bash
+cd mobile
+pnpm install
+pnpm start
+```
 
 ---
 
@@ -113,33 +165,48 @@ O projeto foi projetado para suportar tanto uso administrativo (dashboard intern
 
 ---
 
-## 🚀 Setup — Passo a Passo (do zero)
+## 📦 Setup Completo — Passo a Passo
 
-> Guia para qualquer membro do grupo configurar o projeto pela primeira vez.
+> Guia detalhado para configurar **cada componente** do projeto (banco de dados, back-end, front-end e mobile) em ambiente local.
 
 ### Pré-requisitos
 
-| Ferramenta | Versão mínima | Download |
-|-----------|--------------|---------|
-| **Node.js** | 20+ | https://nodejs.org |
-| **pnpm** | 9+ | `npm install -g pnpm` |
-| **Docker Desktop** | Qualquer | https://docker.com/products/docker-desktop |
-| **Git** | Qualquer | https://git-scm.com |
+| Ferramenta | Versão mínima | Download | Como verificar |
+|-----------|--------------|---------|----------------|
+| **Node.js** | 20+ | https://nodejs.org | `node --version` |
+| **pnpm** | 9+ | `npm install -g pnpm` | `pnpm --version` |
+| **Docker Desktop** | Qualquer | https://docker.com/products/docker-desktop | `docker --version` |
+| **Git** | Qualquer | https://git-scm.com | `git --version` |
+| **Expo CLI** (opcional) | Qualquer | `npm install -g expo-cli` | `expo --version` |
 
-### Passo 1 — Clonar o repositório
+> 💡 **Dica:** Se estiver no Windows, use o WSL2 para melhor compatibilidade com Docker.
+
+---
+
+### 1. Clonar o Repositório
 
 ```bash
 git clone https://github.com/ronnysenna/system-salon.git
 cd system-salon
 ```
 
-### Passo 2 — Instalar dependências
+---
+
+### 2. Instalar Dependências
 
 ```bash
+# Instalar dependências do back-end e front-end (raiz)
 pnpm install
+
+# Instalar dependências do mobile (se for rodar o app)
+cd mobile
+pnpm install
+cd ..
 ```
 
-### Passo 3 — Configurar variáveis de ambiente
+---
+
+### 3. Configurar Variáveis de Ambiente
 
 ```bash
 # Copiar o arquivo de exemplo
@@ -149,57 +216,284 @@ cp .env.example .env
 Abra o `.env` e configure as variáveis obrigatórias:
 
 ```env
-# Conexão com o banco (se usar Docker, deixar assim mesmo)
+# ===========================================
+# CONFIGURAÇÕES DO BANCO DE DADOS
+# ===========================================
+# Se usar Docker, manter assim:
 DATABASE_URL=postgres://postgres:postgres@localhost:5432/salon
 
-# Chave JWT — troque por uma string longa e aleatória
+# Credenciais do PostgreSQL (Docker)
+POSTGRES_PASSWORD=postgres
+POSTGRES_USER=postgres
+POSTGRES_DB=salon
+
+# ===========================================
+# SEGURANÇA
+# ===========================================
+# Gere uma chave forte para produção:
+# openssl rand -base64 64
 JWT_SECRET=troque-isso-por-uma-chave-secreta-bem-longa-aqui
 
-# Ambiente de execução
+# ===========================================
+# AMBIENTE
+# ===========================================
 NODE_ENV=development
+PORT=3000
+
+# ===========================================
+# FRONTEND (Vite)
+# ===========================================
+VITE_APP_ID=proj_abc123def456
+VITE_APP_TITLE="Graciosa Studio de Beleza"
+VITE_APP_LOGO="https://placehold.co/40x40/3b82f6/ffffff?text=T"
+
+# ===========================================
+# CORS (Produção)
+# ===========================================
+FRONTEND_URL=http://localhost:3000
 ```
 
 > ⚠️ **NUNCA** commite o arquivo `.env` com credenciais reais. Ele já está no `.gitignore`.
 
-### Passo 4 — Subir o banco de dados com Docker
+---
+
+### 4. Iniciar Banco de Dados
+
+O banco de dados PostgreSQL é gerenciado via Docker.
+
+#### Opção A: Subir apenas o banco (recomendado para desenvolvimento)
 
 ```bash
 # Sobe apenas o container do PostgreSQL
 docker-compose up -d db
-```
 
-Verifique se está rodando:
-```bash
+# Verificar se está rodando
 docker ps
 # Deve aparecer: system-salon-db-1   Up   0.0.0.0:5432->5432/tcp
+
+# Ver logs (opcional)
+docker-compose logs -f db
 ```
 
-### Passo 5 — Criar as tabelas no banco
+#### Opção B: Usar PostgreSQL local (sem Docker)
+
+Se preferir não usar Docker, instale o PostgreSQL nativamente:
 
 ```bash
-pnpm db:push
+# Ubuntu/Debian
+sudo apt install postgresql postgresql-contrib
+
+# macOS (Homebrew)
+brew install postgresql
+
+# Criar usuário e banco
+psql -U postgres
+CREATE DATABASE salon;
+CREATE USER postgres WITH PASSWORD 'postgres';
+GRANT ALL PRIVILEGES ON DATABASE salon TO postgres;
 ```
 
-### Passo 6 — Popular o banco com dados de demonstração
+Atualize o `.env`:
+```env
+DATABASE_URL=postgres://postgres:postgres@localhost:5432/salon
+```
+
+---
+
+### 5. Configurar Banco de Dados
+
+Com o PostgreSQL rodando, execute as migrações:
+
+```bash
+# Gerar e aplicar migrações (cria as tabelas)
+pnpm db:push
+
+# Saída esperada:
+# ✔ Generated migration files
+# ✔ Migrated database
+```
+
+#### Popular com Dados de Demonstração
 
 ```bash
 NODE_ENV=development pnpm tsx drizzle/seed-admin.ts
 ```
 
-Este comando cria:
-- 1 usuário admin: `teste@teste.com` / `123123`
-- 1 salão: "Graciosa Studio de Beleza"
-- 3 especialistas, 8 serviços, 15 clientes
-- 145 agendamentos (últimos 60 dias + próximos 30 dias)
+Este script cria:
+- ✅ 1 usuário admin: `teste@teste.com` / `123123`
+- ✅ 1 salão: "Graciosa Studio de Beleza"
+- ✅ 3 especialistas
+- ✅ 8 serviços
+- ✅ 15 clientes
+- ✅ 145 agendamentos (últimos 60 dias + próximos 30 dias)
 
-### Passo 7 — Iniciar o servidor
+> 💡 **Dica:** Execute este comando sempre que precisar resetar os dados de teste.
+
+---
+
+### 6. Iniciar Back-end
+
+O back-end roda com **Node.js + tRPC + Express**.
 
 ```bash
+# No diretório raiz (/workspace)
 NODE_ENV=development pnpm dev
 ```
 
-Acesse: **http://localhost:3000**  
-Login: `teste@teste.com` | Senha: `123123`
+**Saída esperada:**
+```
+Server running on http://localhost:3000
+tRPC server ready
+Database connected
+```
+
+O back-end também serve o front-end em produção. Em desenvolvimento, o front-end roda separado.
+
+**Endpoints principais:**
+- API tRPC: `http://localhost:3000/trpc/*`
+- Health check: `http://localhost:3000/health`
+
+---
+
+### 7. Iniciar Front-end
+
+O front-end é uma aplicação **React + Vite + PWA**.
+
+#### Opção A: Rodar junto com o back-end (recomendado)
+
+O comando `pnpm dev` já inicia o back-end. O Vite é configurado para servir automaticamente.
+
+Acesse: **http://localhost:3000**
+
+#### Opção B: Rodar front-end separado (desenvolvimento)
+
+Em um **novo terminal**:
+
+```bash
+# O Vite lê a configuração da raiz e serve o client/
+pnpm vite
+```
+
+Ou diretamente:
+```bash
+cd client
+pnpm dev
+```
+
+**Saída esperada:**
+```
+VITE v5.x.x  ready in xxx ms
+
+➜  Local:   http://localhost:5173/
+➜  Network: use --host to expose
+```
+
+Acesse: **http://localhost:5173** (ou **http://localhost:3000** se integrado)
+
+**Login:**
+- Email: `teste@teste.com`
+- Senha: `123123`
+
+---
+
+### 8. Iniciar Mobile
+
+O aplicativo mobile é construído com **React Native + Expo**.
+
+#### Pré-requisitos Mobile
+
+- Ter instalado no celular:
+  - **Expo Go** (Android): [Google Play Store](https://play.google.com/store/apps/details?id=host.exp.exponent)
+  - **Expo Go** (iOS): [App Store](https://apps.apple.com/app/expo-go/id982107779)
+
+#### Passo a Passo
+
+```bash
+# 1. Navegar até a pasta mobile
+cd mobile
+
+# 2. Instalar dependências (se ainda não instalou)
+pnpm install
+
+# 3. Configurar URL da API
+# Edite mobile/lib/trpc.ts e aponte para seu back-end local
+# Exemplo: http://SEU_IP_LOCAL:3000/trpc
+
+# 4. Iniciar Expo
+pnpm start
+```
+
+**Saída esperada:**
+```
+┌─────────────────────────────────────────────┐
+│ Expo DevTools                               │
+│                                             │
+│ Press a │ Open Android                      │
+│ Press i │ Open iOS simulator                │
+│ Press w │ Open web browser                  │
+│ Press s │ Send link to phone or email       │
+└─────────────────────────────────────────────┘
+```
+
+#### Opções de Execução
+
+| Tecla | Ação |
+|-------|------|
+| `a` | Abrir no Android (emulador ou dispositivo físico) |
+| `i` | Abrir no iOS simulator (apenas macOS) |
+| `w` | Abrir no navegador web |
+| `s` | Enviar QR code para celular |
+
+#### Conectar ao Back-end Local
+
+Para o mobile acessar seu back-end rodando em localhost:
+
+1. Descubra seu IP local:
+   ```bash
+   # Linux/macOS
+   ipconfig getifaddr en0
+   
+   # Windows
+   ipconfig
+   ```
+
+2. Atualize a URL no arquivo `mobile/lib/trpc.ts`:
+   ```typescript
+   const API_URL = 'http://192.168.x.x:3000/trpc' // Seu IP local
+   ```
+
+3. Certifique-se que o back-end aceita conexões externas (CORS).
+
+---
+
+## Resumo dos Comandos por Componente
+
+| Componente | Comando | Porta | URL de Acesso |
+|------------|---------|-------|---------------|
+| **Banco de Dados** | `docker-compose up -d db` | 5432 | `localhost:5432` |
+| **Back-end** | `NODE_ENV=development pnpm dev` | 3000 | `http://localhost:3000` |
+| **Front-end** | Integrado ao back-end | 3000/5173 | `http://localhost:3000` |
+| **Mobile** | `cd mobile && pnpm start` | 8081 | QR Code / Expo Go |
+
+---
+
+## Fluxo Completo de Inicialização
+
+```bash
+# Terminal 1 — Banco de Dados
+docker-compose up -d db
+sleep 5
+
+# Terminal 2 — Back-end (já inclui front-end)
+cd /workspace
+pnpm db:push
+NODE_ENV=development pnpm tsx drizzle/seed-admin.ts
+NODE_ENV=development pnpm dev
+
+# Terminal 3 — Mobile (opcional)
+cd /workspace/mobile
+pnpm start
+```
 
 ---
 
@@ -432,11 +726,11 @@ pm2 restart salon-api
 
 ## Comandos Úteis
 
-### Desenvolvimento
+### Desenvolvimento (Raiz)
 
-\`\`\`bash
-# Iniciar dev server
-pnpm dev
+```bash
+# Iniciar dev server (back-end + front-end)
+NODE_ENV=development pnpm dev
 
 # Verificar tipos TypeScript
 pnpm check
@@ -444,27 +738,87 @@ pnpm check
 # Lint e format
 pnpm lint
 pnpm format
-\`\`\`
+
+# Testes
+pnpm test
+```
 
 ### Banco de Dados
 
-\`\`\`bash
+```bash
 # Aplicar migrações
 pnpm db:push
 
 # Criar admin inicial
-tsx drizzle/seed-admin.ts
+NODE_ENV=development pnpm tsx drizzle/seed-admin.ts
 
 # Backup
-pg_dump \$DATABASE_URL > backup.sql
+pg_dump $DATABASE_URL > backup.sql
 
 # Restore
-psql \$DATABASE_URL < backup.sql
-\`\`\`
+psql $DATABASE_URL < backup.sql
+```
+
+### Front-end
+
+```bash
+# Rodar Vite separado (se necessário)
+pnpm vite
+
+# Build de produção
+pnpm build
+
+# Preview do build
+pnpm preview
+```
+
+### Mobile
+
+```bash
+# Navegar até mobile
+cd mobile
+
+# Iniciar Expo
+pnpm start
+
+# Abrir no Android
+pnpm android
+
+# Abrir no iOS (macOS apenas)
+pnpm ios
+
+# Abrir no navegador
+pnpm web
+
+# Build Android (APK)
+pnpm build:android
+
+# Build iOS
+pnpm build:ios
+```
+
+### Docker
+
+```bash
+# Subir apenas banco
+docker-compose up -d db
+
+# Subir tudo (app + db)
+docker-compose up -d
+
+# Ver logs
+docker-compose logs -f
+
+# Parar tudo
+docker-compose down
+
+# Limpar volumes (cuidado: apaga dados!)
+docker-compose down -v
+```
 
 ### Build e Produção
 
-\`\`\`bash
+```bash
 # Build
 pnpm build
 
@@ -475,11 +829,11 @@ NODE_ENV=production pnpm start
 pm2 start dist/index.js --name salon-api
 pm2 save
 pm2 startup
-\`\`\`
+```
 
 ### Segurança
 
-\`\`\`bash
+```bash
 # Audit de vulnerabilidades
 pnpm audit
 
@@ -488,7 +842,7 @@ openssl rand -base64 64
 
 # Verificar portas
 lsof -i :3000
-\`\`\`
+```
 
 ---
 
@@ -617,14 +971,14 @@ Disponíveis em \`server/routers.ts\`:
 
 **Solução:**
 
-\`\`\`bash
+```bash
 # Verificar se JWT_SECRET está configurado
-echo \$JWT_SECRET
+echo $JWT_SECRET
 
 # Fazer login novamente para obter novo token
 # Ou verificar se o token está sendo enviado no header:
 # Authorization: Bearer <token>
-\`\`\`
+```
 
 ### Erro: "Too Many Requests"
 
@@ -632,7 +986,7 @@ echo \$JWT_SECRET
 
 **Solução:**
 - Aguardar 15 minutos
-- Ou ajustar limite em \`server/_core/index.ts\`
+- Ou ajustar limite em `server/_core/index.ts`
 
 ### Erro: "Database connection failed"
 
@@ -640,16 +994,25 @@ echo \$JWT_SECRET
 
 **Solução:**
 
-\`\`\`bash
+```bash
 # Verificar se PostgreSQL está rodando
 pg_isready
 
 # Testar conexão
-psql \$DATABASE_URL
+psql $DATABASE_URL
 
 # Com Docker
 docker-compose up -d db
-\`\`\`
+```
+
+### Erro: "Cannot connect to Docker"
+
+**Causa:** Docker Desktop não está rodando
+
+**Solução:**
+- Inicie o Docker Desktop
+- Verifique: `docker ps`
+- No Windows, certifique-se que WSL2 está ativo
 
 ### Erro: "CORS"
 
@@ -657,12 +1020,12 @@ docker-compose up -d db
 
 **Solução:**
 
-\`\`\`bash
+```bash
 # Em produção, configurar FRONTEND_URL
 export FRONTEND_URL=https://seu-dominio.com
 
 # Em desenvolvimento, usar localhost:3000 ou 5173
-\`\`\`
+```
 
 ### Erro: "Port already in use"
 
@@ -670,16 +1033,57 @@ export FRONTEND_URL=https://seu-dominio.com
 
 **Solução:**
 
-\`\`\`bash
+```bash
 # Encontrar processo usando a porta
 lsof -ti:3000
 
 # Matar processo
-kill -9 \$(lsof -ti:3000)
+kill -9 $(lsof -ti:3000)
 
 # Ou usar outra porta
 PORT=3001 pnpm dev
-\`\`\`
+```
+
+### Erro: "pnpm not found"
+
+**Causa:** pnpm não está instalado globalmente
+
+**Solução:**
+
+```bash
+# Instalar pnpm
+npm install -g pnpm
+
+# Verificar instalação
+pnpm --version
+```
+
+### Erro: "Mobile não conecta ao back-end"
+
+**Causa:** URL da API incorreta ou problema de rede
+
+**Solução:**
+1. Verifique se back-end está rodando: `http://SEU_IP:3000/health`
+2. Atualize `mobile/lib/trpc.ts` com IP correto
+3. Certifique-se que dispositivos estão na mesma rede Wi-Fi
+4. Firewall pode estar bloqueando - libere porta 3000
+
+### Erro: "Expo não inicia"
+
+**Causa:** Dependências desatualizadas ou cache corrompido
+
+**Solução:**
+
+```bash
+cd mobile
+
+# Limpar cache
+pnpm start --clear
+
+# Ou reinstalar dependências
+rm -rf node_modules
+pnpm install
+```
 
 ---
 
@@ -761,3 +1165,20 @@ Para questões e suporte:
 ---
 
 **Desenvolvido com ❤️ usando TypeScript e as melhores práticas de segurança**
+
+### Padrões de Código
+
+- **TypeScript**: Tipagem estrita sempre que possível
+- **ESLint**: Siga as regras do projeto
+- **Prettier**: Formatação automática
+- **Commits**: Mensagens claras e descritivas
+
+---
+
+## Links Úteis
+
+- [Documentação tRPC](https://trpc.io/docs)
+- [Drizzle ORM](https://orm.drizzle.team/)
+- [Expo Docs](https://docs.expo.dev/)
+- [React Documentation](https://react.dev/)
+- [Vite Docs](https://vitejs.dev/)
