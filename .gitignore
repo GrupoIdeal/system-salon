@@ -1,1 +1,12 @@
-Nothing needs to be added to .gitignore since only a README.md file was modified and no build artifacts, dependencies, or temporary files were detected in the changes.
+node_modules/
+.env
+dist/
+build/
+.pnpm-store/
+*.log
+.DS_Store
+Thumbs.db
+
+# Mobile
+mobile/node_modules/
+mobile/.expo/

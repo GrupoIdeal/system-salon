@@ -21,6 +21,9 @@
       },
       "package": "com.bizflow.access"
     },
+    "extra": {
+      "API_URL": "http://localhost:3000"
+    },
     "plugins": [
       "expo-router",
       "expo-secure-store",

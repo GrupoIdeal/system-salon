@@ -193,7 +193,6 @@ export const clients = pgTable(
   table => ({
     salonIdIdx: index("clients_salonId_idx").on(table.salonId),
     emailIdx: index("clients_email_idx").on(table.email),
-    deletedAtIdx: index("clients_deletedAt_idx").on(table.deletedAt),
   })
 );
 

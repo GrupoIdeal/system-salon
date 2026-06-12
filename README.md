@@ -59,6 +59,37 @@ O projeto foi projetado para suportar tanto uso administrativo (dashboard intern
 
 > Para quem já tem experiência e quer rodar o projeto rapidamente.
 
+### Opção A: Rodar tudo com Docker (recomendado)
+
+```bash
+# 1. Clonar e entrar no diretório
+git clone https://github.com/ronnysenna/system-salon.git
+cd system-salon
+
+# 2. Copiar variáveis de ambiente
+cp .env.example .env
+
+# 3. Subir aplicação completa (banco + back-end + front-end)
+docker-compose up -d --build
+
+# 4. Aguardar ~10s e rodar migrações SQL no container do banco
+docker cp drizzle/migrations system-salon-db-1:/tmp/migrations
+docker exec system-salon-db-1 sh -c "cd /tmp/migrations && for f in \$(ls *.sql | sort); do psql -U postgres -d salon -f \$f; done"
+
+# 5. Rodar seed de dados de teste
+docker exec system-salon-app-1 npm install -g tsx
+docker cp drizzle/seed-admin.ts system-salon-app-1:/app/drizzle/seed-admin.ts
+docker cp drizzle/schema.ts system-salon-app-1:/app/drizzle/schema.ts
+docker cp drizzle/relations.ts system-salon-app-1:/app/drizzle/relations.ts
+docker cp shared system-salon-app-1:/app/shared
+docker exec system-salon-app-1 sh -c "DATABASE_URL=postgres://postgres:postgres@db:5432/salon NODE_ENV=development tsx /app/drizzle/seed-admin.ts"
+```
+
+**Acesse:** http://localhost:3000  
+**Login:** `teste@teste.com` | **Senha:** `123123`
+
+### Opção B: Desenvolvimento local (banco via Docker)
+
 ```bash
 # 1. Clonar e entrar no diretório
 git clone https://github.com/ronnysenna/system-salon.git
@@ -93,6 +124,8 @@ cd mobile
 pnpm install
 pnpm start
 ```
+
+> **Nota:** O app mobile usa Expo. Escaneie o QR code com o app **Expo Go** (Android/iOS).
 
 ---
 
@@ -867,14 +900,22 @@ system-salon/
 │
 ├── drizzle/             # Schema e migrations
 │   ├── schema.ts        # Definição de tabelas
-│   ├── migrations/      # Arquivos de migração
+│   ├── relations.ts     # Relações entre tabelas
+│   ├── migrations/      # Arquivos SQL de migração
 │   └── seed-admin.ts    # Seeds iniciais
 │
 ├── shared/              # Código compartilhado
 │   ├── types.ts         # Tipos TypeScript
 │   └── validations.ts   # Schemas Zod
 │
+├── mobile/              # App React Native (Expo)
+│   ├── app/             # Rotas Expo Router
+│   ├── lib/             # Configurações e utilities
+│   ├── components/      # Componentes reutilizáveis
+│   └── app.json         # Configuração Expo
+│
 ├── .env.example         # Exemplo de variáveis de ambiente
+├── drizzle.config.ts    # Configuração Drizzle Kit
 ├── docker-compose.yml   # Configuração Docker
 ├── Dockerfile           # Build da imagem
 └── README.md            # Este arquivo
@@ -964,6 +1005,16 @@ Disponíveis em \`server/routers.ts\`:
 ---
 
 ## Troubleshooting
+
+### Erro: "autenticação do tipo senha falhou" no Windows com Docker
+
+**Causa:** No Windows, o Node.js local não consegue se conectar ao PostgreSQL dentro do Docker via `localhost` devido a peculiaridades de autenticação SCRAM-SHA-256 e regras pg_hba.conf.
+
+**Solução recomendada:** Rodar tudo via Docker Compose (Opção A do Quick Start):
+```bash
+docker-compose up -d --build
+```
+Isso evita o problema de autenticação, pois o app e o banco ficam na mesma rede Docker interna.
 
 ### Erro: "UNAUTHORIZED"
 
