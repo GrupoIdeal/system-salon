@@ -3,29 +3,39 @@
     "name": "BizFlow Access",
     "slug": "bizflow-access",
     "version": "1.0.0",
-    "orientation": "default",
+    "orientation": "portrait",
     "icon": "./assets/icon.png",
-    "scheme": "bizflow-access",
+    "scheme": "bizflowaccess",
     "userInterfaceStyle": "automatic",
-    "newArchEnabled": false,
+    "newArchEnabled": true,
     "splash": {
       "image": "./assets/splash.png",
       "resizeMode": "contain",
-      "backgroundColor": "#6366f1"
+      "backgroundColor": "#8b6a3a"
     },
     "ios": {
       "supportsTablet": true,
-      "bundleIdentifier": "com.bizflow.access"
+      "bundleIdentifier": "com.bizflow.access",
+      "infoPlist": {
+        "NSCameraUsageDescription": "Este app precisa de acesso à câmera para escanear QR codes.",
+        "NSPhotoLibraryUsageDescription": "Este app precisa de acesso à galeria para selecionar imagens."
+      }
     },
     "android": {
       "adaptiveIcon": {
         "foregroundImage": "./assets/adaptive-icon.png",
-        "backgroundColor": "#6366f1"
+        "backgroundColor": "#8b6a3a"
       },
-      "package": "com.bizflow.access"
+      "package": "com.bizflow.access",
+      "permissions": [
+        "CAMERA",
+        "READ_EXTERNAL_STORAGE",
+        "WRITE_EXTERNAL_STORAGE"
+      ]
     },
     "web": {
-      "favicon": "./assets/favicon.png"
+      "favicon": "./assets/favicon.png",
+      "bundler": "metro"
     },
     "extra": {
       "API_URL": "http://localhost:3000"
@@ -33,11 +43,19 @@
     "plugins": [
       "expo-router",
       "expo-secure-store",
-      "expo-sqlite",
       "expo-notifications",
-      "expo-camera",
-      "expo-location",
-      "expo-image-picker"
+      [
+        "expo-image-picker",
+        {
+          "photosPermission": "O app precisa de acesso às suas fotos para upload de imagens."
+        }
+      ],
+      [
+        "expo-camera",
+        {
+          "cameraPermission": "O app precisa de acesso à câmera para funcionalidades de QR Code."
+        }
+      ]
     ]
   }
 }
