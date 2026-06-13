@@ -5,48 +5,45 @@ node_modules/
 # Build outputs
 dist/
 build/
-target/
+.next/
+.nuxt/
+.un~lock-*
+*.tsbuildinfo
 
 # Environment variables
 .env
 .env.local
-*.env.*
+.env.*
 
-# Python specific
+# IDE files
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Python
 __pycache__/
 *.pyc
 *.pyo
 *.pyd
 .Python
-env/
-venv/
-.venv/
-.ENV
+*.so
+.coverage
+htmlcov/
+.coverage.*
 .python-version
 
 # Logs
 *.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
 
 # OS generated files
 .DS_Store
 Thumbs.db
 
-# Editor specific
-.vscode/
-.idea/
-*.swp
-*.swo
+# Temporary files
 *.tmp
-
-# Testing
-.coverage
-coverage/
-htmlcov/
-.pytest_cache/
-.mypy_cache/
-
-# Distribution / packaging
-*.tar.gz
-*.whl
-*.egg-info/
+*.temp
 ```
