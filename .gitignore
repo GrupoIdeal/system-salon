@@ -1,12 +1,57 @@
+```
+# Dependencies
 node_modules/
-.env
+
+# Build outputs
 dist/
 build/
-.pnpm-store/
+target/
+
+# Environment variables
+.env
+.env.local
+*.env.*
+
+# Python specific
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.Python
+env/
+venv/
+.venv/
+.ENV
+.python-version
+
+# Logs
 *.log
+
+# OS generated files
 .DS_Store
 Thumbs.db
 
-# Mobile
-mobile/node_modules/
-mobile/.expo/
+# Editor specific
+.vscode/
+.idea/
+*.swp
+*.swo
+*.tmp
+
+# Testing
+.coverage
+coverage/
+htmlcov/
+.pytest_cache/
+.mypy_cache/
+
+# Distribution / packaging
+*.tar.gz
+*.whl
+*.egg-info/
+
+# Mobile specific build artifacts
+*.apk
+*.ipa
+*.aab
+```

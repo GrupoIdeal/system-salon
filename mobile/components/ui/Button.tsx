@@ -1,8 +1,9 @@
 import React from 'react'
 import { StyleSheet } from 'react-native'
 import { Button as PaperButton, useTheme } from 'react-native-paper'
+import { borderRadius } from '../../lib/theme'
 
-type ButtonVariant = 'primary' | 'secondary' | 'outline' | 'ghost'
+type ButtonVariant = 'primary' | 'secondary' | 'outline' | 'ghost' | 'destructive'
 
 interface ButtonProps {
   title: string
@@ -18,6 +19,7 @@ interface ButtonProps {
 const variantModeMap: Record<ButtonVariant, 'contained' | 'outlined' | 'text'> = {
   primary: 'contained',
   secondary: 'contained',
+  destructive: 'contained',
   outline: 'outlined',
   ghost: 'text',
 }
@@ -34,7 +36,17 @@ const Button: React.FC<ButtonProps> = ({
 }) => {
   const theme = useTheme()
 
-  const isSecondary = variant === 'secondary'
+  const getButtonColor = () => {
+    if (variant === 'secondary') return theme.colors.secondary
+    if (variant === 'destructive') return theme.colors.error
+    return undefined
+  }
+
+  const getTextColor = () => {
+    if (variant === 'secondary') return theme.colors.onSecondary
+    if (variant === 'destructive') return theme.colors.onError
+    return undefined
+  }
 
   return (
     <PaperButton
@@ -44,10 +56,10 @@ const Button: React.FC<ButtonProps> = ({
       disabled={disabled}
       icon={icon}
       accessibilityLabel={accessibilityLabel ?? title}
-      style={[fullWidth && styles.fullWidth]}
+      style={[fullWidth && styles.fullWidth, { borderRadius: borderRadius.lg }]}
       contentStyle={styles.content}
-      buttonColor={isSecondary ? theme.colors.secondary : undefined}
-      textColor={isSecondary ? theme.colors.onSecondary : undefined}
+      buttonColor={getButtonColor()}
+      textColor={getTextColor()}
     >
       {title}
     </PaperButton>
@@ -59,7 +71,8 @@ const styles = StyleSheet.create({
     width: '100%',
   },
   content: {
-    minHeight: 44,
+    minHeight: 48,
+    paddingVertical: 8,
   },
 })
 
