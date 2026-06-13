@@ -1,0 +1,15 @@
+{
+  "name": "@salon/shared",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "main": "index.ts",
+  "types": "index.ts",
+  "exports": {
+    ".": "./index.ts",
+    "./validations": "./validations.ts",
+    "./types": "./types.ts",
+    "./errors": "./_core/errors.ts",
+    "./const": "./const.ts"
+  }
+}

@@ -49,12 +49,6 @@
         {
           "photosPermission": "O app precisa de acesso às suas fotos para upload de imagens."
         }
-      ],
-      [
-        "expo-camera",
-        {
-          "cameraPermission": "O app precisa de acesso à câmera para funcionalidades de QR Code."
-        }
       ]
     ]
   }
