@@ -56,7 +56,7 @@ export function useAuth(options?: UseAuthOptions) {
     // Só armazena os dados do usuário se tivermos um token e dados válidos
     if (hasToken && meQuery.data) {
       localStorage.setItem(
-        "manus-runtime-user-info",
+        "salon-user-info",
         JSON.stringify(meQuery.data)
       );
     }

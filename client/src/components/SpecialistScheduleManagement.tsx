@@ -118,7 +118,7 @@ export function SpecialistScheduleManagement({
 
   // Draft local para editar agenda (alterações só serão aplicadas ao clicar em Salvar)
   const [scheduleDraft, setScheduleDraft] = useState<Omit<
-    import("/Users/ronnysenna/Projetos/system-salon/server/specialist-schedule").SpecialistSchedule,
+    import("@server/specialist-schedule").SpecialistSchedule,
     "specialistId"
   > | null>(null);
   const [isSaving, setIsSaving] = useState(false);

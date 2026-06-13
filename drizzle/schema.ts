@@ -10,7 +10,6 @@ import {
   jsonb,
   index,
   uniqueIndex,
-  pgTrigger,
 } from "drizzle-orm/pg-core";
 import { relations } from "drizzle-orm";
 

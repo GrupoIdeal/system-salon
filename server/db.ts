@@ -782,6 +782,7 @@ export async function getAppointmentsWithDetailsBySalonId(
       paidAmount: appointments.paidAmount,
       createdAt: appointments.createdAt,
       updatedAt: appointments.updatedAt,
+      deletedAt: appointments.deletedAt,
       // Client fields
       client: {
         id: clients.id,
@@ -808,6 +809,7 @@ export async function getAppointmentsWithDetailsBySalonId(
         specialistId: services.specialistId,
         createdAt: services.createdAt,
         updatedAt: services.updatedAt,
+        deletedAt: services.deletedAt,
       },
       // Specialist fields
       specialist: {
@@ -823,6 +825,7 @@ export async function getAppointmentsWithDetailsBySalonId(
         salonId: specialists.salonId,
         createdAt: specialists.createdAt,
         updatedAt: specialists.updatedAt,
+        deletedAt: specialists.deletedAt,
       },
     })
     .from(appointments)
@@ -847,6 +850,7 @@ export async function getAppointmentsWithDetailsBySalonId(
     paidAmount: row.paidAmount,
     createdAt: row.createdAt,
     updatedAt: row.updatedAt,
+    deletedAt: row.deletedAt,
     client: row.client,
     service: row.service,
     specialist: row.specialist,

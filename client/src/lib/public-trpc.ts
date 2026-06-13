@@ -3,7 +3,7 @@
 import { createTRPCReact } from "@trpc/react-query";
 import { httpBatchLink } from "@trpc/client";
 import superjson from "superjson";
-import type { PublicRouter } from "../../../server/routers";
+import type { PublicRouter } from "@server/routers";
 
 // Use variável de ambiente Vite se fornecida, senão use origin em runtime para deploys
 const PUBLIC_API_BASE =

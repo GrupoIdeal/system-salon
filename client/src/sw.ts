@@ -88,13 +88,13 @@ self.addEventListener("push", (event: PushEvent) => {
     }
   }
 
-  const title = data.title || "BizFlow Access";
-  const options: NotificationOptions = {
+  const title = data.title || "Graciosa Studio";
+  const options = {
     body: data.body || "Você tem uma nova notificação",
     icon: data.icon || "/image/Logo.png",
     badge: data.badge || "/image/favicon.png",
     vibrate: [200, 100, 200],
-    tag: "bizflow-notification",
+    tag: "salon-notification",
     renotify: true,
     requireInteraction: true,
     data: {

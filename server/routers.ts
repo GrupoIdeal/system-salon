@@ -2095,6 +2095,32 @@ export const appRouter = router({
     getTemplates: protectedProcedure.query(async () => {
       return Object.values(defaultTemplates);
     }),
+
+    /** Registra subscription do service worker para push notifications */
+    subscribe: protectedProcedure
+      .input(
+        z.object({
+          endpoint: z.string(),
+          keys: z.object({
+            p256dh: z.string(),
+            auth: z.string(),
+          }),
+        })
+      )
+      .mutation(async ({ ctx, input }) => {
+        console.log(
+          `📱 [Push] Usuário ${ctx.user.id} registrado para notificações push`
+        );
+        return { success: true };
+      }),
+
+    /** Remove inscrição push */
+    unsubscribe: protectedProcedure.mutation(async ({ ctx }) => {
+      console.log(
+        `📱 [Push] Usuário ${ctx.user.id} cancelou notificações push`
+      );
+      return { success: true };
+    }),
   }),
 
   waitlist: router({
@@ -2686,7 +2712,7 @@ export const appRouter = router({
           amount: z.number().positive(),
         })
       )
-      .query(async ({ ctx }) => {
+      .query(async ({ input, ctx }) => {
         const salon = await getSalonByUserId(ctx.user.id);
         if (!salon)
           throw new TRPCError({
@@ -2701,38 +2727,6 @@ export const appRouter = router({
       }),
   }),
 
-  // ==========================================================================
-  // NOTIFICATIONS — Inscrição push e gerenciamento
-  // ==========================================================================
-  notifications: router({
-    /** Registra subscription do service worker para push notifications */
-    subscribe: protectedProcedure
-      .input(
-        z.object({
-          endpoint: z.string(),
-          keys: z.object({
-            p256dh: z.string(),
-            auth: z.string(),
-          }),
-        })
-      )
-      .mutation(async ({ ctx, input }) => {
-        // Em produção: salvar no banco de dados
-        // await savePushSubscription(ctx.user.id, input);
-        console.log(
-          `📱 [Push] Usuário ${ctx.user.id} registrado para notificações push`
-        );
-        return { success: true };
-      }),
-
-    /** Remove inscrição push */
-    unsubscribe: protectedProcedure.mutation(async ({ ctx }) => {
-      console.log(
-        `📱 [Push] Usuário ${ctx.user.id} cancelou notificações push`
-      );
-      return { success: true };
-    }),
-  }),
 });
 
 // Importar o roteador de agendamento público

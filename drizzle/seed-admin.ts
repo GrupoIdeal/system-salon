@@ -58,7 +58,7 @@ function toTimeStr(hour: number, minute = 0): string {
 }
 
 /** Escolhe um item aleatório de um array */
-function pick<T>(arr: T[]): T {
+function pick<T>(arr: readonly T[]): T {
   return arr[Math.floor(Math.random() * arr.length)];
 }
 
@@ -425,7 +425,7 @@ async function main() {
       specialistId: specIds[appt.specIdx],
       type: "income",
       status: "completed",
-      paymentMethod: pick(paymentMethods),
+      paymentMethod: pick(paymentMethods) as "cash" | "credit_card" | "debit_card" | "pix",
       amount,
       description: `${svc.name} — ${clientData[appt.clientIdx].name}`,
       transactionDate: txDate,
