@@ -49,9 +49,4 @@ htmlcov/
 *.tar.gz
 *.whl
 *.egg-info/
-
-# Mobile specific build artifacts
-*.apk
-*.ipa
-*.aab
 ```
