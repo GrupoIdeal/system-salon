@@ -1,5 +1,6 @@
 import React from "react";
-import { View, StyleSheet, Clipboard } from "react-native";
+import { View, StyleSheet } from "react-native";
+import * as Clipboard from "expo-clipboard";
 import { Button, Text, useTheme } from "react-native-paper";
 import MaterialCommunityIcons from "react-native-vector-icons/MaterialCommunityIcons";
 
@@ -11,8 +12,8 @@ interface PixQRCodeProps {
 const PixQRCode: React.FC<PixQRCodeProps> = ({ pixKey, amount }) => {
   const theme = useTheme();
 
-  const handleCopy = () => {
-    Clipboard.setString(pixKey);
+  const handleCopy = async () => {
+    await Clipboard.setStringAsync(pixKey);
   };
 
   return (

@@ -3,7 +3,8 @@ import { httpBatchLink } from "@trpc/client";
 import superjson from "superjson";
 import { getToken } from "./storage";
 import { API_URL } from "./constants";
-import type { AppRouter } from "../../server/routers";
+
+type AppRouter = any;
 
 export const trpc = createTRPCReact<AppRouter>();
 

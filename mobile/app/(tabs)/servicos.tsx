@@ -1,4 +1,4 @@
-import React, { useState, useCallback } from 'react'
+import React, { useState } from 'react'
 import { StyleSheet, View, FlatList, ScrollView } from 'react-native'
 import { Card, Text, Chip, FAB, useTheme, ActivityIndicator, Divider } from 'react-native-paper'
 import MaterialCommunityIcons from 'react-native-vector-icons/MaterialCommunityIcons'

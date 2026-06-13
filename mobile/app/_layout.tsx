@@ -2,14 +2,12 @@ import { Stack } from "expo-router";
 import { StatusBar } from "expo-status-bar";
 import { useEffect, useState } from "react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { httpBatchLink } from "@trpc/client";
-import superjson from "superjson";
 import { PaperProvider, MD3LightTheme, MD3DarkTheme } from "react-native-paper";
 import { SafeAreaProvider } from "react-native-safe-area-context";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
 import { trpc, getTRPCConfig } from "../lib/trpc";
 import { AuthProvider } from "../hooks/useAuth";
-import { getItem, setItem } from "../lib/storage";
+import { getItem } from "../lib/storage";
 import { STORAGE_KEYS } from "../lib/constants";
 
 const lightTheme = {
@@ -34,7 +32,6 @@ export default function RootLayout() {
   const [queryClient] = useState(() => new QueryClient());
   const [trpcClient] = useState(() => trpc.createClient(getTRPCConfig()));
   const [isDark, setIsDark] = useState(false);
-  const [highContrast, setHighContrast] = useState(false);
 
   useEffect(() => {
     loadTheme();
@@ -43,8 +40,6 @@ export default function RootLayout() {
   async function loadTheme() {
     const theme = await getItem<string>(STORAGE_KEYS.THEME_MODE);
     setIsDark(theme === "dark");
-    const contrast = await getItem<string>(STORAGE_KEYS.ACCESSIBILITY_HIGH_CONTRAST);
-    setHighContrast(contrast === "true");
   }
 
   const theme = isDark ? darkTheme : lightTheme;

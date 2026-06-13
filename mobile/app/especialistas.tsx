@@ -91,12 +91,12 @@ export default function EspecialistasScreen() {
     }
   };
 
-  const toggleStatus = async (id: string, currentStatus: string) => {
+  const toggleStatus = async (id: string, currentStatus: string, name: string) => {
     const newStatus = currentStatus === "active" ? "inactive" : "active";
     try {
       await trpc.specialists.update.mutate({
         id,
-        data: { name: "", status: newStatus },
+        data: { name, status: newStatus },
       });
       refetch();
     } catch {
@@ -141,6 +141,7 @@ export default function EspecialistasScreen() {
               <View style={styles.itemRight}>
                 <Chip
                   icon={item.status === "active" ? "check-circle" : "close-circle"}
+                  onPress={() => toggleStatus(item.id, item.status, item.name)}
                   style={[
                     styles.statusChip,
                     {

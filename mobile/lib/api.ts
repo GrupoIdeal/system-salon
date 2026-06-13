@@ -1,4 +1,5 @@
 import { getToken } from "./storage";
+import { API_URL } from "./constants";
 
 export async function getAuthHeaders(): Promise<Record<string, string>> {
   const token = await getToken();
@@ -10,6 +11,5 @@ export async function getAuthHeaders(): Promise<Record<string, string>> {
 }
 
 export function getBaseUrl(): string {
-  const { API_URL } = require("./constants");
   return API_URL;
 }
