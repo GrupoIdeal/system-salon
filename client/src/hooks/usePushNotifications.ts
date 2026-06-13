@@ -16,7 +16,7 @@ function urlBase64ToUint8Array(base64String: string): Uint8Array {
 
 export function usePushNotifications(enabled: boolean = true) {
   const subscribeMutation = trpc.notifications.subscribe.useMutation();
-  const unsubscribeMutation = trpc.notifications.unsubscribe.useMutation();
+  const _unsubscribeMutation = trpc.notifications.unsubscribe.useMutation();
   const registered = useRef(false);
 
   useEffect(() => {

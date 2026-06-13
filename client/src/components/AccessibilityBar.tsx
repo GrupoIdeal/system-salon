@@ -54,7 +54,6 @@ export function AccessibilityBar() {
     if (highContrast) {
       document.documentElement.classList.add("high-contrast");
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   return (

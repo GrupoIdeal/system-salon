@@ -293,9 +293,9 @@ export default function Clients() {
                     <div className="flex items-center gap-3 flex-1 min-w-0">
                       {/* Avatar do cliente */}
                       <div className="w-10 h-10 rounded-full bg-gradient-to-tr from-blue-100 to-slate-100 flex items-center justify-center overflow-hidden shrink-0 border border-slate-200">
-                        {(client as any).photo ? (
+                        {(client as Record<string, unknown>).photo ? (
                           <img
-                            src={(client as any).photo}
+                            src={(client as Record<string, unknown>).photo as string}
                             alt={client.name}
                             className="w-full h-full object-cover"
                           />
@@ -319,10 +319,10 @@ export default function Clients() {
                           </div>
                         )}
                         {/* Pontos de fidelidade do cliente (R$1 = 1 ponto) */}
-                        {(client as any).loyaltyPoints > 0 && (
+                        {((client as Record<string, unknown>).loyaltyPoints as number) > 0 && (
                           <div className="mt-1">
                             <span className="text-xs bg-amber-100 text-amber-700 px-2 py-0.5 rounded-full">
-                              ⭐ {(client as any).loyaltyPoints} pontos
+                              ⭐ {(client as Record<string, unknown>).loyaltyPoints as number} pontos
                             </span>
                           </div>
                         )}

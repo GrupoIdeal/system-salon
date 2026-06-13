@@ -1,5 +1,3 @@
-import { TRPCError } from "@trpc/server";
-
 // Configuração Stripe
 // Em produção: usar @stripe/stripe-js no cliente e stripe no servidor
 // Para este projeto, simulamos a integração com Stripe via Payment Intents
@@ -100,7 +98,7 @@ export async function confirmStripePayment(
 export function generatePaymentOptions(
   amount: number,
   pixKey?: string,
-  salonName?: string
+  _salonName?: string
 ) {
   const options: Array<{
     method: "pix" | "stripe" | "cash" | "credit_card" | "debit_card";

@@ -1,4 +1,4 @@
-import { View, Text, StyleSheet } from 'react-native';
+import { View, Text, StyleSheet, StyleProp, ViewStyle } from 'react-native';
 import React from 'react';
 import { Colors } from '@/utils/colors';
 
@@ -7,7 +7,7 @@ interface CardProps {
   title?: string;
   description?: string;
   variant?: 'default' | 'elevated' | 'outlined';
-  style?: any;
+  style?: StyleProp<ViewStyle>;
 }
 
 export function Card({
@@ -74,10 +74,19 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: Colors.mutedForeground,
   },
+  content: {
+    flex: 1,
+  },
+  actions: {
+    flexDirection: 'row',
+    justifyContent: 'flex-end',
+    gap: 8,
+    marginTop: 12,
+  },
 });
 
 // Sub-componente para conteúdo do Card
-export function CardContent({ children, style }: { children: React.ReactNode; style?: any }) {
+export function CardContent({ children, style }: { children: React.ReactNode; style?: StyleProp<ViewStyle> }) {
   return <View style={[styles.content, style]}>{children}</View>;
 }
 
@@ -88,7 +97,7 @@ CardContent.styles = {
 };
 
 // Sub-componente para ações do Card
-export function CardActions({ children, style }: { children: React.ReactNode; style?: any }) {
+export function CardActions({ children, style }: { children: React.ReactNode; style?: StyleProp<ViewStyle> }) {
   return (
     <View style={[styles.actions, style]}>
       {children}
@@ -97,19 +106,6 @@ export function CardActions({ children, style }: { children: React.ReactNode; st
 }
 
 CardActions.styles = {
-  actions: {
-    flexDirection: 'row',
-    justifyContent: 'flex-end',
-    gap: 8,
-    marginTop: 12,
-  },
-};
-
-const stylesComplete = {
-  ...styles,
-  content: {
-    flex: 1,
-  },
   actions: {
     flexDirection: 'row',
     justifyContent: 'flex-end',

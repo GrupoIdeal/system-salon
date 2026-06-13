@@ -1,8 +1,7 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { trpc } from "@/lib/trpc";
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-type AnyRecord = Record<string, any>;
+type AnyRecord = Record<string, unknown>;
 
 /**
  * Hook genérico para listagem de dados com paginação e filtros
@@ -19,8 +18,7 @@ export function useCrudList<TInput extends AnyRecord = AnyRecord>(
   return useQuery({
     queryKey: [procedureName, input],
     queryFn: async () => {
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const client: any = trpc;
+      const client = trpc as unknown as Record<string, (input?: unknown) => Promise<unknown>>;
       return await client[procedureName](input);
     },
     enabled: options?.enabled ?? true,
@@ -43,8 +41,7 @@ export function useCrudOne<TInput extends { id: string } = { id: string }>(
   return useQuery({
     queryKey: [procedureName, input.id],
     queryFn: async () => {
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const client: any = trpc;
+      const client = trpc as unknown as Record<string, (input?: unknown) => Promise<unknown>>;
       return await client[procedureName](input);
     },
     enabled: options?.enabled ?? true,
@@ -58,17 +55,16 @@ export function useCrudOne<TInput extends { id: string } = { id: string }>(
 export function useCrudCreate<TInput extends AnyRecord = AnyRecord>(
   procedureName: string,
   options?: {
-    onSuccess?: (data: any) => void;
+    onSuccess?: (data: unknown) => void;
     onError?: (error: Error) => void;
-    invalidateQueries?: Array<{ procedure: string; input?: any }>;
+    invalidateQueries?: Array<{ procedure: string; input?: unknown }>;
   }
 ) {
   const queryClient = useQueryClient();
 
   return useMutation({
     mutationFn: async (input: TInput) => {
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const client: any = trpc;
+      const client = trpc as unknown as Record<string, (input?: unknown) => Promise<unknown>>;
       return await client[procedureName](input);
     },
     onSuccess: (data) => {
@@ -87,17 +83,16 @@ export function useCrudCreate<TInput extends AnyRecord = AnyRecord>(
 export function useCrudUpdate<TInput extends AnyRecord = AnyRecord>(
   procedureName: string,
   options?: {
-    onSuccess?: (data: any) => void;
+    onSuccess?: (data: unknown) => void;
     onError?: (error: Error) => void;
-    invalidateQueries?: Array<{ procedure: string; input?: any }>;
+    invalidateQueries?: Array<{ procedure: string; input?: unknown }>;
   }
 ) {
   const queryClient = useQueryClient();
 
   return useMutation({
     mutationFn: async (input: TInput) => {
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const client: any = trpc;
+      const client = trpc as unknown as Record<string, (input?: unknown) => Promise<unknown>>;
       return await client[procedureName](input);
     },
     onSuccess: (data) => {
@@ -116,17 +111,16 @@ export function useCrudUpdate<TInput extends AnyRecord = AnyRecord>(
 export function useCrudDelete<TInput extends { id: string } = { id: string }>(
   procedureName: string,
   options?: {
-    onSuccess?: (data: any) => void;
+    onSuccess?: (data: unknown) => void;
     onError?: (error: Error) => void;
-    invalidateQueries?: Array<{ procedure: string; input?: any }>;
+    invalidateQueries?: Array<{ procedure: string; input?: unknown }>;
   }
 ) {
   const queryClient = useQueryClient();
 
   return useMutation({
     mutationFn: async (input: TInput) => {
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const client: any = trpc;
+      const client = trpc as unknown as Record<string, (input?: unknown) => Promise<unknown>>;
       return await client[procedureName](input);
     },
     onSuccess: (data) => {
@@ -151,7 +145,7 @@ export function useCrud(
   listInput?: AnyRecord,
   options?: {
     staleTime?: number;
-    onSuccess?: (action: "create" | "update" | "delete", data: any) => void;
+    onSuccess?: (action: "create" | "update" | "delete", data: unknown) => void;
     onError?: (
       action: "create" | "update" | "delete",
       error: Error

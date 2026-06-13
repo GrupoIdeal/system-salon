@@ -6,7 +6,23 @@ import reactHooks from "eslint-plugin-react-hooks";
 export default [
   {
     files: ["**/*.{ts,tsx}"],
-    ignores: ["**/node_modules/**", "**/dist/**"],
+    ignores: [
+      "**/node_modules/**",
+      "**/dist/**",
+      "**/build/**",
+      "**/*.log",
+      "**/*.dump",
+      "**/.vite/**",
+      "**/.turbo/**",
+      "drizzle/migrations/**",
+      "drizzle/meta/**",
+      "**/backups/**",
+      "**/.env",
+      "**/.env.*",
+      "**/*.tmp",
+      "**/*.temp",
+      "**/.DS_Store",
+    ],
     languageOptions: {
       parser: tsParser,
       parserOptions: {

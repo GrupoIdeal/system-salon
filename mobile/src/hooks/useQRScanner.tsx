@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { CameraView, useCameraPermissions, type BarcodeScanningResult } from 'expo-camera';
 import { StyleSheet } from 'react-native';
 
@@ -7,12 +7,12 @@ interface UseQRScannerProps {
   autoFocus?: boolean;
 }
 
-export function useQRScanner({ onScan, autoFocus = true }: UseQRScannerProps = {}) {
+export function useQRScanner({ onScan, autoFocus: _autoFocus = true }: UseQRScannerProps = {}) {
   const [permission, requestPermission] = useCameraPermissions();
   const [scanned, setScanned] = useState(false);
   const [scannedData, setScannedData] = useState<string | null>(null);
 
-  const handleBarCodeScanned = ({ type, data }: BarcodeScanningResult) => {
+  const handleBarCodeScanned = ({ type: _type, data }: BarcodeScanningResult) => {
     if (!scanned && onScan) {
       setScanned(true);
       setScannedData(data);
@@ -67,7 +67,7 @@ export function QRScannerView({ onScan, autoFocus = true }: UseQRScannerProps) {
 }
 
 // Fallback quando permissão não foi concedida
-function BarcodeScannerFallback({ onRequestPermission }: { onRequestPermission: () => void }) {
+function BarcodeScannerFallback({ onRequestPermission: _onRequestPermission }: { onRequestPermission: () => void }) {
   return (
     <CameraView style={styles.container}>
       {/* UI customizada solicitando permissão */}

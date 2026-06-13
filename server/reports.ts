@@ -653,17 +653,29 @@ export async function generateDailyReport(
 }
 
 // Exportar relatório para CSV
-export function exportToCSV(data: unknown[]): string {
-  if (data.length === 0) return "";
+export function exportToCSV(
+  headersOrData: string[] | Record<string, unknown>[],
+  rows?: string[][]
+): string {
+  if (Array.isArray(headersOrData) && headersOrData.length === 0) return "";
 
-  const first = data[0] as Record<string, unknown>;
-  const headers = Object.keys(first);
+  if (rows !== undefined) {
+    const headers = headersOrData as string[];
+    const escapeCSV = (val: string) =>
+      val.includes(",") || val.includes('"') || val.includes("\n")
+        ? `"${val.replace(/"/g, '""')}"`
+        : val;
+    return [headers.join(","), ...rows.map(row => row.map(escapeCSV).join(","))].join("\n");
+  }
+
+  const data = headersOrData as Record<string, unknown>[];
+  const headers = Object.keys(data[0]);
   const csvContent = [
     headers.join(","),
     ...data.map(row =>
       headers
         .map(header => {
-          const value = (row as Record<string, unknown>)[header];
+          const value = row[header];
           let out: string | number = "";
           if (value === null || value === undefined) {
             out = "";

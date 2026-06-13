@@ -1,5 +1,5 @@
 import DashboardLayout from "@/components/DashboardLayout";
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { trpc } from "@/lib/trpc";
 
 type AuditLogRow = {
@@ -21,7 +21,7 @@ type AuditLogRow = {
 
 export default function Logs() {
   const [offset, setOffset] = useState(0);
-  const [limit, setLimit] = useState(50);
+  const [limit] = useState(50);
   const [selected, setSelected] = useState<AuditLogRow | null>(null);
 
   const query = trpc.audit.list.useQuery({ limit, offset });

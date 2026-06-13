@@ -95,7 +95,7 @@ export function requirePermission(permission: string): ProcedureMiddleware<TrpcC
 export function auditLog(action: {
   entity: string;
   action: "create" | "update" | "delete" | "read";
-  getDescription?: (input: any, result: any) => string;
+  getDescription?: (input: unknown, result: unknown) => string;
 }): ProcedureMiddleware<TrpcContext> {
   return async ({ ctx, next, rawInput }) => {
     const result = await next();

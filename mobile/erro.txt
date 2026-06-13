@@ -1,0 +1,20 @@
+✓ Lockfile passes supply-chain policies (verified 59s ago)
+Lockfile is up to date, resolution step is skipped
+Already up to date
+Done in 3.2s using pnpm v11.6.0
+$ expo start "--clear"
+Starting project at C:\Users\Mateus\Documents\projetos\system-salon\mobile
+Using src/app as the root directory for Expo Router.
+Starting Metro Bundler
+warning: Bundler cache is empty, rebuilding (this may take a minute)
+TypeError: Body is unusable: Body has already been read
+TypeError: Body is unusable: Body has already been read
+    at consumeBody (node:internal/deps/undici/undici:5826:15)
+    at _Response.json (node:internal/deps/undici/undici:5779:18)
+    at getNativeModuleVersionsAsync (C:\Users\Mateus\Documents\projetos\system-salon\mobile\node_modules\.pnpm\@expo+cli@54.0.25_expo-rout_92236ced387c245b7b1c87da68a99289\node_modules\@expo\cli\src\api\getNativeModuleVersions.ts:47:31)
+    at getVersionedNativeModulesAsync (C:\Users\Mateus\Documents\projetos\system-salon\mobile\node_modules\.pnpm\@expo+cli@54.0.25_expo-rout_92236ced387c245b7b1c87da68a99289\node_modules\@expo\cli\src\start\doctor\dependencies\bundledNativeModules.ts:33:14)
+    at getCombinedKnownVersionsAsync (C:\Users\Mateus\Documents\projetos\system-salon\mobile\node_modules\.pnpm\@expo+cli@54.0.25_expo-rout_92236ced387c245b7b1c87da68a99289\node_modules\@expo\cli\src\start\doctor\dependencies\getVersionedPackages.ts:58:7)
+    at getVersionedDependenciesAsync (C:\Users\Mateus\Documents\projetos\system-salon\mobile\node_modules\.pnpm\@expo+cli@54.0.25_expo-rout_92236ced387c245b7b1c87da68a99289\node_modules\@expo\cli\src\start\doctor\dependencies\validateDependenciesVersions.ts:100:33)
+    at validateDependenciesVersionsAsync (C:\Users\Mateus\Documents\projetos\system-salon\mobile\node_modules\.pnpm\@expo+cli@54.0.25_expo-rout_92236ced387c245b7b1c87da68a99289\node_modules\@expo\cli\src\start\doctor\dependencies\validateDependenciesVersions.ts:49:25)
+    at startAsync (C:\Users\Mateus\Documents\projetos\system-salon\mobile\node_modules\.pnpm\@expo+cli@54.0.25_expo-rout_92236ced387c245b7b1c87da68a99289\node_modules\@expo\cli\src\start\startAsync.ts:110:5)
+[ELIFECYCLE] Command failed with exit code 1.

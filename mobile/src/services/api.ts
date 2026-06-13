@@ -1,5 +1,4 @@
 import axios, { AxiosInstance, AxiosError } from 'axios';
-import { Platform } from 'react-native';
 
 const API_URL = __DEV__ 
   ? 'http://192.168.1.100:3000' // IP local para desenvolvimento
@@ -42,7 +41,7 @@ export const api = {
   auth: {
     login: (email: string, password: string) => 
       axiosInstance.post('/auth/login', { email, password }),
-    register: (data: any) => 
+    register: (data: Record<string, unknown>) => 
       axiosInstance.post('/auth/register', data),
     logout: () => 
       axiosInstance.post('/auth/logout'),
@@ -54,58 +53,58 @@ export const api = {
 
   // Dashboard
   dashboard: {
-    all: (params?: any) => axiosInstance.get('/dashboard/all', { params }),
+    all: (params?: Record<string, unknown>) => axiosInstance.get('/dashboard/all', { params }),
   },
 
   // Agendamentos
   appointments: {
-    list: (params?: any) => axiosInstance.get('/appointments', { params }),
-    create: (data: any) => axiosInstance.post('/appointments', data),
-    update: (id: string, data: any) => axiosInstance.put(`/appointments/${id}`, data),
+    list: (params?: Record<string, unknown>) => axiosInstance.get('/appointments', { params }),
+    create: (data: Record<string, unknown>) => axiosInstance.post('/appointments', data),
+    update: (id: string, data: Record<string, unknown>) => axiosInstance.put(`/appointments/${id}`, data),
     cancel: (id: string) => axiosInstance.patch(`/appointments/${id}/cancel`),
-    complete: (id: string, data?: any) => axiosInstance.patch(`/appointments/${id}/complete`, data),
+    complete: (id: string, data?: Record<string, unknown>) => axiosInstance.patch(`/appointments/${id}/complete`, data),
     getById: (id: string) => axiosInstance.get(`/appointments/${id}`),
   },
 
   // Clientes
   clients: {
-    list: (params?: any) => axiosInstance.get('/clients', { params }),
-    create: (data: any) => axiosInstance.post('/clients', data),
-    update: (id: string, data: any) => axiosInstance.put(`/clients/${id}`, data),
+    list: (params?: Record<string, unknown>) => axiosInstance.get('/clients', { params }),
+    create: (data: Record<string, unknown>) => axiosInstance.post('/clients', data),
+    update: (id: string, data: Record<string, unknown>) => axiosInstance.put(`/clients/${id}`, data),
     delete: (id: string) => axiosInstance.delete(`/clients/${id}`),
     getById: (id: string) => axiosInstance.get(`/clients/${id}`),
   },
 
   // Serviços
   services: {
-    list: (params?: any) => axiosInstance.get('/services', { params }),
-    create: (data: any) => axiosInstance.post('/services', data),
-    update: (id: string, data: any) => axiosInstance.put(`/services/${id}`, data),
+    list: (params?: Record<string, unknown>) => axiosInstance.get('/services', { params }),
+    create: (data: Record<string, unknown>) => axiosInstance.post('/services', data),
+    update: (id: string, data: Record<string, unknown>) => axiosInstance.put(`/services/${id}`, data),
     delete: (id: string) => axiosInstance.delete(`/services/${id}`),
   },
 
   // Especialistas
   specialists: {
-    list: (params?: any) => axiosInstance.get('/specialists', { params }),
-    create: (data: any) => axiosInstance.post('/specialists', data),
-    update: (id: string, data: any) => axiosInstance.put(`/specialists/${id}`, data),
+    list: (params?: Record<string, unknown>) => axiosInstance.get('/specialists', { params }),
+    create: (data: Record<string, unknown>) => axiosInstance.post('/specialists', data),
+    update: (id: string, data: Record<string, unknown>) => axiosInstance.put(`/specialists/${id}`, data),
     delete: (id: string) => axiosInstance.delete(`/specialists/${id}`),
     schedule: (id: string) => axiosInstance.get(`/specialists/${id}/schedule`),
   },
 
   // Produtos
   products: {
-    list: (params?: any) => axiosInstance.get('/products', { params }),
-    create: (data: any) => axiosInstance.post('/products', data),
-    update: (id: string, data: any) => axiosInstance.put(`/products/${id}`, data),
+    list: (params?: Record<string, unknown>) => axiosInstance.get('/products', { params }),
+    create: (data: Record<string, unknown>) => axiosInstance.post('/products', data),
+    update: (id: string, data: Record<string, unknown>) => axiosInstance.put(`/products/${id}`, data),
     delete: (id: string) => axiosInstance.delete(`/products/${id}`),
     lowStock: () => axiosInstance.get('/products/low-stock'),
   },
 
   // Avaliações
   ratings: {
-    list: (params?: any) => axiosInstance.get('/ratings', { params }),
-    create: (data: any) => axiosInstance.post('/ratings', data),
+    list: (params?: Record<string, unknown>) => axiosInstance.get('/ratings', { params }),
+    create: (data: Record<string, unknown>) => axiosInstance.post('/ratings', data),
     getByAppointment: (appointmentId: string) => 
       axiosInstance.get(`/ratings/appointment/${appointmentId}`),
   },

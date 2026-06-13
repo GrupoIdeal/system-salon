@@ -112,7 +112,7 @@ self.addEventListener(
     event.notification.close();
 
     const urlToOpen =
-      (event.notification.data as any)?.url || "/dashboard";
+      ((event.notification.data as Record<string, unknown>)?.url as string) || "/dashboard";
 
     event.waitUntil(
       self.clients
@@ -123,7 +123,7 @@ self.addEventListener(
             if ("url" in client && "focus" in client) {
               client.focus();
               if ("navigate" in client) {
-                (client as any).navigate(urlToOpen);
+                (client as WindowClient).navigate(urlToOpen);
               }
               return;
             }

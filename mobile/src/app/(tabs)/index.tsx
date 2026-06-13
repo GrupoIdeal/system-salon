@@ -15,7 +15,7 @@ export default function IndexScreen() {
   const { user } = useAuth();
   const [refreshing, setRefreshing] = useState(false);
   const [loading, setLoading] = useState(true);
-  const [dashboardData, setDashboardData] = useState<any>(null);
+  const [dashboardData, setDashboardData] = useState<Record<string, unknown> | null>(null);
 
   const loadDashboard = async () => {
     try {
@@ -44,7 +44,7 @@ export default function IndexScreen() {
     return <LoadingScreen message="Carregando dashboard..." />;
   }
 
-  const metrics = dashboardData?.metrics || {};
+  const metrics = (dashboardData?.metrics as Record<string, number>) || {};
 
   return (
     <ScrollView
@@ -92,16 +92,16 @@ export default function IndexScreen() {
 
       {/* Próximos Agendamentos */}
       <Card title="Próximos Agendamentos" style={styles.section}>
-        {dashboardData?.upcomingAppointments?.length > 0 ? (
-          dashboardData.upcomingAppointments.slice(0, 3).map((appointment: any) => (
+        {(dashboardData?.upcomingAppointments as Array<Record<string, unknown>>)?.length > 0 ? (
+          (dashboardData.upcomingAppointments as Array<Record<string, unknown>>).slice(0, 3).map((appointment: Record<string, unknown>) => (
             <AppointmentCard
-              key={appointment.id}
-              id={appointment.id}
-              clientName={appointment.client?.name || 'Cliente'}
-              serviceName={appointment.service?.name || 'Serviço'}
-              specialistName={appointment.specialist?.name}
-              dateTime={new Date(appointment.date).toLocaleString('pt-BR')}
-              status={appointment.status}
+              key={appointment.id as string}
+              id={appointment.id as string}
+              clientName={(appointment.client as Record<string, unknown>)?.name as string || 'Cliente'}
+              serviceName={(appointment.service as Record<string, unknown>)?.name as string || 'Serviço'}
+              specialistName={(appointment.specialist as Record<string, unknown>)?.name as string}
+              dateTime={new Date(appointment.date as string).toLocaleString('pt-BR')}
+              status={appointment.status as 'pending' | 'confirmed' | 'completed' | 'cancelled'}
             />
           ))
         ) : (
@@ -120,17 +120,17 @@ export default function IndexScreen() {
       </Card>
 
       {/* Alerta de Estoque Baixo */}
-      {dashboardData?.lowStockProducts?.length > 0 && (
+      {(dashboardData?.lowStockProducts as Array<Record<string, unknown>>)?.length > 0 && (
         <Card 
           title="⚠️ Estoque Baixo" 
           variant="outlined"
           style={[styles.section, { borderColor: Colors.warning }]}
         >
-          {dashboardData.lowStockProducts.map((product: any) => (
-            <View key={product.id} style={styles.stockItem}>
-              <Text style={styles.stockProduct}>{product.name}</Text>
+          {(dashboardData.lowStockProducts as Array<Record<string, unknown>>).map((product: Record<string, unknown>) => (
+            <View key={product.id as string} style={styles.stockItem}>
+              <Text style={styles.stockProduct}>{product.name as string}</Text>
               <Text style={[styles.stockQuantity, { color: Colors.warning }]}>
-                {product.stock} unidades
+                {product.stock as number} unidades
               </Text>
             </View>
           ))}

@@ -1,5 +1,6 @@
 // Sistema de Configurações de Horário por Especialista - Frontend
 import { useState, useEffect } from "react";
+import type { WorkingHours, SpecialistSchedule } from "@server/specialist-schedule";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -136,7 +137,7 @@ export function SpecialistScheduleManagement({
           minimumNoticeHours: scheduleQuery.data.minimumNoticeHours,
           autoConfirmBookings: scheduleQuery.data.autoConfirmBookings,
           allowOnlineBooking: scheduleQuery.data.allowOnlineBooking,
-          workingHours: scheduleQuery.data.workingHours.map((wh: any) => ({
+          workingHours: scheduleQuery.data.workingHours.map((wh: WorkingHours) => ({
             ...wh,
           })),
           customUnavailableDates:
@@ -172,7 +173,7 @@ export function SpecialistScheduleManagement({
         await utils.schedule.getSpecialistSchedule.cancel({
           specialistId: prev,
         });
-      } catch (e) {
+      } catch (_e) {
         // ignore
       }
       utils.schedule.getSpecialistSchedule.invalidate({ specialistId: prev });
@@ -229,7 +230,7 @@ export function SpecialistScheduleManagement({
     if (!scheduleDraft) return;
     setScheduleDraft(prev => {
       if (!prev) return prev;
-      const copy: any = { ...prev };
+      const copy = { ...prev } as Record<string, unknown>;
       switch (field) {
         case "timeSlotDuration":
         case "bufferTime":
@@ -245,7 +246,7 @@ export function SpecialistScheduleManagement({
         default:
           break;
       }
-      return copy;
+      return copy as Omit<SpecialistSchedule, "specialistId">;
     });
   };
 
@@ -257,10 +258,10 @@ export function SpecialistScheduleManagement({
     if (!scheduleDraft) return;
     setScheduleDraft(prev => {
       if (!prev) return prev;
-      const newWH = (prev.workingHours || []).map((wh: any) =>
+      const newWH = (prev.workingHours || []).map((wh: WorkingHours) =>
         wh.dayOfWeek === dayOfWeek ? { ...wh } : wh
       );
-      const idx = newWH.findIndex((w: any) => w.dayOfWeek === dayOfWeek);
+      const idx = newWH.findIndex((w: WorkingHours) => w.dayOfWeek === dayOfWeek);
       if (idx === -1) return prev;
       const updated = { ...newWH[idx] };
       switch (field) {
@@ -305,7 +306,7 @@ export function SpecialistScheduleManagement({
     setScheduleDraft(prev => {
       if (!prev) return prev;
       const newArr = (prev.customUnavailableDates || []).filter(
-        (d: any) =>
+        (d: Date | string) =>
           new Date(d).toDateString() !== new Date(dateString).toDateString()
       );
       return { ...prev, customUnavailableDates: newArr };
@@ -354,10 +355,9 @@ export function SpecialistScheduleManagement({
           }
         }
 
-        // cast para any para evitar erro de tipagem do TypeScript aqui (o objeto é parcial)
         await specialistUpdate.mutateAsync({
           id: editingSpecialist.id,
-          data: updateData as any,
+          data: updateData as unknown as Parameters<typeof specialistUpdate.mutateAsync>[0]["data"],
         });
       }
 
@@ -373,7 +373,7 @@ export function SpecialistScheduleManagement({
           autoConfirmBookings: scheduleDraft.autoConfirmBookings,
           allowOnlineBooking: scheduleDraft.allowOnlineBooking,
           // enviar apenas campos esperados pelo servidor
-          workingHours: (scheduleDraft.workingHours || []).map((wh: any) => ({
+          workingHours: (scheduleDraft.workingHours || []).map((wh: WorkingHours) => ({
             dayOfWeek: wh.dayOfWeek,
             isWorking: !!wh.isWorking,
             startTime: wh.startTime || undefined,
@@ -384,19 +384,20 @@ export function SpecialistScheduleManagement({
           // enviar datas como strings ISO
           customUnavailableDates: (
             scheduleDraft.customUnavailableDates || []
-          ).map((d: any) =>
+          ).map((d: Date | string) =>
             d instanceof Date ? d.toISOString() : new Date(d).toISOString()
           ),
         };
 
-        await updateScheduleMutation.mutateAsync(payload as any);
+        await updateScheduleMutation.mutateAsync(payload as unknown as Parameters<typeof updateScheduleMutation.mutateAsync>[0]);
       }
 
       toast.success("Alterações salvas com sucesso!");
       if (onSave) onSave();
       onClose();
-    } catch (err: any) {
-      toast.error(`Erro ao salvar: ${err?.message || String(err)}`);
+    } catch (err: unknown) {
+      const message = err instanceof Error ? err.message : String(err);
+      toast.error(`Erro ao salvar: ${message}`);
     } finally {
       setIsSaving(false);
     }

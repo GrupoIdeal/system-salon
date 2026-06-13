@@ -60,14 +60,12 @@ import {
   listAuditLogsWithCount,
   // Funções de produtos (Sprint 3)
   getProductsBySalonId,
-  getProductById,
   createProduct,
   updateProduct,
   deleteProduct,
   getLowStockProducts,
   // Funções de produtos no atendimento (checkout)
   saveAppointmentProducts,
-  getAppointmentProducts,
   // Pontos de fidelidade
   addLoyaltyPoints,
   updateSalon,
@@ -2107,7 +2105,7 @@ export const appRouter = router({
           }),
         })
       )
-      .mutation(async ({ ctx, input }) => {
+      .mutation(async ({ ctx }) => {
         console.log(
           `📱 [Push] Usuário ${ctx.user.id} registrado para notificações push`
         );

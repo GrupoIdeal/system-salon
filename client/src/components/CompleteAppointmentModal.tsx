@@ -195,8 +195,8 @@ export default function CompleteAppointmentModal({
       toast.success("Agendamento concluído com sucesso!");
       // Se gerou token de avaliação, mantém modal aberto para o usuário copiar o link
       // onSuccess e onClose são chamados só quando o usuário fechar manualmente
-      if ((data as any)?.ratingToken) {
-        setRatingToken((data as any).ratingToken);
+      if ((data as Record<string, unknown>)?.ratingToken) {
+        setRatingToken((data as Record<string, unknown>).ratingToken as string);
       } else {
         onSuccess?.();
         onClose();
@@ -471,9 +471,9 @@ export default function CompleteAppointmentModal({
             </Select>
           </div>
           {/* QR Code PIX — exibido somente quando PIX é selecionado */}
-          {paymentMethod === "pix" && (salonQuery.data as any)?.pixKey ? (
+          {paymentMethod === "pix" && (salonQuery.data as Record<string, unknown>)?.pixKey ? (
             <PixQRCode
-              pixKey={(salonQuery.data as any).pixKey}
+              pixKey={(salonQuery.data as Record<string, unknown>).pixKey as string}
               amount={grandTotal}
               salonName={salonQuery.data?.name ?? "Salão"}
             />

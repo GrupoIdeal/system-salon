@@ -51,7 +51,7 @@ export default function Dashboard() {
   const metrics = dashboardQuery.data?.metrics;
   const revenueChart = dashboardQuery.data?.revenueChart;
   const upcomingAppointments = dashboardQuery.data?.upcomingAppointments;
-  const specRatings = (dashboardQuery.data as any)?.specRatings as
+  const specRatings = (dashboardQuery.data as Record<string, unknown>)?.specRatings as
     | Record<string, { average: number; count: number }>
     | undefined;
 

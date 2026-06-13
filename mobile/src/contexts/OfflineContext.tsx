@@ -12,7 +12,7 @@ interface OfflineContextType {
 export interface QueuedAction {
   id: string;
   type: string;
-  payload: any;
+  payload: unknown;
   timestamp: number;
   retryCount: number;
 }

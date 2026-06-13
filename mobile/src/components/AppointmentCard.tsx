@@ -18,7 +18,6 @@ export function AppointmentCard({
   specialistName,
   dateTime,
   status,
-  onPress,
 }: AppointmentCardProps) {
   const statusConfig = {
     pending: { label: 'Pendente', color: Colors.warning },

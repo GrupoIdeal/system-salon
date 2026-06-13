@@ -2,16 +2,14 @@ import { View, Text, StyleSheet, ScrollView, TouchableOpacity } from 'react-nati
 import React, { useState } from 'react';
 import { Colors } from '@/utils/colors';
 import { Button } from '@/components/Button';
-import { api } from '@/services/api';
 import { useAuth } from '@/contexts/AuthContext';
-import { LoadingScreen } from '@/components/LoadingScreen';
 import { Ionicons } from '@expo/vector-icons';
 
-export default function LoginScreen({ navigation }: any) {
+export default function LoginScreen() {
   const { login } = useAuth();
   const [loading, setLoading] = useState(false);
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
+  const [email, _setEmail] = useState('');
+  const [password, _setPassword] = useState('');
 
   const handleLogin = async () => {
     if (!email || !password) {
@@ -22,9 +20,9 @@ export default function LoginScreen({ navigation }: any) {
     setLoading(true);
     try {
       await login(email, password);
-      // Navegação é tratada pelo AuthContext
-    } catch (error: any) {
-      alert(error.response?.data?.message || 'Erro ao fazer login');
+    } catch (error: unknown) {
+      const err = error as { response?: { data?: { message?: string } } };
+      alert(err.response?.data?.message || 'Erro ao fazer login');
     } finally {
       setLoading(false);
     }

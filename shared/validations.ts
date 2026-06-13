@@ -233,7 +233,14 @@ export const appointmentSchema = z.object({
   appointmentDate: z.date(),
   appointmentTime: z
     .string()
-    .regex(/^\d{2}:\d{2}$/, "Formato de hora inválido (HH:MM)"),
+    .regex(/^\d{2}:\d{2}$/, "Formato de hora inválido (HH:MM)")
+    .refine(
+      (val) => {
+        const [h, m] = val.split(":").map(Number);
+        return h >= 0 && h <= 23 && m >= 0 && m <= 59;
+      },
+      { message: "Hora inválida (00:00 - 23:59)" }
+    ),
   status: z
     .enum(["pending", "confirmed", "completed", "cancelled"])
     .default("pending"),

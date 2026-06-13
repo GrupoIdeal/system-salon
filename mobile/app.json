@@ -76,11 +76,8 @@
     "extra": {
       "apiUrl": "https://api.salonbooking.com"
     },
-    "runtimeVersion": {
-      "policy": "appVersion"
-    },
     "updates": {
-      "url": "https://u.expo.dev/your-project-id"
+      "enabled": false
     }
   }
 }

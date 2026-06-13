@@ -96,7 +96,7 @@ function getDefaultSchedule(): Omit<SpecialistSchedule, "specialistId"> {
 // Helper para mapear row -> SpecialistSchedule
 function rowToSchedule(
   specialistId: string,
-  row: any | null
+  row: Record<string, unknown> | null
 ): SpecialistSchedule {
   const defaultSched = getDefaultSchedule();
 
@@ -117,16 +117,16 @@ function rowToSchedule(
   return {
     specialistId,
     workingHours,
-    timeSlotDuration: row.timeSlotDuration ?? defaultSched.timeSlotDuration,
-    bufferTime: row.bufferTime ?? defaultSched.bufferTime,
+    timeSlotDuration: (row.timeSlotDuration as number) ?? defaultSched.timeSlotDuration,
+    bufferTime: (row.bufferTime as number) ?? defaultSched.bufferTime,
     allowBookingDaysInAdvance:
-      row.allowBookingDaysInAdvance ?? defaultSched.allowBookingDaysInAdvance,
+      (row.allowBookingDaysInAdvance as number) ?? defaultSched.allowBookingDaysInAdvance,
     minimumNoticeHours:
-      row.minimumNoticeHours ?? defaultSched.minimumNoticeHours,
+      (row.minimumNoticeHours as number) ?? defaultSched.minimumNoticeHours,
     autoConfirmBookings:
-      row.autoConfirmBookings ?? defaultSched.autoConfirmBookings,
+      (row.autoConfirmBookings as boolean) ?? defaultSched.autoConfirmBookings,
     allowOnlineBooking:
-      row.allowOnlineBooking ?? defaultSched.allowOnlineBooking,
+      (row.allowOnlineBooking as boolean) ?? defaultSched.allowOnlineBooking,
     customUnavailableDates,
   };
 }
@@ -337,7 +337,7 @@ export async function updateSpecialistSchedule(
   const mergedWorkingHours = updates.workingHours
     ? updates.workingHours.map(wh => ({ ...wh }))
     : Array.isArray(existing.workingHours)
-      ? existing.workingHours.map((wh: any) => ({ ...wh }))
+      ? existing.workingHours.map((wh) => ({ ...wh }))
       : defaultSched.workingHours.map(wh => ({ ...wh }));
 
   const mergedCustomDates = updates.customUnavailableDates

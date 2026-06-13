@@ -28,7 +28,6 @@ import {
   appointments,
   transactions,
   specialistSchedules,
-  auditLogs,
 } from "../drizzle/schema";
 import { nanoid } from "nanoid";
 import bcrypt from "bcrypt";

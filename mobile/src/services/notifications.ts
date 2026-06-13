@@ -15,7 +15,7 @@ Notifications.setNotificationHandler({
 export interface PushNotificationService {
   requestPermissions: () => Promise<boolean>;
   registerForPushNotifications: () => Promise<string | null>;
-  scheduleLocalNotification: (title: string, body: string, data?: any) => Promise<string>;
+  scheduleLocalNotification: (title: string, body: string, data?: Record<string, unknown>) => Promise<string>;
   cancelNotification: (notificationId: string) => Promise<void>;
   cancelAllNotifications: () => Promise<void>;
 }
@@ -71,7 +71,7 @@ class PushNotificationServiceImpl implements PushNotificationService {
   async scheduleLocalNotification(
     title: string,
     body: string,
-    data?: any
+    data?: Record<string, unknown>
   ): Promise<string> {
     const notificationId = await Notifications.scheduleNotificationAsync({
       content: {
@@ -103,7 +103,7 @@ export function usePushNotifications() {
     return await pushNotificationService.registerForPushNotifications();
   };
 
-  const sendLocal = async (title: string, body: string, data?: any) => {
+  const sendLocal = async (title: string, body: string, data?: Record<string, unknown>) => {
     return await pushNotificationService.scheduleLocalNotification(title, body, data);
   };
 

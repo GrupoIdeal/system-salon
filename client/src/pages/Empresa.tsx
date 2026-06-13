@@ -38,7 +38,7 @@ export default function Empresa() {
         address: salonQuery.data.address || "",
         phone: salonQuery.data.phone || "",
         email: salonQuery.data.email || "",
-        pixKey: (salonQuery.data as any).pixKey || "",
+        pixKey: ((salonQuery.data as Record<string, unknown>).pixKey as string) || "",
       });
     }
   }, [salonQuery.data]);

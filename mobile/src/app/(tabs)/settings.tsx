@@ -8,7 +8,7 @@ import { Ionicons } from '@expo/vector-icons';
 
 export default function SettingsScreen() {
   const { user, logout } = useAuth();
-  const { theme, setTheme, toggleTheme, isDark } = useTheme();
+  const { theme, setTheme } = useTheme();
 
   const themes: Array<{ label: string; value: typeof theme }> = [
     { label: '☀️ Claro', value: 'light' },
