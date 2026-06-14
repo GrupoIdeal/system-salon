@@ -10,11 +10,9 @@ import {
   SidebarMenuButton,
   SidebarMenuItem,
   SidebarProvider,
-  SidebarTrigger,
   useSidebar,
 } from "@/components/ui/sidebar";
 import { APP_LOGO, APP_TITLE, getLoginUrl } from "@/const";
-import { useIsMobile } from "@/hooks/useMobile";
 import {
   Calendar,
   Hand,
@@ -50,6 +48,9 @@ const SIDEBAR_WIDTH_KEY = "sidebar-width";
 const DEFAULT_WIDTH = 280;
 const MIN_WIDTH = 200;
 const MAX_WIDTH = 480;
+
+// Constante de build - true quando buildado para mobile (VITE_MOBILE=true)
+const IS_MOBILE_BUILD = import.meta.env.VITE_MOBILE === "true";
 
 export default function DashboardLayout({
   children,
@@ -136,9 +137,7 @@ function DashboardLayoutContent({
   const [isResizing, setIsResizing] = useState(false);
   const sidebarRef = useRef<HTMLDivElement>(null);
   const activeMenuItem = menuItems.find(item => item.path === location);
-  const isMobile = useIsMobile();
 
-  // Registrar push notifications quando o usuário está autenticado
   usePushNotifications(!!user);
 
   useEffect(() => {
@@ -150,7 +149,6 @@ function DashboardLayoutContent({
   useEffect(() => {
     const handleMouseMove = (e: MouseEvent) => {
       if (!isResizing) return;
-
       const sidebarLeft = sidebarRef.current?.getBoundingClientRect().left ?? 0;
       const newWidth = e.clientX - sidebarLeft;
       if (newWidth >= MIN_WIDTH && newWidth <= MAX_WIDTH) {
@@ -189,7 +187,6 @@ function DashboardLayoutContent({
             <div className="flex items-center gap-3 pl-2 group-data-[collapsible=icon]:px-0 transition-all w-full bg-transparent">
               {isCollapsed ? (
                 <div className="relative h-8 w-8 shrink-0 group">
-                  {/* Removido a logo quando colapsado */}
                   <button
                     onClick={toggleSidebar}
                     type="button"
@@ -200,7 +197,6 @@ function DashboardLayoutContent({
                 </div>
               ) : (
                 <>
-                  {/* Logo e título - clicável para ir ao dashboard */}
                   <button
                     onClick={() => setLocation("/dashboard")}
                     type="button"
@@ -242,7 +238,6 @@ function DashboardLayoutContent({
                   </SidebarMenuItem>
                 );
               })}
-              {/* Menu de administração só para admin */}
               {user?.role === "admin" && (
                 <>
                   <SidebarMenuItem>
@@ -252,9 +247,7 @@ function DashboardLayoutContent({
                       tooltip="Empresa"
                       className={`h-12 transition-all font-normal ${location === "/empresa" ? "bg-[var(--primary)] text-[var(--sidebar-foreground)]" : "text-[var(--sidebar-foreground)]/70 hover:bg-[var(--chart-3)] hover:text-[var(--sidebar-foreground)]"}`}
                     >
-                      <User
-                        className={`h-6 w-6 mr-2 ${location === "/empresa" ? "text-[var(--sidebar-foreground)]" : "text-[var(--sidebar-foreground)]/70"}`}
-                      />
+                      <User className={`h-6 w-6 mr-2 ${location === "/empresa" ? "text-[var(--sidebar-foreground)]" : "text-[var(--sidebar-foreground)]/70"}`} />
                       <span className="truncate">Empresa</span>
                     </SidebarMenuButton>
                   </SidebarMenuItem>
@@ -265,9 +258,7 @@ function DashboardLayoutContent({
                       tooltip="Usuários"
                       className={`h-12 transition-all font-normal ${location === "/usuarios" ? "bg-[var(--primary)] text-[var(--sidebar-foreground)]" : "text-[var(--sidebar-foreground)]/70 hover:bg-[var(--chart-3)] hover:text-[var(--sidebar-foreground)]"}`}
                     >
-                      <Users
-                        className={`h-6 w-6 mr-2 ${location === "/usuarios" ? "text-[var(--sidebar-foreground)]" : "text-[var(--sidebar-foreground)]/70"}`}
-                      />
+                      <Users className={`h-6 w-6 mr-2 ${location === "/usuarios" ? "text-[var(--sidebar-foreground)]" : "text-[var(--sidebar-foreground)]/70"}`} />
                       <span className="truncate">Usuários</span>
                     </SidebarMenuButton>
                   </SidebarMenuItem>
@@ -278,9 +269,7 @@ function DashboardLayoutContent({
                       tooltip="Log sistema"
                       className={`h-12 transition-all font-normal ${location === "/logs" ? "bg-[var(--primary)] text-[var(--sidebar-foreground)]" : "text-[var(--sidebar-foreground)]/70 hover:bg-[var(--chart-3)] hover:text-[var(--sidebar-foreground)]"}`}
                     >
-                      <FileText
-                        className={`h-6 w-6 mr-2 ${location === "/logs" ? "text-[var(--sidebar-foreground)]" : "text-[var(--sidebar-foreground)]/70"}`}
-                      />
+                      <FileText className={`h-6 w-6 mr-2 ${location === "/logs" ? "text-[var(--sidebar-foreground)]" : "text-[var(--sidebar-foreground)]/70"}`} />
                       <span className="truncate">Log sistema</span>
                     </SidebarMenuButton>
                   </SidebarMenuItem>
@@ -290,7 +279,6 @@ function DashboardLayoutContent({
           </SidebarContent>
 
           <SidebarFooter className="flex flex-col gap-2 p-4 border-t border-[var(--sidebar-border)] bg-[var(--sidebar)]">
-            {/* Barra de acessibilidade no rodapé da sidebar (desktop) */}
             {!isCollapsed && (
               <div className="flex justify-center pb-1">
                 <AccessibilityBar />
@@ -321,23 +309,15 @@ function DashboardLayoutContent({
       </div>
 
       <SidebarInset>
-        {isMobile && (
-          <div className="flex border-b h-14 items-center justify-between bg-[var(--sidebar)]/95 px-2 backdrop-blur supports-[backdrop-filter]:backdrop-blur sticky top-0 z-40">
-            <div className="flex items-center gap-2">
-              <SidebarTrigger className="h-9 w-9 rounded-lg bg-[var(--sidebar-primary)] text-[var(--sidebar-foreground)]" />
-              <div className="flex items-center gap-3">
-                <div className="flex flex-col gap-1">
-                  <span className="tracking-tight text-black font-semibold">
-                    {activeMenuItem?.label ?? APP_TITLE}
-                  </span>
-                </div>
-              </div>
-            </div>
-            {/* Barra de acessibilidade no header mobile */}
+        {IS_MOBILE_BUILD && (
+          <div className="flex border-b h-14 items-center justify-between bg-[var(--sidebar)]/95 px-4 backdrop-blur supports-[backdrop-filter]:backdrop-blur sticky top-0 z-40 safe-area-top">
+            <span className="tracking-tight text-black font-semibold text-lg">
+              {activeMenuItem?.label ?? APP_TITLE}
+            </span>
             <AccessibilityBar />
           </div>
         )}
-        <main className="flex-1 p-4 sm:p-6 lg:p-8 bg-[var(--background)] dark:bg-[var(--card)] overflow-x-hidden">
+        <main className="flex-1 p-4 sm:p-6 lg:p-8 bg-[var(--background)] dark:bg-[var(--card)] overflow-x-hidden pb-32">
           {children}
         </main>
       </SidebarInset>

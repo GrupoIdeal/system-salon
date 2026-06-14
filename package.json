@@ -12,9 +12,18 @@
     "test": "vitest run",
     "db:push": "drizzle-kit generate && drizzle-kit migrate",
     "lint": "eslint . --max-warnings=0",
-    "lint:fix": "eslint . --fix"
+    "lint:fix": "eslint . --fix",
+    "mobile:sync": "cd mobile && npx cap sync",
+    "mobile:build": "cross-env VITE_MOBILE=true VITE_API_URL=http://localhost:3000 vite build && cd mobile && npx cap sync",
+    "mobile:dev": "cross-env VITE_MOBILE=true VITE_API_URL=http://localhost:3000 vite build && cd mobile && npx cap sync && npx cap run android",
+    "mobile:open:android": "cd mobile && npx cap open android",
+    "mobile:open:ios": "cd mobile && npx cap open ios",
+    "mobile:add:android": "cd mobile && npx cap add android",
+    "mobile:add:ios": "cd mobile && npx cap add ios",
+    "mobile:assets": "cd mobile && npx cap assets"
   },
   "dependencies": {
+    "@capacitor/core": "^7.0.0",
     "@radix-ui/react-accordion": "^1.2.12",
     "@radix-ui/react-alert-dialog": "^1.1.15",
     "@radix-ui/react-aspect-ratio": "^1.1.7",

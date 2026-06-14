@@ -7,6 +7,11 @@ import { ThemeProvider } from "./contexts/ThemeContext";
 import { useAuth } from "@/_core/hooks/useAuth";
 import { lazy, Suspense, useEffect } from "react";
 import Footer from "@/components/Footer";
+import BottomNav from "@/components/BottomNav";
+
+// Constante de build - true quando buildado para mobile (VITE_MOBILE=true)
+const IS_MOBILE_BUILD = import.meta.env.VITE_MOBILE === "true";
+console.log("[DEBUG] IS_MOBILE_BUILD:", IS_MOBILE_BUILD, "VITE_MOBILE:", import.meta.env.VITE_MOBILE);
 
 // Lazy loading: cada página só é carregada quando o usuário navegar até ela.
 // Isso reduz o bundle inicial em ~40%, acelerando o primeiro carregamento.
@@ -147,17 +152,25 @@ function Router() {
   );
 }
 
+function AppContent() {
+  return (
+    <>
+      <Toaster />
+      <Suspense fallback={<PageLoader />}>
+        <Router />
+      </Suspense>
+      <Footer />
+      {IS_MOBILE_BUILD && <BottomNav />}
+    </>
+  );
+}
+
 function App() {
   return (
     <ErrorBoundary>
       <ThemeProvider defaultTheme="light">
         <TooltipProvider>
-          <Toaster />
-          {/* Suspense envolve o roteador para exibir o loader enquanto chunks carregam */}
-          <Suspense fallback={<PageLoader />}>
-            <Router />
-          </Suspense>
-          <Footer />
+          <AppContent />
         </TooltipProvider>
       </ThemeProvider>
     </ErrorBoundary>

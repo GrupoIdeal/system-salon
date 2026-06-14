@@ -4,11 +4,12 @@ import { createTRPCReact } from "@trpc/react-query";
 import { httpBatchLink } from "@trpc/client";
 import superjson from "superjson";
 import type { PublicRouter } from "@server/routers";
+import { getApiBaseUrl } from "@/lib/capacitor";
 
-// Use variável de ambiente Vite se fornecida, senão use origin em runtime para deploys
-const PUBLIC_API_BASE =
-  (import.meta.env.VITE_PUBLIC_API_URL as string | undefined) ??
-  `${globalThis.location?.origin || ""}/api`;
+const apiBase = getApiBaseUrl();
+const PUBLIC_API_BASE = apiBase
+  ? `${apiBase}/api`
+  : `${globalThis.location?.origin || ""}/api`;
 
 // Criar cliente tRPC público
 export const publicTrpc = createTRPCReact<PublicRouter>();

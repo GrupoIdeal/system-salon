@@ -27,6 +27,8 @@
 
 <body>
   <div id="root"></div>
+  <!-- TESTE: Div fixa para verificar se o WebView renderiza elementos fixed -->
+  <div id="nav-test" style="position:fixed;bottom:0;left:0;right:0;height:80px;background:#ff0000;z-index:999999;display:flex;align-items:center;justify-content:center;color:white;font-size:18px;font-weight:bold;">NAV TEST</div>
   <script type="module" src="/src/main.tsx"></script>
   <script defer src="%VITE_ANALYTICS_ENDPOINT%/umami" data-website-id="%VITE_ANALYTICS_WEBSITE_ID%"></script>
 </body>

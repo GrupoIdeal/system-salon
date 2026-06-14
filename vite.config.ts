@@ -1,17 +1,21 @@
 import tailwindcss from "@tailwindcss/vite";
 import react from "@vitejs/plugin-react";
 import path from "path";
-import { defineConfig } from "vite";
+import { defineConfig, loadEnv } from "vite";
 import { VitePWA } from "vite-plugin-pwa";
 import { vitePluginManusRuntime } from "vite-plugin-manus-runtime";
 
 const appTitle = process.env.VITE_APP_TITLE || "Graciosa Studio de Beleza";
+const isMobile = process.env.VITE_MOBILE === "true";
 
 const plugins = [
   react(),
   tailwindcss(),
   vitePluginManusRuntime(),
-  VitePWA({
+];
+
+if (!isMobile) {
+  plugins.push(VitePWA({
     strategies: "injectManifest",
     srcDir: "src",
     filename: "sw.ts",
@@ -45,8 +49,8 @@ const plugins = [
     devOptions: {
       enabled: true,
     },
-  }),
-];
+  }));
+}
 
 export default defineConfig({
   plugins,
@@ -83,6 +87,12 @@ export default defineConfig({
   },
   server: {
     host: true,
+    proxy: {
+      "/api": {
+        target: "http://localhost:3000",
+        changeOrigin: true,
+      },
+    },
     allowedHosts: [
       ".manus.computer",
       ".manuspre.computer",

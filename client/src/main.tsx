@@ -7,6 +7,7 @@ import superjson from "superjson";
 import App from "./App";
 import { getLoginUrl, APP_TITLE } from "./const";
 import { getAuthToken } from "@/lib/auth-utils";
+import { getApiBaseUrl } from "@/lib/capacitor";
 import "./index.css";
 
 const queryClient = new QueryClient({
@@ -54,10 +55,12 @@ queryClient.getMutationCache().subscribe(event => {
   }
 });
 
+const apiBase = getApiBaseUrl();
+
 const trpcClient = trpc.createClient({
   links: [
     httpBatchLink({
-      url: "/api/trpc",
+      url: `${apiBase}/api/trpc`,
       transformer: superjson,
       fetch(input, init) {
         // Obter token de autenticação do localStorage
@@ -74,7 +77,6 @@ const trpcClient = trpc.createClient({
         return globalThis.fetch(input, {
           ...(init ?? {}),
           headers,
-          credentials: "include",
         });
       },
     }),
