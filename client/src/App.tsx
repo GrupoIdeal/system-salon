@@ -160,7 +160,6 @@ function AppContent() {
         <Router />
       </Suspense>
       <Footer />
-      {IS_MOBILE_BUILD && <BottomNav />}
     </>
   );
 }

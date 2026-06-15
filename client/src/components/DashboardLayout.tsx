@@ -31,6 +31,7 @@ import { useLocation } from "wouter";
 import { DashboardLayoutSkeleton } from "./DashboardLayoutSkeleton";
 import { AccessibilityBar } from "./AccessibilityBar";
 import { Button } from "./ui/button";
+import BottomNav from "./BottomNav";
 import { usePushNotifications } from "@/hooks/usePushNotifications";
 
 const menuItems = [
@@ -176,7 +177,7 @@ function DashboardLayoutContent({
   }, [isResizing, setSidebarWidth]);
 
   return (
-    <>
+    <div style={{ display: "flex", flexDirection: "column", height: "100vh", overflow: "hidden" }}>
       <div className="relative" ref={sidebarRef}>
         <Sidebar
           collapsible="icon"
@@ -321,6 +322,7 @@ function DashboardLayoutContent({
           {children}
         </main>
       </SidebarInset>
-    </>
+      {IS_MOBILE_BUILD && <BottomNav />}
+    </div>
   );
 }
