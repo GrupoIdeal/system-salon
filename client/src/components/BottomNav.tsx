@@ -1,5 +1,4 @@
 import { useLocation } from "wouter";
-import { createPortal } from "react-dom";
 import {
   Calendar,
   LayoutDashboard,
@@ -19,7 +18,7 @@ const menuItems = [
 export default function BottomNav() {
   const [, setLocation] = useLocation();
 
-  const nav = (
+  return (
     <nav
       id="mobile-bottom-nav"
       style={{
@@ -68,6 +67,4 @@ export default function BottomNav() {
       ))}
     </nav>
   );
-
-  return createPortal(nav, document.body);
 }

@@ -3,7 +3,7 @@
 
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5, viewport-fit=cover" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5, height=device-height" />
   <meta name="theme-color" content="#0f172a" />
   <meta name="apple-mobile-web-app-capable" content="yes" />
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
@@ -27,8 +27,6 @@
 
 <body>
   <div id="root"></div>
-  <!-- TESTE: Div fixa para verificar se o WebView renderiza elementos fixed -->
-  <div id="nav-test" style="position:fixed;bottom:0;left:0;right:0;height:80px;background:#ff0000;z-index:999999;display:flex;align-items:center;justify-content:center;color:white;font-size:18px;font-weight:bold;">NAV TEST</div>
   <script type="module" src="/src/main.tsx"></script>
   <script defer src="%VITE_ANALYTICS_ENDPOINT%/umami" data-website-id="%VITE_ANALYTICS_WEBSITE_ID%"></script>
 </body>
