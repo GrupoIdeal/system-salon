@@ -1,1 +1,4 @@
-Nothing needs to be added to the .gitignore file based on the provided changes, as they consist only of source code and configuration files (.tsx, .ts, .html).
+```
+# Environment variables
+.env
+```
