@@ -38,7 +38,19 @@ async function startServer() {
   // Helmet para segurança de headers HTTP
   app.use(
     helmet({
-      contentSecurityPolicy: ENV.isProduction ? undefined : false,
+      contentSecurityPolicy: ENV.isProduction
+        ? {
+            directives: {
+              defaultSrc: ["'self'"],
+              scriptSrc: ["'self'", "'unsafe-inline'", "'unsafe-eval'"],
+              styleSrc: ["'self'", "'unsafe-inline'", "https://fonts.googleapis.com"],
+              imgSrc: ["'self'", "data:", "blob:", "https:"],
+              fontSrc: ["'self'", "https://fonts.gstatic.com"],
+              frameSrc: ["'self'", "https://www.youtube.com", "https://www.youtube-nocookie.com"],
+              connectSrc: ["'self'", "https:"],
+            },
+          }
+        : false,
       crossOriginEmbedderPolicy: false,
     })
   );
@@ -159,9 +171,9 @@ async function startServer() {
     console.log(`Port ${preferredPort} is busy, using port ${port} instead`);
   }
 
-  server.listen(port, () => {
+  server.listen(port, "0.0.0.0", () => {
     if (!ENV.isProduction) {
-      console.log(`Servidor em execução: http://localhost:${port}/`);
+      console.log(`Servidor em execução: http://localhost:${port}/ (bind 0.0.0.0)`);
     }
   });
 }

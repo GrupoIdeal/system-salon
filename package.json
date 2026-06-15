@@ -13,14 +13,7 @@
     "db:push": "drizzle-kit generate && drizzle-kit migrate",
     "lint": "eslint . --max-warnings=0",
     "lint:fix": "eslint . --fix",
-    "mobile:sync": "cd mobile && npx cap sync",
-    "mobile:build": "cross-env VITE_MOBILE=true VITE_API_URL=http://localhost:3000 vite build && cd mobile && npx cap sync",
-    "mobile:dev": "cross-env VITE_MOBILE=true VITE_API_URL=http://localhost:3000 vite build && cd mobile && npx cap sync && npx cap run android",
-    "mobile:open:android": "cd mobile && npx cap open android",
-    "mobile:open:ios": "cd mobile && npx cap open ios",
-    "mobile:add:android": "cd mobile && npx cap add android",
-    "mobile:add:ios": "cd mobile && npx cap add ios",
-    "mobile:assets": "cd mobile && npx cap assets"
+    "db:seed": "cross-env NODE_ENV=development tsx drizzle/seed-admin.ts"
   },
   "dependencies": {
     "@capacitor/core": "^7.0.0",

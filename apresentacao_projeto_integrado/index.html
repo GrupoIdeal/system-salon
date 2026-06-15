@@ -1,0 +1,397 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>BeautySalon Access — Apresentação Final</title>
+<style>
+*,*::before,*::after{margin:0;padding:0;box-sizing:border-box}
+:root{--bg:#06070b;--sur:#0e1017;--b:#2563eb;--p:#7c3aed;--g:#059669;--a:#d97706;--t:#f8fafc;--m:#64748b;--l:rgba(255,255,255,.05)}
+body{font-family:'Segoe UI',system-ui,sans-serif;background:var(--bg);color:var(--t);height:100vh;overflow:hidden;user-select:none}
+body::before{content:'';position:fixed;top:-30vh;right:-10vw;width:60vw;height:70vh;background:radial-gradient(circle,rgba(37,99,235,.05)0,transparent 70%);pointer-events:none;z-index:0}
+body::after{content:'';position:fixed;bottom:-30vh;left:-10vw;width:50vw;height:60vh;background:radial-gradient(circle,rgba(124,58,237,.04)0,transparent 70%);pointer-events:none;z-index:0}
+.slide{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:5vh 7vw;opacity:0;transform:translateY(16px);transition:opacity .6s ease,transform .6s ease;pointer-events:none}
+.slide.on{opacity:1;transform:translateY(0);pointer-events:auto}
+.bar{position:fixed;top:0;left:0;height:2px;background:linear-gradient(90deg,var(--b),var(--p));z-index:100;transition:width .6s ease}
+.pn{position:fixed;bottom:26px;right:32px;font-size:10px;color:var(--m);letter-spacing:4px;z-index:100;font-weight:500}
+h1{font-size:clamp(42px,6vw,72px);font-weight:800;line-height:1.1;text-align:center}
+h1 .gr{background:linear-gradient(135deg,var(--b)0,var(--p)50%,#ec4899 100%);-webkit-background-clip:text;-webkit-text-fill-color:transparent}
+h2{font-size:clamp(26px,3.2vw,38px);font-weight:700;text-align:center;line-height:1.25;margin-bottom:6px}
+h2 .ac{color:var(--b)}
+h3{font-size:15px;font-weight:700;margin-bottom:4px}
+.tag{font-size:10px;text-transform:uppercase;letter-spacing:5px;color:var(--b);font-weight:600;margin-bottom:20px}
+.sub{color:var(--m);font-size:14px;text-align:center;max-width:560px;line-height:1.7}
+.sub strong{color:var(--t);font-weight:600}
+.r{display:flex;gap:18px;width:100%;max-width:960px;justify-content:center;flex-wrap:wrap}
+.c2>*{flex:0 1 calc(50% - 9px);min-width:280px}
+.c3>*{flex:0 1 calc(33.33% - 12px);min-width:220px}
+.card{background:var(--sur);border:1px solid var(--l);border-radius:12px;padding:28px 24px;text-align:left;transition:border-color .2s}
+.card:hover{border-color:rgba(255,255,255,.08)}
+.card .em{font-size:24px;margin-bottom:12px;display:block}
+.card h3{font-size:15px;font-weight:700;margin-bottom:4px}
+.card p{font-size:12px;color:var(--m);line-height:1.6}
+.stats{display:flex;flex-wrap:wrap;gap:16px;max-width:860px;justify-content:center;margin-top:20px}
+.stat{padding:32px 28px;text-align:center;min-width:160px;background:var(--sur);border:1px solid var(--l);border-radius:12px;flex:1}
+.stat .n{font-size:38px;font-weight:900;background:linear-gradient(135deg,var(--b),var(--p));-webkit-background-clip:text;-webkit-text-fill-color:transparent;margin-bottom:2px;line-height:1}
+.stat .l{font-size:10px;color:var(--m);text-transform:uppercase;letter-spacing:2px}
+.pills{display:flex;flex-wrap:wrap;gap:8px;max-width:880px;justify-content:center;margin-top:10px}
+.pill{padding:8px 18px;border-radius:100px;background:var(--sur);border:1px solid var(--l);font-size:12px;color:var(--m);font-weight:500}
+.row{display:flex;align-items:center;gap:16px;padding:18px 22px;border-radius:10px;background:var(--sur);border:1px solid var(--l);width:100%;max-width:700px;margin-bottom:6px}
+.row .lc{width:3px;height:32px;border-radius:2px;flex-shrink:0}
+.row .nm{font-weight:700;font-size:15px;flex:1}
+.row .rs{font-size:11px;color:var(--m);text-align:right;line-height:1.5}
+.risk{display:flex;align-items:flex-start;gap:14px;padding:16px 0;border-bottom:1px solid var(--l);width:100%;max-width:700px}
+.risk:last-child{border:none}
+.risk .ic{font-size:20px;flex-shrink:0;margin-top:1px}
+.risk h4{font-size:13px;font-weight:600;margin-bottom:3px}
+.risk p{font-size:11px;color:var(--m);line-height:1.5}
+.decision{background:var(--sur);border:1px solid var(--l);border-radius:12px;padding:28px 32px;max-width:760px;width:100%;margin-top:6px}
+.decision h3{font-size:18px;margin-bottom:12px;display:flex;align-items:center;gap:10px}
+.decision p{font-size:13px;color:var(--m);line-height:1.7;margin-bottom:10px}
+.decision .vs{display:flex;gap:12px;margin-top:8px}
+.decision .vs div{flex:1;padding:14px 16px;border-radius:8px;font-size:11px;line-height:1.6}
+.decision .vs .bad{background:rgba(239,68,68,.08);border:1px solid rgba(239,68,68,.15);color:#fca5a5}
+.decision .vs .good{background:rgba(16,185,129,.08);border:1px solid rgba(16,185,129,.15);color:#6ee7b7}
+.arch-box{background:var(--sur);border:1px solid var(--l);border-radius:12px;padding:32px 40px;max-width:580px;width:100%;font-family:'SF Mono','Fira Code','Cascadia Code',monospace;font-size:12px;color:var(--m);line-height:2;text-align:center}
+.arch-box b{color:var(--t)}
+.cover h1{margin-bottom:10px}
+.cover .sub{margin-bottom:32px;font-size:16px}
+.cover .meta{font-size:11px;color:var(--m);display:flex;gap:24px;letter-spacing:3px;text-transform:uppercase}
+.thanks h2{margin-bottom:8px}
+.thanks p{color:var(--m);margin-bottom:28px;font-size:15px}
+.thanks .links{display:flex;gap:32px;font-size:12px;color:var(--m)}
+nav{position:fixed;bottom:26px;left:50%;transform:translateX(-50%);display:flex;align-items:center;gap:4px;z-index:100}
+nav button{width:30px;height:30px;border:1px solid var(--l);border-radius:50%;background:var(--sur);color:var(--m);cursor:pointer;font-size:15px;transition:all .2s;display:flex;align-items:center;justify-content:center}
+nav button:hover{border-color:rgba(255,255,255,.15);color:var(--t)}
+nav .ds{display:flex;gap:5px;margin:0 6px}
+nav .d{width:5px;height:5px;border-radius:50%;background:rgba(255,255,255,.08);transition:all .35s;cursor:pointer}
+nav .d.on{background:var(--b);width:14px;border-radius:3px}
+ul{list-style:none;padding:0}
+li{display:flex;align-items:flex-start;gap:10px;padding:6px 0;font-size:13px;color:var(--m)}
+li::before{content:'•';color:var(--b);font-weight:bold;flex-shrink:0}
+@media(max-width:768px){.slide{padding:32px 18px}.c2>*,.c3>*{flex:0 1 100%;min-width:0}h1{font-size:32px}h2{font-size:20px}.card{padding:20px 16px}.decision{padding:20px}.arch-box{padding:20px;font-size:10px}.pn{bottom:64px;right:14px}}
+</style>
+</head>
+<body>
+<div class="bar" id="bar"></div><div class="pn" id="pn">1/22</div>
+
+<!-- ===== 1. CAPA ===== -->
+<div class="slide cover on">
+  <div class="tag">PROJETO INTEGRADO IV · 2026.1</div>
+  <h1><span class="gr">BeautySalon<br>Access</span></h1>
+  <p class="sub">Sistema de Gestão Inteligente para Salões de Beleza<br>com Acessibilidade em Libras</p>
+  <div class="meta"><span>Faculdade CDL</span><span>Ideal Soluções Tecnológicas</span><span>Junho 2026</span></div>
+</div>
+
+<!-- ===== 2. ROTEIRO ===== -->
+<div class="slide">
+  <div class="tag">Roteiro</div>
+  <h2>O que vamos <span class="ac">apresentar</span></h2>
+  <div class="c2 r" style="margin-top:28px">
+    <div class="card"><span class="em">&#x1F3E2;</span><h3>1. Contexto e Problema</h3><p>O mercado de salões, as dores reais dos donos e a lacuna de acessibilidade.</p></div>
+    <div class="card"><span class="em">&#x1F4A1;</span><h3>2. Solução Proposta</h3><p>O BeautySalon Access como plataforma única de gestão + acessibilidade.</p></div>
+    <div class="card"><span class="em">&#x1F3D7;</span><h3>3. Arquitetura e Decisões</h3><p>Stack tecnológica, tRPC vs REST, Drizzle vs Prisma, PWA vs Nativo.</p></div>
+    <div class="card"><span class="em">&#x2714;</span><h3>4. O que Entregamos</h3><p>Funcionalidades, métricas, segurança, acessibilidade e documentação.</p></div>
+  </div>
+</div>
+
+<!-- ===== 3. CONTEXTO: O MERCADO ===== -->
+<div class="slide">
+  <div class="tag">Contexto</div>
+  <h2>O mercado de <span class="ac">salões de beleza</span></h2>
+  <div class="r c2" style="margin-top:24px">
+    <div class="card">
+      <span class="em">&#x1F4CA;</span>
+      <h3>Setor em crescimento</h3>
+      <p>O Brasil é o 4º maior mercado de beleza do mundo, com mais de 1 milhão de salões ativos. A maioria são micro e pequenas empresas familiares.</p>
+    </div>
+    <div class="card">
+      <span class="em">&#x1F4C6;</span>
+      <h3>Gestão ainda manual</h3>
+      <p>Estima-se que 70% dos pequenos salões ainda usam agenda de papel, WhatsApp ou planilhas para controlar horários, clientes e finanças.</p>
+    </div>
+    <div class="card">
+      <span class="em">&#x1F4B8;</span>
+      <h3>Perda de receita</h3>
+      <p>Agendamentos manuais geram ~30% de ausências (no-shows). Sem lembretes automáticos, cada falta é uma perda direta de faturamento.</p>
+    </div>
+    <div class="card">
+      <span class="em">&#x1F9CF;</span>
+      <h3>Exclusão digital</h3>
+      <p>Profissionais e clientes surdos não encontram sistemas de gestão com suporte a Libras — uma barreira real de inclusão no mercado de trabalho.</p>
+    </div>
+  </div>
+</div>
+
+<!-- ===== 4. PROBLEMA ===== -->
+<div class="slide">
+  <div class="tag">Problema</div>
+  <h2>Qual <span class="ac">problema real</span> resolvemos?</h2>
+  <div class="c2 r" style="margin-top:28px">
+    <div class="card" style="border-left:3px solid #ef4444"><h3>&#x26A0; Agendamento ineficiente</h3><p>Clientes precisam ligar ou mandar WhatsApp. O salão controla por papel. Conflitos de horário, falta de confirmação e ausências são constantes.</p></div>
+    <div class="card" style="border-left:3px solid #ef4444"><h3>&#x26A0; Controle financeiro frágil</h3><p>Receitas e despesas anotadas em cadernos. Sem visão de lucro real. Sem registro do que foi pago, como foi pago, quem pagou.</p></div>
+    <div class="card" style="border-left:3px solid #ef4444"><h3>&#x26A0; Estoque sem gestão</h3><p>Produtos acabam sem reposição. Não se sabe o custo real dos produtos vendidos. Não há vínculo entre produto usado e atendimento.</p></div>
+    <div class="card" style="border-left:3px solid #ef4444"><h3>&#x26A0; Barreira de comunicação</h3><p>Nenhum sistema de gestão para salões oferece recursos em Libras. Profissionais surdos e clientes surdos ficam excluídos do mercado.</p></div>
+  </div>
+</div>
+
+<!-- ===== 5. PÚBLICO-ALVO ===== -->
+<div class="slide">
+  <div class="tag">Público-Alvo</div>
+  <h2>Quem <span class="ac">utiliza</span> o sistema?</h2>
+  <div class="r c3" style="margin-top:28px">
+    <div class="card"><span class="em">&#x1F468;&#x200D;&#x1F4BC;</span><h3>Dono(a) do Salão</h3><p>Empreendedor que precisa de uma ferramenta profissional para gerenciar equipe, agenda, estoque e finanças em um único lugar.</p></div>
+    <div class="card"><span class="em">&#x1F487;</span><h3>Profissionais de Beleza</h3><p>Cabeleireiros, manicures, esteticistas que visualizam sua agenda do dia, comissões por atendimento e avaliações dos clientes.</p></div>
+    <div class="card"><span class="em">&#x1F9D1;</span><h3>Clientes do Salão</h3><p>Agendam online sem criar conta, recebem lembretes, avaliam o serviço após o atendimento e acumulam pontos de fidelidade.</p></div>
+    <div class="card"><span class="em">&#x1F9CF;</span><h3>Comunidade Surda</h3><p>Usuários com deficiência auditiva que encontram no sistema o alfabeto completo em Libras, modo alto contraste e navegação adaptada.</p></div>
+    <div class="card"><span class="em">&#x1F4CA;</span><h3>Gestores / Admins</h3><p>Acompanham métricas no dashboard, geram relatórios, gerenciam usuários e acessam a trilha de auditoria completa.</p></div>
+    <div class="card"><span class="em">&#x1F4F1;</span><h3>Usuários Mobile</h3><p>Instalam o sistema como app via PWA no celular, acessam offline dados já carregados e recebem notificações push.</p></div>
+  </div>
+</div>
+
+<!-- ===== 6. SOLUÇÃO ===== -->
+<div class="slide">
+  <div class="tag">Solução</div>
+  <h2><span class="ac">BeautySalon Access</span></h2>
+  <p class="sub">Plataforma web completa e instalável (PWA) que integra gestão, financeiro e acessibilidade em Libras</p>
+  <div class="r c3" style="margin-top:28px">
+    <div class="card"><span class="em">&#x1F4C5;</span><h3>Agendamento</h3><p>Slots calculados em tempo real considerando duração do serviço, buffer entre atendimentos, horários de trabalho e feriados.</p></div>
+    <div class="card"><span class="em">&#x1F4B0;</span><h3>Financeiro + PIX</h3><p>QR Code EMV gerado no checkout. Suporte a 5 métodos de pagamento. Registro de receitas, despesas e estornos.</p></div>
+    <div class="card"><span class="em">&#x1F9CF;</span><h3>Central de Libras</h3><p>Alfabeto manual com 27 imagens reais. Números 0-9. Frases comuns. Vídeos de apoio. Alto contraste e ajuste de fonte.</p></div>
+    <div class="card"><span class="em">&#x2B50;</span><h3>Avaliações</h3><p>Token único por atendimento. Cliente avalia de 1 a 5 estrelas via link. Média por especialista no dashboard.</p></div>
+    <div class="card"><span class="em">&#x1F4E6;</span><h3>Estoque Inteligente</h3><p>Mínimo configurável com alerta visual. Venda de produtos vinculada ao checkout. Movimentação automática.</p></div>
+    <div class="card"><span class="em">&#x1F4CA;</span><h3>Dashboard & Relatórios</h3><p>KPIs em tempo real, gráficos Recharts, comparativos mensais, ranking de serviços e exportação CSV.</p></div>
+  </div>
+</div>
+
+<!-- ===== 7. ARQUITETURA ===== -->
+<div class="slide">
+  <div class="tag">Arquitetura</div>
+  <h2>Visão geral do <span class="ac">sistema</span></h2>
+  <p class="sub" style="margin-top:8px">Monolito fullstack com separação lógica em camadas — mesmo processo Node.js serve API e frontend</p>
+  <div class="arch-box" style="margin-top:16px">
+    <b>&#x1F310; Navegador / PWA</b><br>
+    React SPA · TanStack Query · Service Worker<br>
+    <span style="color:var(--m)">&#x2502;</span><br>
+    <b>&#x26A1; tRPC</b><br>
+    Type-safe RPC · superjson · batch automático<br>
+    <span style="color:var(--m)">&#x2502;</span><br>
+    <b>&#x1F4E6; Express + Node.js</b><br>
+    14 routers · ~100 procedures · Helmet · Rate Limit<br>
+    <span style="color:var(--m)">&#x2502;</span><br>
+    <b>&#x1F5C4; Drizzle ORM</b><br>
+    95 funções de acesso a dados tipadas<br>
+    <span style="color:var(--m)">&#x2502;</span><br>
+    <b>&#x1F4BE; PostgreSQL 16</b><br>
+    13 tabelas · índices compostos · JSONB
+  </div>
+</div>
+
+<!-- ===== 8. DECISÃO: tRPC vs REST ===== -->
+<div class="slide">
+  <div class="tag">Decisão Técnica</div>
+  <h2>Por que <span class="ac">tRPC</span> e não REST?</h2>
+  <div class="decision" style="margin-top:20px">
+    <h3><span style="font-size:22px">&#x26A1;</span> tRPC — TypeScript Remote Procedure Call</h3>
+    <p>Em vez de definir manualmente endpoints HTTP, códigos de status, contratos de request/response e documentação Swagger, o <strong>tRPC</strong> permite que o frontend chame funções do backend como se fossem locais, com <strong>segurança total de tipos</strong>.</p>
+    <div class="vs">
+      <div class="bad"><strong>&#x2718; Abordagem REST tradicional</strong><br>Definir manualmente cada endpoint · Documentar com Swagger/OpenAPI · Gerar cliente HTTP com fetch/axios · Tipar manualmente as respostas · Sem sincronização automática de tipos entre front e back</div>
+      <div class="good"><strong>&#x2714; Abordagem tRPC</strong><br>Procedures tipadas no servidor · Cliente importa tipos direto do servidor · Batch automático de chamadas · Validação Zod integrada · Erro de tipo = erro de compilação, nunca em produção</div>
+    </div>
+  </div>
+</div>
+
+<!-- ===== 9. DECISÃO: Drizzle vs Prisma ===== -->
+<div class="slide">
+  <div class="tag">Decisão Técnica</div>
+  <h2>Por que <span class="ac">Drizzle ORM</span> e não Prisma?</h2>
+  <div class="decision" style="margin-top:20px">
+    <h3><span style="font-size:22px">&#x1F5C4;</span> Drizzle ORM — TypeScript-first, zero abstração</h3>
+    <p>O Drizzle foi escolhido por ser um ORM que gera <strong>SQL otimizado</strong> sem engine binária, resultando em performance superior e bundle menor — crucial para deploy serverless e Docker.</p>
+    <div class="vs">
+      <div class="bad"><strong>&#x2718; Prisma</strong><br>Engine binária (~6MB) · Cold start lento · Sintaxe própria (não SQL) · Migrations com shadow database · Mais pesado para bundles serverless</div>
+      <div class="good"><strong>&#x2714; Drizzle ORM</strong><br>Cliente TypeScript (~300KB) · Queries SQL-like familiares · Relações definidas explicitamente · Migrations com drizzle-kit · Ideal para Node.js e edge runtimes</div>
+    </div>
+  </div>
+</div>
+
+<!-- ===== 10. DECISÃO: PWA vs Nativo ===== -->
+<div class="slide">
+  <div class="tag">Decisão Técnica</div>
+  <h2>Por que <span class="ac">PWA</span> e não App Nativo?</h2>
+  <div class="decision" style="margin-top:20px">
+    <h3><span style="font-size:22px">&#x1F4F1;</span> PWA — Progressive Web App</h3>
+    <p>Uma PWA é uma aplicação web que pode ser <strong>instalada como app nativo</strong> no celular, com ícone na tela inicial, splash screen, funcionamento offline e notificações push — sem precisar publicar na Google Play ou App Store.</p>
+    <div class="vs">
+      <div class="bad"><strong>&#x2718; App Nativo (Flutter / RN)</strong><br>Duplicar código (web + mobile) · Duas bases de código · Aprovação em lojas · Atualizações via loja · Curva de aprendizado adicional</div>
+      <div class="good"><strong>&#x2714; PWA (vite-plugin-pwa)</strong><br>Único código para web e mobile · Instalável como app nativo · 56 assets offline · Atualização silenciosa via SW · Usado por Twitter, Pinterest, Uber, Starbucks</div>
+    </div>
+  </div>
+</div>
+
+<!-- ===== 11. DECISÃO: Monolito vs Microsserviços ===== -->
+<div class="slide">
+  <div class="tag">Decisão Técnica</div>
+  <h2>Por que <span class="ac">Monolito</span> e não Microsserviços?</h2>
+  <div class="decision" style="margin-top:20px">
+    <h3><span style="font-size:22px">&#x1F3D7;</span> Monolito Fullstack</h3>
+    <p>Para o escopo do projeto integrado, um monolito bem estruturado oferece o melhor equilíbrio entre <strong>simplicidade de desenvolvimento, deploy e manutenção</strong>. A separação lógica em camadas (shared/ server/ client/) garante que uma migração futura para microsserviços seja possível sem reescrever o código.</p>
+    <div class="vs">
+      <div class="bad"><strong>&#x2718; Microsserviços (não adotado)</strong><br>Alta complexidade operacional · Latência de rede entre serviços · Orquestração (Kubernetes) · Complexidade de deploy · Overhead para equipe pequena</div>
+      <div class="good"><strong>&#x2714; Monolito bem estruturado</strong><br>1 comando = deploy completo · Comunicação interna sem latência · TypeScript garante consistência · Dockerfile multi-stage ~200MB · Migrável para microserviços no futuro</div>
+    </div>
+  </div>
+</div>
+
+<!-- ===== 12. STACK COMPLETA ===== -->
+<div class="slide">
+  <div class="tag">Tecnologias</div>
+  <h2>Stack <span class="ac">completa</span></h2>
+  <p class="sub" style="margin-top:12px">TypeScript ponta a ponta — mesmo tipo transita do banco de dados à interface do usuário</p>
+  <div style="margin-top:20px">
+    <div class="row"><div class="lc" style="background:var(--b)"></div><div class="nm">Frontend</div><div class="rs">React 19 · Vite 7 · Tailwind 4 · shadcn/ui · TanStack Query · Wouter · Recharts · Framer Motion</div></div>
+    <div class="row"><div class="lc" style="background:var(--p)"></div><div class="nm">Comunicação</div><div class="rs">tRPC 11 · superjson · HTTP batch</div></div>
+    <div class="row"><div class="lc" style="background:var(--g)"></div><div class="nm">Backend</div><div class="rs">Express 4 · Drizzle ORM · PostgreSQL 16 · bcrypt · jose (JWT) · Zod · Cloudinary</div></div>
+    <div class="row"><div class="lc" style="background:var(--a)"></div><div class="nm">Segurança</div><div class="rs">Helmet · Rate Limit · CORS · XSS sanitization · Auditoria completa</div></div>
+    <div class="row"><div class="lc" style="background:#06b6d4"></div><div class="nm">PWA / Mobile</div><div class="rs">vite-plugin-pwa · Workbox · Service Worker · Manifesto Web</div></div>
+    <div class="row"><div class="lc" style="background:#ec4899"></div><div class="nm">DevOps</div><div class="rs">Docker · docker-compose · pnpm workspace · Vitest · ESLint · Prettier</div></div>
+  </div>
+</div>
+
+<!-- ===== 13. DISCIPLINAS ===== -->
+<div class="slide">
+  <div class="tag">Interdisciplinaridade</div>
+  <h2>Como cada <span class="ac">disciplina</span> contribuiu</h2>
+  <div style="width:100%;max-width:700px;margin-top:24px">
+    <div class="row"><div class="lc" style="background:var(--b)"></div><div class="nm">Gestão de Processos</div><div class="rs">Mapeamento de 3 fluxos BPMN (agendamento, atendimento, vendas)<br>Matriz SWOT do salão · Proposta de melhoria AS-IS vs TO-BE</div></div>
+    <div class="row"><div class="lc" style="background:var(--p)"></div><div class="nm">Programação Mobile</div><div class="rs">PWA instalável com Service Worker · Layout responsivo<br>56 assets offline · Add to Home Screen em Android e iOS</div></div>
+    <div class="row"><div class="lc" style="background:var(--g)"></div><div class="nm">Análise de Sistemas</div><div class="rs">Diagramas UML (Casos de Uso, Classes, Sequência, Atividades)<br>85 RFs + 30 RNFs documentados · Documento de Arquitetura</div></div>
+    <div class="row"><div class="lc" style="background:var(--a)"></div><div class="nm">Tópicos Especiais</div><div class="rs">Docker (containerização multi-stage) · PIX QR Code (padrão EMV)<br>PWA com Workbox (Google)</div></div>
+    <div class="row"><div class="lc" style="background:#ec4899"></div><div class="nm">Libras</div><div class="rs">Central completa com 27 letras + 10 números com imagens reais<br>Alto contraste WCAG 2.1 AA · Ajuste de fonte · Relatório de Acessibilidade</div></div>
+  </div>
+</div>
+
+<!-- ===== 14. FUNCIONALIDADES DEMO ===== -->
+<div class="slide">
+  <div class="tag">Funcionalidades</div>
+  <h2>O que foi <span class="ac">construído</span></h2>
+  <div class="r c3" style="margin-top:24px">
+    <div class="card"><span class="em">&#x1F465;</span><h3>Cadastros</h3><p>CRUD completo de clientes, serviços, produtos, especialistas e usuários com validações Zod.</p></div>
+    <div class="card"><span class="em">&#x1F4C5;</span><h3>Agendamentos</h3><p>Calendário 3 visões. Slots inteligentes. Confirmação, conclusão e cancelamento com registro de pagamento.</p></div>
+    <div class="card"><span class="em">&#x1F310;</span><h3>Agendamento Público</h3><p>Clientes agendam sem login. 5 passos: especialista → serviço → data → dados → confirmação.</p></div>
+    <div class="card"><span class="em">&#x1F4B0;</span><h3>Checkout</h3><p>Carrinho de produtos no atendimento. PIX QR Code EMV. 5 métodos de pagamento. Decremento automático de estoque.</p></div>
+    <div class="card"><span class="em">&#x2B50;</span><h3>Avaliações</h3><p>Token único por agendamento concluído. Página pública /avaliar. Média por especialista no dashboard.</p></div>
+    <div class="card"><span class="em">&#x1F4CA;</span><h3>Dashboard</h3><p>6 KPIs. Gráfico de receita 30 dias. Ranking serviços e especialistas. Alertas de estoque baixo. Exportação CSV.</p></div>
+    <div class="card"><span class="em">&#x1F9CF;</span><h3>Central de Libras</h3><p>27 letras com fotos reais. 10 números. 10 frases. 3 vídeos YouTube. Alto contraste e ajuste de fonte.</p></div>
+    <div class="card"><span class="em">&#x1F512;</span><h3>Admin</h3><p>Gestão de usuários com permissões granulares. Trilha de auditoria completa. Logs com before/after JSON.</p></div>
+    <div class="card"><span class="em">&#x1F4E6;</span><h3>Deploy</h3><p>Docker com 1 comando. Build multi-stage (~200MB). Banco de dados com backup e seed de teste.</p></div>
+  </div>
+</div>
+
+<!-- ===== 15. ACESSIBILIDADE ===== -->
+<div class="slide">
+  <div class="tag">Libras</div>
+  <h2>Acessibilidade <span class="ac">real</span> em Libras</h2>
+  <p class="sub" style="margin-top:12px">A Lei 10.436/2002 reconhece Libras como meio legal de comunicação. O Decreto 5.626/2005 exige acessibilidade comunicativa para surdos.</p>
+  <div class="r c3" style="margin-top:20px">
+    <div class="card"><span class="em">&#x1F590;</span><h3>Alfabeto Manual</h3><p>27 fotos reais (A-Z + Ç) da configuração correta das mãos para cada letra da Língua Brasileira de Sinais.</p></div>
+    <div class="card"><span class="em">&#x1F522;</span><h3>Números 0-9</h3><p>10 imagens com a forma correta dos dedos para representar cada número em Libras.</p></div>
+    <div class="card"><span class="em">&#x1F4AC;</span><h3>Frases do Cotidiano</h3><p>10 frases comuns (Olá, Obrigado, Por favor) com descrição textual detalhada dos movimentos das mãos.</p></div>
+    <div class="card"><span class="em">&#x1F3AC;</span><h3>Vídeos de Apoio</h3><p>3 vídeos no YouTube com thumbnails interativas. Abrem em nova aba sem interromper a navegação.</p></div>
+    <div class="card"><span class="em">&#x1F441;</span><h3>Alto Contraste</h3><p>Toggle que aplica tema de alto contraste WCAG 2.1 AA em todas as páginas. Preferência salva em localStorage.</p></div>
+    <div class="card"><span class="em">&#x1F4DD;</span><h3>Ajuste de Fonte</h3><p>Botões +A/-A para aumentar ou diminuir o tamanho do texto. Persiste entre sessões do usuário.</p></div>
+  </div>
+</div>
+
+<!-- ===== 16. SEGURANÇA ===== -->
+<div class="slide">
+  <div class="tag">Segurança</div>
+  <h2>Camadas de <span class="ac">proteção</span></h2>
+  <div class="decisions" style="width:100%;max-width:700px;margin-top:20px">
+    <div class="row"><div class="lc" style="background:var(--b)"></div><div class="nm">Senhas</div><div class="rs">bcrypt com 10 rounds de salt — irreversível mesmo se o banco vazar</div></div>
+    <div class="row"><div class="lc" style="background:var(--b)"></div><div class="nm">Autenticação</div><div class="rs">JWT assinado com secret forte, armazenado em cookie httpOnly</div></div>
+    <div class="row"><div class="lc" style="background:var(--purple)"></div><div class="nm">Headers</div><div class="rs">Helmet: XSS, clickjacking, MIME sniffing, HSTS</div></div>
+    <div class="row"><div class="lc" style="background:var(--purple)"></div><div class="nm">Rate Limiting</div><div class="rs">100 req/15min público · 10 tentativas/15min auth</div></div>
+    <div class="row"><div class="lc" style="background:var(--g)"></div><div class="nm">Validação de Dados</div><div class="rs">Zod em todas as entradas · Sanitização XSS · Limites de tamanho</div></div>
+    <div class="row"><div class="lc" style="background:var(--g)"></div><div class="nm">ORM</div><div class="rs">Drizzle com queries parametrizadas — SQL Injection prevenido</div></div>
+    <div class="row"><div class="lc" style="background:var(--a)"></div><div class="nm">Auditoria</div><div class="rs">Toda ação registrada (quem, o quê, quando, antes/depois em JSON)</div></div>
+    <div class="row"><div class="lc" style="background:var(--a)"></div><div class="nm">CORS</div><div class="rs">Apenas origens configuradas em produção</div></div>
+  </div>
+</div>
+
+<!-- ===== 17. MÉTRICAS ===== -->
+<div class="slide">
+  <div class="tag">Métricas</div>
+  <h2><span class="ac">Números</span> do projeto</h2>
+  <div class="stats">
+    <div class="stat"><div class="n">17</div><div class="l">Páginas React</div></div>
+    <div class="stat"><div class="n">100+</div><div class="l">Procedures tRPC</div></div>
+    <div class="stat"><div class="n">13</div><div class="l">Tabelas SQL</div></div>
+    <div class="stat"><div class="n">14</div><div class="l">Routers API</div></div>
+    <div class="stat"><div class="n">95</div><div class="l">Funções DB</div></div>
+    <div class="stat"><div class="n">85</div><div class="l">Requisitos RF</div></div>
+    <div class="stat"><div class="n">30</div><div class="l">Requisitos RNF</div></div>
+    <div class="stat"><div class="n">27</div><div class="l">Letras Libras</div></div>
+    <div class="stat"><div class="n">56</div><div class="l">Assets Offline</div></div>
+    <div class="stat"><div class="n">186 KB</div><div class="l">Bundle (gzip)</div></div>
+  </div>
+</div>
+
+<!-- ===== 18. RISCOS ===== -->
+<div class="slide">
+  <div class="tag">Planejamento</div>
+  <h2>Riscos iniciais e <span class="ac">mitigações</span></h2>
+  <div style="width:100%;max-width:680px;margin-top:20px">
+    <div class="risk"><div class="ic">&#x1F4F1;</div><div><h4>Responsividade em todos os dispositivos</h4><p>Risco: Interface não adaptar em telas pequenas. <strong>Mitigação:</strong> Tailwind CSS responsivo, sidebar adaptativa (overlay em mobile), testes em breakpoints reais.</p></div></div>
+    <div class="risk"><div class="ic">&#x1F310;</div><div><h4>PWA — Cache e Offline</h4><p>Risco: Service Worker não cachear corretamente. <strong>Mitigação:</strong> Workbox (Google) com estratégia Network First + Precaching. 56 assets pre-cacheados.</p></div></div>
+    <div class="risk"><div class="ic">&#x1F9CF;</div><div><h4>Qualidade do conteúdo em Libras</h4><p>Risco: Imagens imprecisas ou vídeos bloqueados. <strong>Mitigação:</strong> Fotos reais validadas. Links diretos YouTube (abrem nova aba) ao invés de iframes embedados.</p></div></div>
+    <div class="risk"><div class="ic">&#x1F510;</div><div><h4>Vazamento de dados</h4><p>Risco: Exposição de dados de clientes e financeiros. <strong>Mitigação:</strong> bcrypt + JWT + Helmet + rate limiting + CORS + sanitização + trilha de auditoria.</p></div></div>
+    <div class="risk"><div class="ic">&#x26A1;</div><div><h4>Performance com volume de dados</h4><p>Risco: Dashboard lento com muitos agendamentos. <strong>Mitigação:</strong> Cache em memória (10min), índices compostos, React Query staleTime, exportação assíncrona.</p></div></div>
+  </div>
+</div>
+
+<!-- ===== 19. RESULTADOS ===== -->
+<div class="slide">
+  <div class="tag">Entregas</div>
+  <h2><span class="ac">Resultados</span> alcançados</h2>
+  <div class="r c3" style="margin-top:24px">
+    <div class="card"><span class="em">&#x2705;</span><h3>Gestão Completa</h3><p>CRUD de todas as entidades com validações de negócio, regras de conflito e proteção contra exclusão indevida.</p></div>
+    <div class="card"><span class="em">&#x2705;</span><h3>Financeiro + PIX</h3><p>QR Code EMV em tempo real. 5 métodos de pagamento. Checkout com carrinho de produtos. Transações e comissões.</p></div>
+    <div class="card"><span class="em">&#x2705;</span><h3>Central Libras</h3><p>27 letras + 10 números com imagens reais. Alto contraste. Ajuste de fonte. Vídeos. Conformidade WCAG 2.1 AA.</p></div>
+    <div class="card"><span class="em">&#x2705;</span><h3>Dashboard Analítico</h3><p>KPIs em tempo real, Recharts interativo, comparativos, ranking, alertas e exportação CSV.</p></div>
+    <div class="card"><span class="em">&#x2705;</span><h3>Avaliações</h3><p>Tokens únicos, página pública de rating, distribuição por estrelas, média por especialista.</p></div>
+    <div class="card"><span class="em">&#x2705;</span><h3>Documentação</h3><p>85 RFs + 30 RNFs. Arquitetura. UML. BPMN. Relatório de Acessibilidade. Tópicos Especiais.</p></div>
+    <div class="card"><span class="em">&#x2705;</span><h3>Segurança</h3><p>8 camadas de proteção. bcrypt, JWT, Helmet, rate limit, Zod, CORS, sanitização, auditoria.</p></div>
+    <div class="card"><span class="em">&#x2705;</span><h3>PWA + Docker</h3><p>Instalável como app. 56 assets offline. Deploy em 1 comando. Imagem Docker multi-stage ~200MB.</p></div>
+    <div class="card"><span class="em">&#x2705;</span><h3>Open Source</h3><p>Código disponível no GitHub com README profissional, guia de setup e documentação completa.</p></div>
+  </div>
+</div>
+
+<!-- ===== 20. AGRADECIMENTOS ===== -->
+<div class="slide thanks">
+  <div class="tag">Projeto Integrado IV · 2026.1</div>
+  <h2><span class="gr">Obrigado!</span></h2>
+  <p>BeautySalon Access — Transformando a gestão de salões com tecnologia e acessibilidade</p>
+  <div class="links">
+    <span>&#x1F4E7; contato@idealsolucoes.com</span>
+    <span>&#x1F310; github.com/GrupoIdeal/system-salon</span>
+  </div>
+</div>
+
+<!-- NAV -->
+<nav>
+  <button onclick="go(-1)">&#x2039;</button><div class="ds" id="ds"></div><button onclick="go(1)">&#x203A;</button>
+</nav>
+
+<script>
+const P=document.querySelectorAll('.slide'),B=document.getElementById('bar'),N=document.getElementById('pn'),D=document.getElementById('ds');
+let i=0,n=P.length;
+function dots(){D.innerHTML='';for(let j=0;j<n;j++){const d=document.createElement('div');d.className='d'+(j===i?' on':'');d.onclick=()=>set(j);D.appendChild(d)}}
+function set(x){P[i].classList.remove('on');i=((x%n)+n)%n;P[i].classList.add('on');B.style.width=((i+1)/n*100)+'%';N.textContent=(i+1)+'/'+n;dots()}
+function go(x){set(i+x)}
+document.addEventListener('keydown',e=>{if(e.key==='ArrowRight'||e.key==='ArrowDown'||e.key===' '){e.preventDefault();go(1)}if(e.key==='ArrowLeft'||e.key==='ArrowUp'){e.preventDefault();go(-1)}if(e.key==='Home'){e.preventDefault();set(0)}if(e.key==='End'){e.preventDefault();set(n-1)}});
+let ts=0;document.addEventListener('touchstart',e=>{ts=e.touches[0].clientX});document.addEventListener('touchend',e=>{const d=ts-e.changedTouches[0].clientX;if(Math.abs(d)>40){d>0?go(1):go(-1)}});
+set(0);
+</script>
+</body>
+</html>

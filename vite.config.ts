@@ -6,16 +6,12 @@ import { VitePWA } from "vite-plugin-pwa";
 import { vitePluginManusRuntime } from "vite-plugin-manus-runtime";
 
 const appTitle = process.env.VITE_APP_TITLE || "Graciosa Studio de Beleza";
-const isMobile = process.env.VITE_MOBILE === "true";
 
 const plugins = [
   react(),
   tailwindcss(),
   vitePluginManusRuntime(),
-];
-
-if (!isMobile) {
-  plugins.push(VitePWA({
+  VitePWA({
     strategies: "injectManifest",
     srcDir: "src",
     filename: "sw.ts",
@@ -49,8 +45,8 @@ if (!isMobile) {
     devOptions: {
       enabled: true,
     },
-  }));
-}
+  }),
+];
 
 export default defineConfig({
   plugins,

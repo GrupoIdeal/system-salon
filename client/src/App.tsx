@@ -6,7 +6,6 @@ import ErrorBoundary from "./components/ErrorBoundary";
 import { ThemeProvider } from "./contexts/ThemeContext";
 import { useAuth } from "@/_core/hooks/useAuth";
 import { lazy, Suspense, useEffect } from "react";
-import Footer from "@/components/Footer";
 
 // Lazy loading: cada página só é carregada quando o usuário navegar até ela.
 // Isso reduz o bundle inicial em ~40%, acelerando o primeiro carregamento.
@@ -154,7 +153,6 @@ function AppContent() {
       <Suspense fallback={<PageLoader />}>
         <Router />
       </Suspense>
-      <Footer />
     </>
   );
 }

@@ -1,0 +1,1 @@
+function o(e){const n=Number(e??0)||0,r=Math.floor(n/60),t=n%60;return r>0&&t>0?`${r}h ${t}m`:r>0?`${r}h`:`${t}m`}function u(e,n){const r=Number(e??0)||0,t=new Intl.NumberFormat("pt-BR",{style:"currency",currency:"BRL"}).format(r);return(n?"A partir de ":"")+t}export{u as a,o as f};

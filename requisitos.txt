@@ -1,0 +1,7 @@
+A apresentação deve ser entre 10 a 15 minutos no máximo e deve constar:
+Contexto e problema (Qual problema comercial real foi resolvido? Por que isso é relevante?)
+Público-alvo (Quem usará o sistema?)
+Solução proposta (Descrição geral e seu diferencial)
+Mapeamento das disciplinas Como cada disciplina contribuiu para o projeto)
+Tecnologias escolhidas (Framework mobile)
+Riscos iniciais (Principais desafios identificados e planos de mitigação)

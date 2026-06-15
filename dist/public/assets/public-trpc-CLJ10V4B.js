@@ -1,0 +1,1 @@
+import{S as s,U as t,W as c,X as i}from"./index-o17yr2zy.js";const e=c(),p=e?`${e}/api`:`${globalThis.location?.origin||""}/api`,l=s(),n=l.createClient({links:[t({url:`${p}/public`,transformer:i,fetch(r,a){return globalThis.fetch(r,{...a??{},headers:new Headers(a?.headers||{})})}})]});export{n as a,l as p};

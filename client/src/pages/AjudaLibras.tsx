@@ -1,62 +1,76 @@
-import { Hand, Volume2, ChevronLeft } from "lucide-react";
+import { Hand, Volume2, ChevronLeft, ExternalLink, Play } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { useLocation } from "wouter";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { getAlphabetSign, getNumberSign } from "@/components/LibrasHandSigns";
+
+const HAS_IMAGE: Record<string, boolean> = {
+  A: true, B: true, C: true, D: true, E: true, F: true, G: true,
+  H: true, I: true, J: true, K: true, L: true, M: true, N: true,
+  O: true, P: true, Q: true, R: true, S: true, T: true, U: true,
+  V: true, W: true, X: true, Y: true, Z: true,
+};
+
+function signImagePath(letter: string): string {
+  if (letter === "Ç") return "/image/libras/cedilha.jpg";
+  return `/image/libras/${letter.toLowerCase()}.jpg`;
+}
 
 const alphabetLibra = [
-  { letter: "A", sign: "🤟", desc: "Mão fechada com polegar estendido para cima" },
-  { letter: "B", sign: "🤚", desc: "Mão aberta com dedos estendidos" },
-  { letter: "C", sign: "🖐️", desc: "Mão formando formato de C" },
-  { letter: "D", sign: "☝️", desc: "Mão fechada com indicador levantado" },
-  { letter: "E", sign: "✋", desc: "Mão aberta com polegar sobre os dedos" },
-  { letter: "F", sign: "🤏", desc: "Mão fechada com polegar e indicador se tocando" },
-  { letter: "G", sign: "✊", desc: "Mão fechada, polegar estendido para frente" },
-  { letter: "H", sign: "✌️", desc: "Mão fechada com indicador e médio estendidos" },
-  { letter: "I", sign: "🤙", desc: "Mão fechada com mindinho levantado" },
-  { letter: "J", sign: "👉", desc: "Mão fechada com mindinho fazendo curva" },
-  { letter: "K", sign: "🤞", desc: "Mão fechada com indicador e médio levantados" },
-  { letter: "L", sign: "👍", desc: "Mão fechada com polegar e indicador estendidos em L" },
-  { letter: "M", sign: "🤟", desc: "Polegar sob os dedos indicador, médio e anelar" },
-  { letter: "N", sign: "🤘", desc: "Polegar sob indicador e médio" },
-  { letter: "O", sign: "🫰", desc: "Dedos formando círculo" },
-  { letter: "P", sign: "🖖", desc: "Mão aberta voltada para baixo" },
-  { letter: "Q", sign: "👇", desc: "Polegar e indicador estendidos para baixo" },
-  { letter: "R", sign: "🤞", desc: "Indicador e médio cruzados" },
-  { letter: "S", sign: "🤛", desc: "Mão fechada" },
-  { letter: "T", sign: "✊", desc: "Mão fechada com polegar entre indicador e médio" },
-  { letter: "U", sign: "✌️", desc: "Indicador e médio estendidos para cima" },
-  { letter: "V", sign: "✌️", desc: "Indicador e médio abertos em V" },
-  { letter: "W", sign: "🤟", desc: "Indicador, médio e anelar estendidos" },
-  { letter: "X", sign: "✊", desc: "Mão fechada com indicador curvado" },
-  { letter: "Y", sign: "🤙", desc: "Polegar e mindinho estendidos" },
-  { letter: "Z", sign: "✍️", desc: "Mão fazendo movimento de Z no ar" },
+  { letter: "A", desc: "Mão fechada com polegar estendido para cima" },
+  { letter: "B", desc: "Mão aberta com todos os dedos estendidos e unidos" },
+  { letter: "C", desc: "Mão formando formato da letra C com os dedos curvados" },
+  { letter: "Ç", desc: "Movimento do C com a cedilha (C + movimento do gancho)" },
+  { letter: "D", desc: "Mão fechada com indicador levantado, polegar tocando o médio" },
+  { letter: "E", desc: "Dedos dobrados, polegar sobre os dedos" },
+  { letter: "F", desc: "Polegar e indicador formando círculo, demais dedos estendidos" },
+  { letter: "G", desc: "Mão fechada com indicador apontando para frente" },
+  { letter: "H", desc: "Indicador e médio estendidos na horizontal" },
+  { letter: "I", desc: "Mão fechada com mindinho levantado" },
+  { letter: "J", desc: "Mindinho desenha a letra J no ar" },
+  { letter: "K", desc: "Indicador e médio abertos, polegar entre eles" },
+  { letter: "L", desc: "Indicador para cima e polegar estendido formando L" },
+  { letter: "M", desc: "Polegar sob os dedos indicador, médio e anelar" },
+  { letter: "N", desc: "Polegar sob os dedos indicador e médio" },
+  { letter: "O", desc: "Todos os dedos formando círculo (formato de O)" },
+  { letter: "P", desc: "Indicador apontando para frente, médio atrás" },
+  { letter: "Q", desc: "Polegar e indicador para baixo como pinça" },
+  { letter: "R", desc: "Indicador e médio cruzados" },
+  { letter: "S", desc: "Mão fechada com polegar sobre os dedos" },
+  { letter: "T", desc: "Polegar entre indicador e médio" },
+  { letter: "U", desc: "Indicador e médio unidos apontando para cima" },
+  { letter: "V", desc: "Indicador e médio abertos em formato de V" },
+  { letter: "W", desc: "Indicador, médio e anelar estendidos (3 dedos)" },
+  { letter: "X", desc: "Indicador curvado formando gancho" },
+  { letter: "Y", desc: "Polegar e mindinho estendidos" },
+  { letter: "Z", desc: "Indicador desenha a letra Z no ar" },
 ];
 
 const numbersLibra = [
-  { number: "0", sign: "🫰", desc: "Dedos formando círculo" },
-  { number: "1", sign: "☝️", desc: "Indicador levantado" },
-  { number: "2", sign: "✌️", desc: "Indicador e médio levantados" },
-  { number: "3", sign: "🤟", desc: "Polegar, indicador e médio levantados" },
-  { number: "4", sign: "🖐️", desc: "Quatro dedos levantados (polegar escondido)" },
-  { number: "5", sign: "✋", desc: "Mão aberta" },
-  { number: "6", sign: "🤙", desc: "Mão fechada, polegar toca mindinho" },
-  { number: "7", sign: "🤙", desc: "Polegar toca anelar" },
-  { number: "8", sign: "🤙", desc: "Polegar toca médio" },
-  { number: "9", sign: "🤙", desc: "Polegar toca indicador" },
+  { number: "0", desc: "Dedos formando círculo (formato de zero)" },
+  { number: "1", desc: "Indicador levantado" },
+  { number: "2", desc: "Indicador e médio levantados" },
+  { number: "3", desc: "Polegar, indicador e médio levantados" },
+  { number: "4", desc: "Quatro dedos levantados (polegar sobre a palma)" },
+  { number: "5", desc: "Mão aberta com todos os dedos estendidos" },
+  { number: "6", desc: "Polegar toca o mindinho, demais dedos levantados" },
+  { number: "7", desc: "Polegar toca o anelar, demais dedos levantados" },
+  { number: "8", desc: "Polegar toca o dedo médio, demais dedos estendidos" },
+  { number: "9", desc: "Polegar toca o indicador, demais dedos estendidos" },
 ];
 
 const phrasesLibra = [
-  { phrase: "Olá", sign: "👋", desc: "Mão aberta balançando de um lado para o outro" },
-  { phrase: "Bom dia", sign: "🌅", desc: "Mão direita aberta toca o peito e abre para cima" },
-  { phrase: "Obrigado", sign: "🤝", desc: "Mão fechada no queixo abre para frente" },
-  { phrase: "Por favor", sign: "🤲", desc: "Mãos abertas fazendo movimento circular no peito" },
-  { phrase: "Desculpa", sign: "🙏", desc: "Mão fechada esfrega o peito em movimento circular" },
-  { phrase: "Sim", sign: "👌", desc: "Mão fechada balançando para cima e para baixo" },
-  { phrase: "Não", sign: "✋", desc: "Mão aberta balançando de um lado para o outro" },
-  { phrase: "Beleza", sign: "💅", desc: "Mão aberta desliza pela bochecha" },
-  { phrase: "Agendar", sign: "📅", desc: "Mãos fechadas uma sobre a outra abrindo" },
-  { phrase: "Preço", sign: "💰", desc: "Mão fechada esfrega o polegar nos dedos" },
+  { phrase: "Olá", desc: "Mão aberta balançando de um lado para o outro" },
+  { phrase: "Bom dia", desc: "Mão direita no peito e abre para cima" },
+  { phrase: "Obrigado", desc: "Mão fechada no queixo abre para frente" },
+  { phrase: "Por favor", desc: "Mãos abertas fazendo movimento circular no peito" },
+  { phrase: "Desculpa", desc: "Mão fechada esfrega o peito em movimento circular" },
+  { phrase: "Sim", desc: "Mão fechada balançando para cima e para baixo" },
+  { phrase: "Não", desc: "Mão aberta balançando de um lado para o outro" },
+  { phrase: "Beleza", desc: "Mão aberta desliza pela bochecha" },
+  { phrase: "Agendar", desc: "Mãos fechadas uma sobre a outra abrindo" },
+  { phrase: "Preço", desc: "Mão fechada esfrega o polegar nos dedos" },
 ];
 
 export default function AjudaLibras() {
@@ -83,8 +97,8 @@ export default function AjudaLibras() {
         <Volume2 className="h-5 w-5 text-blue-600 mt-0.5 shrink-0" />
         <div className="text-sm text-blue-800 dark:text-blue-200">
           <strong>Dica:</strong> Navegue pelas abas abaixo para aprender o alfabeto,
-          números e frases básicas em Libras. Cada sinal é representado por um emoji
-          ilustrativo com a descrição dos movimentos das mãos.
+          números e frases básicas em Libras. Cada sinal possui uma ilustração
+          da configuração das mãos com a descrição dos movimentos.
         </div>
       </div>
 
@@ -97,19 +111,33 @@ export default function AjudaLibras() {
 
         <TabsContent value="alphabet" className="mt-4">
           <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3">
-            {alphabetLibra.map((item) => (
-              <Card key={item.letter} className="hover:shadow-md transition-shadow">
-                <CardHeader className="pb-2 pt-3 px-3">
-                  <CardTitle className="text-center">
-                    <span className="text-2xl font-bold text-blue-600">{item.letter}</span>
-                  </CardTitle>
-                </CardHeader>
-                <CardContent className="px-3 pb-3 text-center">
-                  <div className="text-4xl mb-2">{item.sign}</div>
-                  <p className="text-xs text-muted-foreground">{item.desc}</p>
-                </CardContent>
-              </Card>
-            ))}
+            {alphabetLibra.map((item) => {
+              const hasImage = HAS_IMAGE[item.letter];
+              return (
+                <Card key={item.letter} className="hover:shadow-md transition-shadow">
+                  <CardHeader className="pb-1 pt-3 px-3">
+                    <CardTitle className="text-center">
+                      <span className="text-xl font-bold text-blue-600">{item.letter}</span>
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent className="px-3 pb-3 text-center">
+                    <div className="w-16 h-16 mx-auto mb-2">
+                      {hasImage ? (
+                        <img
+                          src={signImagePath(item.letter)}
+                          alt={`Sinal de ${item.letter} em Libras`}
+                          className="w-full h-full object-contain rounded"
+                          loading="lazy"
+                        />
+                      ) : (
+                        getAlphabetSign(item.letter, "#2563eb")
+                      )}
+                    </div>
+                    <p className="text-xs text-muted-foreground leading-tight">{item.desc}</p>
+                  </CardContent>
+                </Card>
+              );
+            })}
           </div>
         </TabsContent>
 
@@ -117,14 +145,21 @@ export default function AjudaLibras() {
           <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3">
             {numbersLibra.map((item) => (
               <Card key={item.number} className="hover:shadow-md transition-shadow">
-                <CardHeader className="pb-2 pt-3 px-3">
+                <CardHeader className="pb-1 pt-3 px-3">
                   <CardTitle className="text-center">
-                    <span className="text-2xl font-bold text-green-600">{item.number}</span>
+                    <span className="text-xl font-bold text-green-600">{item.number}</span>
                   </CardTitle>
                 </CardHeader>
                 <CardContent className="px-3 pb-3 text-center">
-                  <div className="text-4xl mb-2">{item.sign}</div>
-                  <p className="text-xs text-muted-foreground">{item.desc}</p>
+                  <div className="w-16 h-16 mx-auto mb-2">
+                    <img
+                      src={`/image/libras/numeros/${item.number}.jpg`}
+                      alt={`Número ${item.number} em Libras`}
+                      className="w-full h-full object-contain rounded"
+                      loading="lazy"
+                    />
+                  </div>
+                  <p className="text-xs text-muted-foreground leading-tight">{item.desc}</p>
                 </CardContent>
               </Card>
             ))}
@@ -135,18 +170,100 @@ export default function AjudaLibras() {
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             {phrasesLibra.map((item) => (
               <Card key={item.phrase} className="hover:shadow-md transition-shadow">
-                <CardContent className="pt-4 px-4 pb-4 flex items-center gap-4">
-                  <div className="text-4xl shrink-0">{item.sign}</div>
-                  <div>
-                    <h3 className="font-semibold text-lg">{item.phrase}</h3>
-                    <p className="text-sm text-muted-foreground">{item.desc}</p>
-                  </div>
+                <CardContent className="pt-4 px-4 pb-4">
+                  <h3 className="font-semibold text-base">{item.phrase}</h3>
+                  <p className="text-xs text-muted-foreground leading-tight mt-1">{item.desc}</p>
                 </CardContent>
               </Card>
             ))}
           </div>
         </TabsContent>
       </Tabs>
+
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-lg flex items-center gap-2">
+            <Play className="h-5 w-5 text-blue-600" />
+            Vídeos de Apoio - Libras
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <a
+              href="https://www.youtube.com/watch?v=8hnL2W5fDPg"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="group block rounded-lg border hover:shadow-md transition-shadow overflow-hidden"
+            >
+              <div className="aspect-video bg-gray-100 dark:bg-gray-800 relative">
+                <img
+                  src="https://img.youtube.com/vi/8hnL2W5fDPg/mqdefault.jpg"
+                  alt="Apoio Comercial em Libras"
+                  className="w-full h-full object-cover"
+                  loading="lazy"
+                />
+                <div className="absolute inset-0 flex items-center justify-center">
+                  <div className="bg-black/60 rounded-full p-3 group-hover:bg-red-600 transition-colors">
+                    <Play className="h-6 w-6 text-white fill-white" />
+                  </div>
+                </div>
+              </div>
+              <div className="p-3 flex items-center gap-2 text-sm font-medium">
+                <span>Apoio Comercial</span>
+                <ExternalLink className="h-3 w-3 opacity-50" />
+              </div>
+            </a>
+            <a
+              href="https://www.youtube.com/watch?v=NJU2vYoWrrI"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="group block rounded-lg border hover:shadow-md transition-shadow overflow-hidden"
+            >
+              <div className="aspect-video bg-gray-100 dark:bg-gray-800 relative">
+                <img
+                  src="https://img.youtube.com/vi/NJU2vYoWrrI/mqdefault.jpg"
+                  alt="Apoio em Libras"
+                  className="w-full h-full object-cover"
+                  loading="lazy"
+                />
+                <div className="absolute inset-0 flex items-center justify-center">
+                  <div className="bg-black/60 rounded-full p-3 group-hover:bg-red-600 transition-colors">
+                    <Play className="h-6 w-6 text-white fill-white" />
+                  </div>
+                </div>
+              </div>
+              <div className="p-3 flex items-center gap-2 text-sm font-medium">
+                <span>Alfabeto em Libras</span>
+                <ExternalLink className="h-3 w-3 opacity-50" />
+              </div>
+            </a>
+            <a
+              href="https://www.youtube.com/watch?v=yat_mbtbE9k"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="group block rounded-lg border hover:shadow-md transition-shadow overflow-hidden"
+            >
+              <div className="aspect-video bg-gray-100 dark:bg-gray-800 relative">
+                <img
+                  src="https://img.youtube.com/vi/yat_mbtbE9k/mqdefault.jpg"
+                  alt="Apoio em Libras"
+                  className="w-full h-full object-cover"
+                  loading="lazy"
+                />
+                <div className="absolute inset-0 flex items-center justify-center">
+                  <div className="bg-black/60 rounded-full p-3 group-hover:bg-red-600 transition-colors">
+                    <Play className="h-6 w-6 text-white fill-white" />
+                  </div>
+                </div>
+              </div>
+              <div className="p-3 flex items-center gap-2 text-sm font-medium">
+                <span>Sinais em Libras</span>
+                <ExternalLink className="h-3 w-3 opacity-50" />
+              </div>
+            </a>
+          </div>
+        </CardContent>
+      </Card>
 
       <Card className="border-blue-200 dark:border-blue-800">
         <CardHeader>
